@@ -99,6 +99,7 @@ th{color:var(--pudar);font-weight:500;white-space:nowrap}
 .cek{display:flex;gap:10px;align-items:flex-start;margin-top:10px;color:var(--teks)}.cek input{width:22px;height:22px;min-height:0;margin-top:1px;flex:none}
 .muat{opacity:.6;pointer-events:none}
 .besarInput{font-size:26px;font-weight:800;text-align:center}
+.fizgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--garis)}.fizgrid .tag{white-space:normal;margin:0 2px 3px 0;line-height:1.3}
 .kotakHasil{background:var(--kad2);border-radius:14px;padding:6px 14px;margin-top:12px}
 .kotakHasil .bar2{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--garis)}
 .kotakHasil .bar2:last-child{border:0}
@@ -768,10 +769,19 @@ function lukisFiz() {
   $('#cipF').innerHTML = cip('fTapis', [['semua', 'Semua']].concat(kats.map(k => [k.nama, k.nama])), S.fTapis, 'lukisFiz');
   const q = ($('#cariF').value || '').toLowerCase();
   $('#senF').innerHTML = S.fizAhli.map((a, i) => [a, i]).filter(([a]) => a.nama.toLowerCase().includes(q) && (S.fTapis === 'semua' || a.kat.some(k => k.nama === S.fTapis))).map(([a, i]) => {
-    const f = S.fizTerkini[a.no_kp], b = f ? infoBMI(+f.berat, +f.tinggi) : null, kl = f && f.berat ? a.kat.map(k => kelasBerat(k, +f.berat).split(' (')[0]).join(' / ') : '';
-    return `<div class="item" onclick="bukaFiz(${i})"><div class="k"><b>${esc(a.nama)}</b>
-      <small>${a.umur != null ? a.umur + ' thn · ' + namaKat(a.kat) : 'Tarikh lahir tiada'}${f && f.berat ? ' · ' + esc(f.berat) + ' kg' + (kl ? ' · ' + esc(kl) : '') : ''}</small></div>
-      <div class="r">${b ? tag('BMI ' + b.bmi, b.w) : `<button class="utama kecil" style="min-height:42px">+ Rekod</button>`}</div></div>`; }).join('') || '<p class="pudar">Tiada.</p>';
+    const f = S.fizTerkini[a.no_kp], brt = f ? +f.berat : 0, b = f ? infoBMI(brt, +f.tinggi) : null;
+    const lbl = t => `<span class="pudar" style="font-size:11px;display:block;margin-bottom:3px">${t}</span>`;
+    const usia = a.kat.length ? a.kat.map(k => tag(k.nama, 'BIRU')).join(' ') : tag(a.umur == null ? 'TIADA TARIKH LAHIR' : 'TIADA KATEGORI', 'TIDAK');
+    const berat = !brt ? '<span class="pudar" style="font-size:13px">—</span>'
+      : a.kat.length ? a.kat.map(k => `<span class="tag" style="background:#3a321f;color:var(--emas)">${a.kat.length > 1 ? esc(k.nama.split(' ')[0]) + ': ' : ''}${esc(kelasBerat(k, brt).replace('Kelas ', ''))}</span>`).join(' ') : '<span class="pudar" style="font-size:13px">—</span>';
+    return `<div class="item" style="display:block" onclick="bukaFiz(${i})">
+      <div class="baris" style="align-items:flex-start"><div class="k" style="flex:1"><b>${esc(a.nama)}</b><small>${a.umur != null ? a.umur + ' tahun' : 'Umur tidak diketahui'}${brt ? ` · ${esc(f.berat)} kg${f.tinggi ? ' · ' + esc(f.tinggi) + ' cm' : ''}` : ''}</small></div>
+        ${f ? '<span class="pudar" style="flex:none">✎</span>' : '<button class="utama kecil" style="flex:none;min-height:38px">+ Rekod</button>'}</div>
+      <div class="fizgrid">
+        <div>${lbl('KELAS USIA')}${usia}</div>
+        <div>${lbl('KELAS BERAT')}${berat}</div>
+        <div>${lbl('BMI')}${b ? tag(b.bmi + ' · ' + b.k, b.w) : '<span class="pudar" style="font-size:13px">—</span>'}</div>
+      </div></div>`; }).join('') || '<p class="pudar">Tiada.</p>';
 }
 function bukaFiz(i) {
   const a = S.fizAhli[i], f = S.fizTerkini[a.no_kp]; S.fPilih = a;
