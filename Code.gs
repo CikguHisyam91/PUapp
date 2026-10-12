@@ -113,7 +113,7 @@ function jawab_(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
 }
 
-var AWAM = { ping: 1, negeri: 1, daftar: 1, login: 1, status_awal: 1, cipta_super: 1 };
+var AWAM = { ibubapa: 1, ping: 1, negeri: 1, daftar: 1, login: 1, status_awal: 1, cipta_super: 1 };
 var TULIS = { kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, lulus_gelanggang: 1, status_gelanggang: 1,
   status_pengguna: 1, set_ketua: 1, lantik_admin: 1, daftar_ahli: 1, kemaskini_ahli: 1, status_ahli: 1,
   rekod_yuran: 1, padam_yuran: 1, mohon_gelanggang: 1 };
@@ -974,4 +974,42 @@ API.fiz_padam = function (u, p) {
   if (!f || f.KOD_GELANGGANG !== g.KOD) return { ok: false, msg: 'Rekod tiada.' };
   padamBaris_('FIZIKAL', f._r);
   return { ok: true, msg: 'Rekod dipadam.' };
+};
+
+/* ======================= PORTAL IBU BAPA =======================
+ * Log masuk tanpa akaun: No. KP anak + No. telefon waris (seperti dalam rekod ahli).
+ * Dihadkan 5 cubaan gagal / 15 minit bagi setiap No. KP. Hanya data anak itu dipulangkan. */
+function digitTel_(t) { var d = String(t || '').replace(/\D/g, ''); return d.slice(-9); }
+AWAM_FN.ibubapa = function (p) {
+  var kp = bersihKP_(p.no_kp), c = CacheService.getScriptCache(), kunci = 'ib_' + kp.replace(/\D/g, '');
+  var gagal = Number(c.get(kunci) || 0);
+  if (gagal >= 5) return { ok: false, msg: 'Terlalu banyak cubaan. Cuba lagi selepas 15 minit.' };
+  var a = cariSatu_('AHLI', 'NO_KP', kp), t = digitTel_(p.telefon);
+  if (!a || t.length < 8 || digitTel_(a.TEL_WARIS) !== t) {
+    c.put(kunci, String(gagal + 1), 900);
+    return { ok: false, msg: 'No. KP atau no. telefon waris tidak sepadan dengan rekod gelanggang.' };
+  }
+  c.remove(kunci);
+  var g = cariSatu_('GELANGGANG', 'KOD', a.GELANGGANG_UTAMA) || {};
+  var ketua = g.KETUA_ID ? cariSatu_('PENGGUNA', 'ID', g.KETUA_ID) : null;
+  var kini = new Date(), th = String(kini.getFullYear());
+  // Kehadiran 4 bulan terakhir
+  var bulanList = [];
+  for (var i = 0; i < 4; i++) { var d = new Date(kini.getFullYear(), kini.getMonth() - i, 1); bulanList.push(Utilities.formatDate(d, 'Asia/Kuala_Lumpur', 'yyyy-MM')); }
+  var hadir = bulanList.map(function (ym) {
+    var sesi = baca_('KEHADIRAN').filter(function (x) { return x.KOD_GELANGGANG === g.KOD && x.TARIKH.indexOf(ym) === 0; });
+    var tarikh = sesi.filter(function (x) { return (x.HADIR || '').split(',').indexOf(kp) >= 0; }).map(function (x) { return x.TARIKH; }).sort();
+    return { bulan: ym, sesi: sesi.length, hadir: tarikh.length, tarikh: tarikh };
+  });
+  var yb = baca_('YURAN_BULANAN').filter(function (y) { return y.NO_KP === kp && y.TAHUN === th; })
+    .map(function (y) { return { bulan: Number(y.BULAN), jumlah: y.JUMLAH, tarikh: y.TARIKH_BAYAR, kaedah: y.KAEDAH }; });
+  var kec = baca_('PENGECUALIAN').filter(function (k) { return k.KOD_GELANGGANG === g.KOD && (k.JENIS === 'BULAN' || k.NO_KP === kp); })
+    .map(function (k) { return { jenis: k.JENIS, mula: k.MULA, tamat: k.TAMAT, sebab: k.SEBAB }; });
+  var yt = baca_('YURAN_TAHUNAN').filter(function (y) { return y.NO_KP === kp; }).map(function (y) { return { tahun: y.TAHUN, jumlah: y.JUMLAH, tarikh: y.TARIKH_BAYAR }; });
+  var fiz = baca_('FIZIKAL').filter(function (f) { return f.NO_KP === kp; }).sort(function (x, y) { return y.TARIKH.localeCompare(x.TARIKH); })
+    .slice(0, 6).map(function (f) { return { tarikh: f.TARIKH, berat: f.BERAT, tinggi: f.TINGGI, bmi: f.BMI }; });
+  return { ok: true, anak: { nama: a.NAMA, no_ahli: a.NO_AHLI, no_kp: topengKP_(a.NO_KP), jantina: a.JANTINA, tarikh_lahir: a.TARIKH_LAHIR,
+      bengkung: a.BENGKUNG, status: a.STATUS, tarikh_daftar: a.TARIKH_DAFTAR },
+    gelanggang: { nama: g.NAMA || '', kod: g.KOD || '', negeri: namaNegeri_(g.NEGERI), ketua: ketua ? ketua.NAMA : '', telKetua: ketua ? ketua.TELEFON : '' },
+    tahun: th, hadir: hadir, yuranBulanan: yb, pengecualian: kec, yuranTahunan: yt, fizikal: fiz };
 };

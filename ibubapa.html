@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Portal Ibu Bapa</title>
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0F1115">
+<style>
+:root{--bg:#0F1115;--kad:#181B22;--kad2:#20242D;--garis:#2C313C;--teks:#E8E9EC;--pudar:#9097A3;--emas:#E2B55A;--hijau:#3FB97B;--merah:#E0605A;--kuning:#E2B55A;--biru:#5A9BE2}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--teks);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:620px;margin:0 auto;padding:14px 14px 40px}
+header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--garis);background:#0B0D10;position:sticky;top:0;z-index:10}
+header img{width:38px;height:38px;border-radius:50%;background:#fff}
+header .t{flex:1;min-width:0}header .t b{display:block;font-size:17px}header .t small{color:var(--pudar);font-size:12px}
+button{background:var(--kad2);color:var(--teks);border:1px solid var(--garis);border-radius:12px;padding:11px 16px;font:inherit;font-size:15px;cursor:pointer;min-height:44px}
+button.utama{background:var(--emas);color:#1a1405;border-color:var(--emas);font-weight:700}
+button.kecil{padding:6px 12px;font-size:14px;min-height:36px}
+button.penuh{width:100%}
+input{width:100%;background:var(--kad2);color:var(--teks);border:1px solid var(--garis);border-radius:12px;padding:12px 14px;font:inherit;font-size:16px;min-height:48px}
+input:focus{outline:none;border-color:var(--emas)}
+label{display:block;margin:12px 0 6px;color:var(--pudar);font-size:14px}
+.kad{background:var(--kad);border:1px solid var(--garis);border-radius:16px;padding:16px;margin-bottom:12px}
+.kad h3{margin:0 0 12px;color:var(--emas);font-size:16px;display:flex;justify-content:space-between;align-items:center}
+.pudar{color:var(--pudar)}
+.tag{display:inline-block;padding:3px 10px;border-radius:8px;font-size:13px;font-weight:700;white-space:nowrap}
+.t-HIJAU,.t-AKTIF{background:#1f3a2c;color:var(--hijau)}.t-KUNING{background:#3a321f;color:var(--kuning)}.t-MERAH{background:#3a2020;color:var(--merah)}.t-BIRU{background:#1f2c3a;color:var(--biru)}.t-TIDAK{background:#2a2d33;color:var(--pudar)}
+.login{max-width:420px;margin:24px auto}
+.login .logo{text-align:center}.login .logo img{width:130px;height:130px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px var(--emas)}
+.login h1{color:var(--emas);text-align:center;margin:12px 0 2px;font-size:22px}
+.cip{display:flex;gap:8px;overflow-x:auto;margin:0 0 12px;scrollbar-width:none}.cip::-webkit-scrollbar{display:none}
+.cip button{flex:none;border-radius:20px;padding:8px 16px;min-height:40px;background:var(--kad);color:var(--pudar);font-weight:600}
+.cip button.on{background:#EDEEF0;color:#111;border-color:#EDEEF0}
+.ahlikad{background:linear-gradient(135deg,#1c1f27,#0B0D10);border:2px solid var(--emas);border-radius:16px;padding:16px;display:flex;gap:14px;align-items:center;margin-bottom:12px}
+.ahlikad img{width:70px;height:70px;border-radius:50%;background:#fff;flex:none}
+.ahlikad .n{font-size:16px;font-weight:800;text-transform:uppercase}
+.ahlikad .no{color:var(--emas);font-size:19px;font-weight:800;letter-spacing:1px}
+.baris{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--garis)}
+.baris:last-child{border:0}.baris b{text-align:right}
+.besar{font-size:34px;font-weight:800;line-height:1.1}
+.bar{height:8px;background:var(--kad2);border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:var(--hijau)}
+.bulan{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.bulan div{background:var(--kad2);border-radius:10px;padding:8px 2px;text-align:center;font-size:12px}
+.bulan div b{display:block;font-size:17px;margin-top:2px}
+.carta{display:flex;align-items:flex-end;gap:10px;height:110px;margin:6px 0}
+.carta div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:12px}
+.carta i{display:block;width:100%;max-width:46px;background:var(--emas);border-radius:6px 6px 0 0;min-height:3px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--kad2);border:1px solid var(--emas);padding:12px 16px;border-radius:12px;width:max-content;max-width:92%;display:none;z-index:60}
+.cek{display:flex;gap:10px;align-items:center;margin-top:12px;color:var(--teks)}.cek input{width:22px;height:22px;min-height:0;flex:none}
+.muat{opacity:.6;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast"></div>
+<script src="bersama.js"></script>
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbwYLSghcfcLVKLg2plYc9Slj8E0KuNu8LX7HOugVTSIWxwCfv2hcBZB_l0uc5JArfxV/exec';
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const tag = (s, w) => s ? `<span class="tag t-${esc(w || String(s).split(' ')[0])}">${esc(s)}</span>` : '';
+const BLN = ['','Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
+const tarikhMY = t => t && t.length >= 10 ? `${t.slice(8, 10)}/${t.slice(5, 7)}/${t.slice(0, 4)}` : (t || '');
+function toast(m) { const t = $('#toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(() => t.style.display = 'none', 4000); }
+const simpan = { baca() { try { return JSON.parse(localStorage.getItem('ib_anak') || '[]'); } catch (e) { return []; } },
+  tulis(v) { try { localStorage.setItem('ib_anak', JSON.stringify(v)); } catch (e) {} } };
+let S = { anak: simpan.baca(), pilih: 0, data: {} };
+
+async function api(data) {
+  const body = JSON.stringify(Object.assign({ action: 'ibubapa' }, data));
+  try { const r = await fetch(API_URL, { method: 'POST', credentials: 'omit', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body }); return await r.json(); }
+  catch (e) { try { const r = await fetch(API_URL + '?p=' + encodeURIComponent(body), { credentials: 'omit' }); return await r.json(); }
+    catch (e2) { return { ok: false, msg: 'Tiada sambungan internet.' }; } }
+}
+
+function paparLogin(tambah) {
+  $('#app').innerHTML = `<div class="wrap"><div class="login">
+    <div class="logo"><img src="logo.png" alt="Logo Sri Gayong Panglima Ulung"></div>
+    <h1>Portal Ibu Bapa</h1><p class="pudar" style="text-align:center;margin-top:0">Sri Gayong Panglima Ulung</p>
+    <div class="kad" id="kotak">
+      <p class="pudar" style="margin-top:0;font-size:14px">Semak kehadiran, yuran dan prestasi anak anda.</p>
+      <label>No. Kad Pengenalan / MyKid anak</label><input id="kp" inputmode="numeric" placeholder="cth. 150512081234">
+      <label>No. telefon waris (seperti didaftarkan di gelanggang)</label><input id="tel" inputmode="tel" placeholder="cth. 0123456789">
+      <label class="cek"><input type="checkbox" id="ingat" checked> Ingat di telefon ini</label>
+      <button class="utama penuh" style="margin-top:16px" onclick="masuk()">${tambah ? 'Tambah Anak' : 'Semak'}</button>
+      ${tambah ? `<button class="penuh" style="margin-top:8px" onclick="papar()">Batal</button>` : ''}
+    </div>
+    <p class="pudar" style="font-size:12px;text-align:center">No. telefon tidak sepadan? Minta jurulatih kemas kini "Tel. Waris" dalam rekod anak anda.</p>
+  </div></div>`;
+}
+async function masuk() {
+  const kp = $('#kp').value.trim(), tel = $('#tel').value.trim();
+  if (!kp || !tel) return toast('Sila isi No. KP dan no. telefon.');
+  $('#kotak').classList.add('muat');
+  const r = await api({ no_kp: kp, telefon: tel });
+  $('#kotak').classList.remove('muat');
+  if (!r.ok) return toast(r.msg);
+  const kunci = kp.replace(/\D/g, '');
+  S.anak = S.anak.filter(a => a.kp.replace(/\D/g, '') !== kunci);
+  S.anak.push({ kp, tel, nama: r.anak.nama });
+  S.pilih = S.anak.length - 1; S.data[S.pilih] = r;
+  if ($('#ingat').checked) simpan.tulis(S.anak);
+  papar();
+}
+function keluar() {
+  if (!confirm('Keluar dan buang semua anak dari telefon ini?')) return;
+  S.anak = []; S.data = {}; simpan.tulis([]); paparLogin();
+}
+async function papar() {
+  if (!S.anak.length) return paparLogin();
+  if (S.pilih >= S.anak.length) S.pilih = 0;
+  const pilihan = S.anak.length > 1 ? `<div class="cip">${S.anak.map((a, i) => `<button class="${i === S.pilih ? 'on' : ''}" onclick="S.pilih=${i};papar()">${esc(a.nama.split(' ')[0])}</button>`).join('')}</div>` : '';
+  $('#app').innerHTML = `<header><img src="logo.png" alt=""><div class="t"><b>Portal Ibu Bapa</b><small>Sri Gayong Panglima Ulung</small></div><button class="kecil" onclick="keluar()">Keluar</button></header>
+    <div class="wrap">${pilihan}<div id="isi"><p class="pudar" style="text-align:center;padding:30px 0">Memuatkan...</p></div>
+    <button class="penuh" onclick="paparLogin(true)">+ Tambah anak lain</button></div>`;
+  let r = S.data[S.pilih];
+  if (!r) { const a = S.anak[S.pilih]; r = await api({ no_kp: a.kp, telefon: a.tel }); if (!r.ok) { $('#isi').innerHTML = `<div class="kad">${esc(r.msg)}</div>`; return; } S.data[S.pilih] = r; }
+  lukis(r);
+}
+function lukis(r) {
+  const a = r.anak, g = r.gelanggang, th = Number(r.tahun), kini = new Date();
+  const y = Number(String(a.tarikh_lahir || '').slice(0, 4)) || (() => { const d = String(a.no_kp).replace(/\D/g, ''); if (d.length < 2) return 0; const x = Number(d.slice(0, 2)); return x > kini.getFullYear() % 100 ? 1900 + x : 2000 + x; })();
+  const umur = y ? th - y : null, kats = kategoriUsia(umur);
+  const bi = indeksBengkung(a.bengkung);
+  // Kehadiran
+  const h0 = r.hadir[0], pc = h0.sesi ? Math.round(h0.hadir / h0.sesi * 100) : 0, maxS = Math.max(1, ...r.hadir.map(h => h.sesi));
+  // Yuran bulanan
+  const bulanIni = kini.getMonth() + 1;
+  const kec = (ym) => r.pengecualian.find(k => (k.jenis === 'BULAN' && k.mula === ym) || (k.jenis === 'AHLI' && k.mula <= ym && (!k.tamat || k.tamat >= ym)));
+  let belum = 0;
+  const grid = BLN.slice(1).map((b, i) => { const m = i + 1, ym = `${th}-${String(m).padStart(2, '0')}`, p = r.yuranBulanan.find(x => x.bulan === m), k = !p && kec(ym);
+    let isi, warna = '';
+    if (p) { isi = '✓'; warna = 'background:#1f3a2c;color:var(--hijau)'; }
+    else if (k) { isi = '–'; warna = 'background:#2a2140;color:#B9A4FF'; }
+    else if (m <= bulanIni) { isi = '✕'; warna = 'background:#3a2020;color:var(--merah)'; belum++; }
+    else { isi = '·'; warna = 'color:var(--garis)'; }
+    return `<div style="${warna}">${b}<b>${isi}</b></div>`; }).join('');
+  const jumYB = r.yuranBulanan.reduce((s, x) => s + Number(x.jumlah || 0), 0);
+  const ytIni = r.yuranTahunan.find(x => x.tahun === String(th));
+  // Fizikal
+  const f = r.fizikal[0], info = f ? infoBMI(+f.berat, +f.tinggi) : null;
+  $('#isi').innerHTML = `
+  <div class="ahlikad"><img src="logo.png" alt=""><div style="min-width:0">
+    <div class="pudar" style="font-size:11px">KAD AHLI · SRI GAYONG PANGLIMA ULUNG</div>
+    <div class="n">${esc(a.nama)}</div><div class="no">${esc(a.no_ahli)}</div>
+    <div style="font-size:14px;display:flex;align-items:center;gap:6px;margin-top:2px">${bi >= 0 ? jalur(bi) : ''}<b>${esc(bi >= 0 ? BENGKUNG[bi] : (a.bengkung || '-'))}</b></div>
+    <div style="margin-top:6px">${tag(a.status, a.status === 'AKTIF' ? 'HIJAU' : 'MERAH')} <small class="pudar">${umur != null ? umur + ' tahun' : ''}</small></div></div></div>
+  <div class="kad"><h3>Gelanggang</h3>
+    <div class="baris"><span class="pudar">Nama</span><b>${esc(g.nama)}</b></div>
+    <div class="baris"><span class="pudar">Negeri</span><b>${esc(g.negeri)}</b></div>
+    ${g.ketua ? `<div class="baris"><span class="pudar">Ketua jurulatih</span><b>${esc(g.ketua)}</b></div>` : ''}
+    ${g.telKetua ? `<a href="https://wa.me/6${esc(String(g.telKetua).replace(/\D/g, '').replace(/^6/, ''))}" style="text-decoration:none"><button class="penuh" style="margin-top:10px;border-color:#2d5a43;color:var(--hijau)">💬 WhatsApp Jurulatih</button></a>` : ''}</div>
+  <div class="kad"><h3>Kehadiran <span class="pudar" style="font-size:13px;font-weight:400">${BLN[+h0.bulan.slice(5)]} ${h0.bulan.slice(0, 4)}</span></h3>
+    <div class="besar">${h0.hadir}<span class="pudar" style="font-size:18px"> / ${h0.sesi} sesi</span></div>
+    <div class="pudar" style="font-size:14px;margin:4px 0 10px">${h0.sesi ? pc + '% kehadiran bulan ini' : 'Belum ada latihan direkod bulan ini'}</div>
+    <div class="bar"><i style="width:${pc}%;background:${pc >= 75 ? 'var(--hijau)' : pc >= 50 ? 'var(--kuning)' : 'var(--merah)'}"></i></div>
+    <div class="carta" style="margin-top:16px">${r.hadir.slice().reverse().map(h => `<div><b style="font-size:13px">${h.hadir}/${h.sesi}</b><i style="height:${h.sesi ? Math.max(4, h.hadir / maxS * 80) : 3}px;${h.sesi ? '' : 'background:var(--garis)'}"></i><span class="pudar">${BLN[+h.bulan.slice(5)]}</span></div>`).join('')}</div>
+    ${h0.tarikh.length ? `<div class="pudar" style="font-size:13px">Hadir: ${h0.tarikh.map(t => +t.slice(8) + 'hb').join(', ')}</div>` : ''}</div>
+  <div class="kad"><h3>Yuran Bulanan ${th} ${belum ? tag(belum + ' belum bayar', 'MERAH') : tag('Terkini', 'HIJAU')}</h3>
+    <div class="bulan">${grid}</div>
+    <div class="pudar" style="font-size:12px;margin-top:10px">✓ dibayar · ✕ belum dibayar · – dikecualikan</div>
+    <div class="baris" style="margin-top:6px"><span class="pudar">Jumlah dibayar ${th}</span><b>RM${jumYB.toFixed(2)}</b></div>
+    <div class="baris"><span class="pudar">Yuran tahunan ${th}</span><b>${ytIni ? tag('Dibayar RM' + ytIni.jumlah, 'HIJAU') : tag('Belum', 'KUNING')}</b></div></div>
+  <div class="kad"><h3>Fizikal & BMI ${f ? `<span class="pudar" style="font-size:13px;font-weight:400">${tarikhMY(f.tarikh)}</span>` : ''}</h3>
+    <div class="baris"><span class="pudar">Kategori usia</span><b>${kats.length ? kats.map(k => tag(k.nama, 'BIRU')).join(' ') : '-'}</b></div>
+    ${f ? `<div class="baris"><span class="pudar">Berat / Tinggi</span><b>${esc(f.berat)} kg / ${esc(f.tinggi || '-')} cm</b></div>
+      ${kats.map(k => `<div class="baris"><span class="pudar">Kelas berat ${kats.length > 1 ? '(' + esc(k.nama) + ')' : ''}</span><b style="color:var(--emas)">${esc(kelasBerat(k, +f.berat))}</b></div>`).join('')}
+      ${info ? `<div class="baris"><span class="pudar">BMI</span><b>${info.bmi} ${tag(info.k, info.w)}</b></div>
+      <div class="baris"><span class="pudar">Berat ideal</span><b>${info.ideal}</b></div>
+      <div class="baris"><span class="pudar">Sasaran</span><b>${info.beza}</b></div>` : ''}
+      ${r.fizikal.length > 1 ? `<div class="pudar" style="font-size:13px;margin-top:8px">Sejarah berat: ${r.fizikal.map(x => `${esc(x.berat)}kg (${tarikhMY(x.tarikh).slice(0, 5)})`).join(' · ')}</div>` : ''}`
+      : '<p class="pudar" style="margin-bottom:0">Belum ada rekod timbang.</p>'}</div>
+  <p class="pudar" style="font-size:12px;text-align:center">🔒 Maklumat ini hanya untuk ibu bapa / penjaga. No. KP dipaparkan separa.</p>`;
+}
+papar();
+</script>
+</body>
+</html>
