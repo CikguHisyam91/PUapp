@@ -6,6 +6,10 @@
 <title>Portal Ibu Bapa</title>
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest-ibubapa.json">
+<meta name="apple-mobile-web-app-title" content="Portal Ibu Bapa">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0F1115">
 <style>
 :root{--bg:#0F1115;--kad:#181B22;--kad2:#20242D;--garis:#2C313C;--teks:#E8E9EC;--pudar:#9097A3;--emas:#E2B55A;--hijau:#3FB97B;--merah:#E0605A;--kuning:#E2B55A;--biru:#5A9BE2}
@@ -175,6 +179,7 @@ function lukis(r) {
       : '<p class="pudar" style="margin-bottom:0">Belum ada rekod timbang.</p>'}</div>
   <p class="pudar" style="font-size:12px;text-align:center">🔒 Maklumat ini hanya untuk ibu bapa / penjaga. No. KP dipaparkan separa.</p>`;
 }
+pasangApp('Portal Ibu Bapa', 'pwa_ib');
 papar();
 </script>
 </body>

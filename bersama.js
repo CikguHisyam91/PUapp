@@ -59,3 +59,40 @@ function infoBMI(berat, tinggi) {
   const beza = berat < min ? `Naik ${(min - berat).toFixed(1)} kg` : berat > max ? `Turun ${(berat - max).toFixed(1)} kg` : 'Dalam julat ideal ✓';
   return { bmi: bmi.toFixed(1), k, w, ideal: `${min.toFixed(1)} – ${max.toFixed(1)} kg`, beza };
 }
+
+/* ====== Pasang ke skrin utama (PWA) — popup sekali sahaja ====== */
+function pasangApp(namaApp, kunci) {
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  const sudahApp = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  let pernah = false; try { pernah = !!localStorage.getItem(kunci); } catch (e) {}
+  if (sudahApp || pernah) return;
+  const tandai = () => { try { localStorage.setItem(kunci, '1'); } catch (e) {} };
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !/crios|fxios/i.test(navigator.userAgent);
+  const papar = (isi, butang) => {
+    const d = document.createElement('div');
+    d.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:flex-end;justify-content:center';
+    d.innerHTML = `<div style="background:#181B22;color:#E8E9EC;border:1px solid #2C313C;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));width:100%;max-width:520px;font:15px/1.5 system-ui,sans-serif">
+      <div style="display:flex;gap:14px;align-items:center;margin-bottom:12px"><img src="icon-192.png" style="width:60px;height:60px;border-radius:14px;background:#fff">
+      <div><b style="font-size:17px">Pasang ${namaApp}</b><div style="color:#9097A3;font-size:13px">Buka terus dari skrin utama telefon, macam app.</div></div></div>
+      ${isi}<div style="display:flex;gap:10px;margin-top:16px">
+      <button id="pwaTidak" style="flex:1;min-height:46px;border-radius:12px;border:1px solid #2C313C;background:#20242D;color:#E8E9EC;font:inherit">Nanti</button>
+      ${butang ? `<button id="pwaYa" style="flex:1;min-height:46px;border-radius:12px;border:0;background:#E2B55A;color:#1a1405;font:inherit;font-weight:700">📲 Pasang</button>` : ''}</div></div>`;
+    document.body.appendChild(d);
+    const tutup = () => { d.remove(); tandai(); };
+    d.querySelector('#pwaTidak').onclick = tutup;
+    return { d, tutup };
+  };
+  if (ios) {
+    setTimeout(() => papar(`<ol style="margin:0;padding-left:20px;color:#E8E9EC">
+      <li>Tekan butang <b>Kongsi</b> <span style="display:inline-block;border:1px solid #9097A3;border-radius:4px;padding:0 5px">⬆︎</span> di bawah skrin Safari</li>
+      <li>Pilih <b>Add to Home Screen</b> / <b>Tambah ke Skrin Utama</b></li><li>Tekan <b>Add</b></li></ol>`, false), 2500);
+    return;
+  }
+  window.addEventListener('beforeinstallprompt', ev => {
+    ev.preventDefault();
+    setTimeout(() => {
+      const p = papar('', true);
+      p.d.querySelector('#pwaYa').onclick = async () => { p.tutup(); ev.prompt(); try { await ev.userChoice; } catch (e) {} };
+    }, 1500);
+  });
+}
