@@ -102,7 +102,9 @@ async function api(action, data) {
 }
 
 /* ================= LOG MASUK / DAFTAR ================= */
-function paparLogin() {
+async function paparLogin() {
+  const st = await api('status_awal');
+  if (st.ok && st.perluSuper) return paparCiptaSuper();
   $('#app').innerHTML = `<div class="wrap"><div class="login">
     <div class="logo"><img src="logo.png" alt="Logo Sri Gayong Panglima Ulung"></div>
     <h1>SilatApp Pusat</h1><p class="pudar" style="text-align:center;margin-top:0">Sri Gayong Panglima Ulung</p>
@@ -113,6 +115,26 @@ function paparLogin() {
       <p class="pudar" style="text-align:center;margin-bottom:0">Jurulatih baharu? <a href="#" onclick="paparDaftar();return false">Daftar di sini</a></p>
     </div></div></div>`;
   $('#lPw').addEventListener('keydown', e => { if (e.key === 'Enter') logMasuk(); });
+}
+function paparCiptaSuper() {
+  $('#app').innerHTML = `<div class="wrap"><div class="login">
+    <div class="logo"><img src="logo.png" alt="Logo"></div>
+    <h1>Selamat Datang</h1><p class="pudar" style="text-align:center;margin-top:0">Langkah pertama: cipta akaun Super Admin anda (sekali sahaja).</p>
+    <div class="kad" id="kotakSuper">
+      <label>ID Pengguna (huruf kecil, cth. superadmin)</label><input id="sId" value="superadmin" autocapitalize="none">
+      <label>Nama Penuh</label><input id="sNama">
+      <label>No. Telefon</label><input id="sTel" inputmode="tel">
+      <label>Kata Laluan (min. 8 aksara)</label><input id="sPw" type="password">
+      <label>Ulang Kata Laluan</label><input id="sPw2" type="password">
+      <div style="margin-top:14px" class="baris"><button class="utama" onclick="ciptaSuper()">Cipta Akaun</button></div>
+    </div></div></div>`;
+}
+async function ciptaSuper() {
+  if ($('#sPw').value !== $('#sPw2').value) return toast('Kata laluan tidak sama.');
+  const k = $('#kotakSuper'); k.classList.add('muat');
+  const r = await api('cipta_super', { id: $('#sId').value, nama: $('#sNama').value, telefon: $('#sTel').value, katalaluan: $('#sPw').value });
+  k.classList.remove('muat'); toast(r.msg, 5000);
+  if (r.ok) paparLogin();
 }
 async function logMasuk() {
   const k = $('#kotakLogin'); k.classList.add('muat');

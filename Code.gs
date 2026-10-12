@@ -41,6 +41,7 @@ var JADUAL = {
 
 /* ======================= SETUP ======================= */
 function setup() {
+  binaSheet_();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   Object.keys(JADUAL).forEach(function (nama) {
     var sh = ss.getSheetByName(nama) || ss.insertSheet(nama);
@@ -73,6 +74,22 @@ function setup() {
   }
 }
 
+function binaSheet_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  Object.keys(JADUAL).forEach(function (nama) {
+    if (ss.getSheetByName(nama)) return;
+    var sh = ss.insertSheet(nama);
+    sh.getRange(1, 1, sh.getMaxRows(), JADUAL[nama].length).setNumberFormat('@');
+    sh.getRange(1, 1, 1, JADUAL[nama].length).setValues([JADUAL[nama]]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  });
+  var neg = ss.getSheetByName('NEGERI');
+  if (neg.getLastRow() < 2) neg.getRange(2, 1, NEGERI.length, 2).setNumberFormat('@').setValues(NEGERI);
+}
+function adaSuper_() {
+  return baca_('PENGGUNA').some(function (x) { return x.PERANAN === 'SUPER_ADMIN'; });
+}
+
 /* ======================= PINTU API ======================= */
 function doGet(e) {
   var p = {};
@@ -89,8 +106,8 @@ function jawab_(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
 }
 
-var AWAM = { ping: 1, negeri: 1, daftar: 1, login: 1 };
-var TULIS = { daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, lulus_gelanggang: 1, status_gelanggang: 1,
+var AWAM = { ping: 1, negeri: 1, daftar: 1, login: 1, status_awal: 1, cipta_super: 1 };
+var TULIS = { cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, lulus_gelanggang: 1, status_gelanggang: 1,
   status_pengguna: 1, set_ketua: 1, lantik_admin: 1, daftar_ahli: 1, kemaskini_ahli: 1, status_ahli: 1,
   rekod_yuran: 1, padam_yuran: 1, mohon_gelanggang: 1 };
 
@@ -98,6 +115,7 @@ function urus_(p) {
   var lock = null;
   try {
     var a = p.action;
+    if (!sh_('PENGGUNA') || !sh_('LOG_AUDIT')) binaSheet_();
     if (TULIS[a]) {
       lock = LockService.getScriptLock();
       if (!lock.tryLock(25000)) return { ok: false, msg: 'Sistem sibuk. Cuba lagi sebentar.' };
@@ -216,6 +234,23 @@ function namaNegeri_(k) { for (var i = 0; i < NEGERI.length; i++) if (NEGERI[i][
 /* ======================= TINDAKAN AWAM ======================= */
 var AWAM_FN = {
   ping: function () { return { ok: true, msg: 'SilatApp Pusat berfungsi', masa: masa_() }; },
+
+  // Kali pertama sahaja: cipta Super Admin dari laman web jika belum ada
+  status_awal: function () { return { ok: true, perluSuper: !adaSuper_() }; },
+  cipta_super: function (p) {
+    if (adaSuper_()) return { ok: false, msg: 'Super Admin sudah wujud. Sila log masuk.' };
+    var id = String(p.id || '').trim().toLowerCase();
+    if (!/^[a-z0-9._]{4,30}$/.test(id)) return { ok: false, msg: 'ID 4–30 aksara (huruf kecil / nombor sahaja, tanpa jarak).' };
+    if (String(p.katalaluan || '').length < 8) return { ok: false, msg: 'Kata laluan sekurang-kurangnya 8 aksara.' };
+    if (!p.nama) return { ok: false, msg: 'Nama wajib.' };
+    if (cariSatu_('PENGGUNA', 'ID', id)) return { ok: false, msg: 'ID sudah digunakan.' };
+    var salt = Utilities.getUuid();
+    tambah_('PENGGUNA', { ID: id, HASH: hash_(p.katalaluan, salt), SALT: salt, NAMA: String(p.nama).trim(),
+      TELEFON: String(p.telefon || '').trim(), PERANAN: 'SUPER_ADMIN', NEGERI: '', KOD_GELANGGANG: '', KETUA: 'TIDAK',
+      STATUS: 'AKTIF', TARIKH_DAFTAR: hariIni_(), GAGAL: '0', KUNCI_HINGGA: '' });
+    log_(id, 'CIPTA_SUPER', 'Dari laman web');
+    return { ok: true, msg: 'Akaun Super Admin dicipta! Sila log masuk.' };
+  },
 
   negeri: function () {
     var gel = baca_('GELANGGANG').filter(function (g) { return g.STATUS === 'AKTIF'; })
