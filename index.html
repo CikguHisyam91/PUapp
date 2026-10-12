@@ -113,22 +113,21 @@ th{color:var(--pudar);font-weight:500;white-space:nowrap}
 /* ====== TETAPAN: URL Web App Apps Script ====== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbwYLSghcfcLVKLg2plYc9Slj8E0KuNu8LX7HOugVTSIWxwCfv2hcBZB_l0uc5JArfxV/exec';
 
-/* ====== KATEGORI USIA & KELAS BERAT (Silat Olahraga / Tanding) ======
-   SILA SEMAK & UBAH ikut peraturan pertandingan terkini.
-   umur = tahun semasa − tahun lahir.
-   janaKelas(berat mula, langkah kg, bilangan kelas) → Kelas A, B, C ...
-   Berat melebihi kelas terakhir = Kelas Bebas. */
-function janaKelas(mula, langkah, bil) {
-  const out = []; for (let i = 0; i < bil; i++) out.push(['Kelas ' + String.fromCharCode(65 + i), mula + i * langkah, mula + (i + 1) * langkah]);
-  return out;
-}
+/* ====== KATEGORI USIA & KELAS BERAT (dari jadual rasmi cikgu) ======
+   umur = tahun semasa − tahun lahir.  kelas: [nama, berat min (kg), berat maks (kg) / null = Bebas]
+   Berat dikira masuk kelas jika: berat min < berat ≤ berat maks.
+   Umur bertindih (cth. 16 = Remaja & Sukma, 35 = Terbuka & Master 2) → semua kategori layak dipaparkan. */
 const KATEGORI_USIA = [
-  { nama: 'Kanak-kanak', min: 0, max: 8, kelas: [] },
-  { nama: 'Usia Dini', min: 9, max: 11, kelas: janaKelas(26, 2, 12) },
-  { nama: 'Pra-Remaja', min: 12, max: 13, kelas: janaKelas(28, 2, 14) },
-  { nama: 'Remaja', min: 14, max: 16, kelas: janaKelas(39, 4, 12) },
-  { nama: 'Dewasa', min: 17, max: 35, kelas: janaKelas(45, 5, 10) },
-  { nama: 'Veteran', min: 36, max: 200, kelas: [] }
+  { nama: "PRA TUNAS", umur: "5-6", min: 5, max: 6, kelas: [["Kelas A", 15, 18], ["Kelas B", 18, 21], ["Kelas C", 21, 24], ["Kelas Bebas", 24, null]] },
+  { nama: "TUNAS", umur: "7-8", min: 7, max: 8, kelas: [["Kelas A", 16, 19], ["Kelas B", 19, 22], ["Kelas C", 22, 25], ["Kelas D", 25, 28], ["Kelas E", 28, 31], ["Kelas Bebas", 31, null]] },
+  { nama: "PRA DINI", umur: "9-10", min: 9, max: 10, kelas: [["Kelas A", 18, 21], ["Kelas B", 21, 24], ["Kelas C", 24, 27], ["Kelas D", 27, 30], ["Kelas E", 30, 33], ["Kelas Bebas", 33, null]] },
+  { nama: "DINI", umur: "11-12", min: 11, max: 12, kelas: [["Kelas A", 24, 28], ["Kelas B", 28, 32], ["Kelas C", 32, 36], ["Kelas D", 36, 40], ["Kelas E", 40, 44], ["Kelas F", 44, 48], ["Kelas G", 48, 52], ["Kelas H", 52, 56], ["Kelas I", 56, 60], ["Kelas Bebas", 60, null]] },
+  { nama: "PRA REMAJA", umur: "13-14", min: 13, max: 14, kelas: [["Kelas A", 33, 37], ["Kelas B", 37, 41], ["Kelas C", 41, 45], ["Kelas D", 45, 49], ["Kelas E", 49, 53], ["Kelas F", 53, 57], ["Kelas G", 57, 61], ["Kelas H", 61, 65], ["Kelas Bebas", 65, null]] },
+  { nama: "REMAJA", umur: "15-16", min: 15, max: 16, kelas: [["Kelas A", 39, 43], ["Kelas B", 43, 47], ["Kelas C", 47, 51], ["Kelas D", 51, 55], ["Kelas E", 55, 59], ["Kelas F", 59, 63], ["Kelas G", 63, 67], ["Kelas H", 67, 71], ["Kelas I", 71, 75], ["Kelas Bebas", 75, null]] },
+  { nama: "SUKMA", umur: "16-20", min: 16, max: 20, kelas: [["Kelas A", 45, 50], ["Kelas B", 50, 55], ["Kelas C", 55, 60], ["Kelas D", 60, 65], ["Kelas E", 65, 70], ["Kelas F", 70, 75], ["Kelas G", 75, 80], ["Kelas H", 80, 85], ["Kelas Bebas", 85, null]] },
+  { nama: "TERBUKA", umur: "21-35", min: 21, max: 35, kelas: [["Kelas A", 45, 50], ["Kelas B", 50, 55], ["Kelas C", 55, 60], ["Kelas D", 60, 65], ["Kelas E", 65, 70], ["Kelas F", 70, 75], ["Kelas G", 75, 80], ["Kelas H", 80, 85], ["Kelas Bebas", 85, null]] },
+  { nama: "MASTER 2", umur: "35-45", min: 35, max: 45, kelas: [["Kelas A", 45, 50], ["Kelas B", 50, 55], ["Kelas C", 55, 60], ["Kelas D", 60, 65], ["Kelas E", 65, 70], ["Kelas F", 70, 75], ["Kelas G", 75, 80], ["Kelas H", 80, 85], ["Kelas I", 85, 90], ["Kelas J", 90, 95], ["Kelas Bebas", 95, null]] },
+  { nama: "MASTER 1", umur: "45+", min: 45, max: 200, kelas: [["Kelas A", 45, 50], ["Kelas B", 50, 55], ["Kelas C", 55, 60], ["Kelas D", 60, 65], ["Kelas E", 65, 70], ["Kelas F", 70, 75], ["Kelas G", 75, 80], ["Kelas H", 80, 85], ["Kelas I", 85, 90], ["Kelas J", 90, 95], ["Kelas Bebas", 95, null]] }
 ];
 /* ================================================================ */
 
@@ -594,28 +593,82 @@ async function laporanHadir() {
     <button class="penuh" onclick="modal('')">Tutup</button>`);
 }
 
-/* ---- Yuran bulanan ---- */
+/* ---- Yuran bulanan + pengecualian ---- */
+const ymKey = () => `${S.ybTahun}-${String(S.ybBulan).padStart(2, '0')}`;
+const bulanKec = () => (S.kec || []).find(k => k.jenis === 'BULAN' && k.mula === ymKey());
+const ahliKec = kp => (S.kec || []).find(k => k.jenis === 'AHLI' && k.no_kp === kp && k.mula <= ymKey() && (!k.tamat || k.tamat >= ymKey()));
+const labelYM = ym => ym ? `${BULAN_PENUH[+ym.slice(5)].slice(0, 3)} ${ym.slice(0, 4)}` : '';
 async function tabYB() {
   const ahli = await muatAhliJur(); if (!ahli) return;
   const d = new Date(); S.ybBulan = S.ybBulan || d.getMonth() + 1; S.ybTahun = S.ybTahun || d.getFullYear();
-  const r = await api('yb_get', { tahun: S.ybTahun }); if (!r.ok) return toast(r.msg);
+  const [r, k] = await Promise.all([api('yb_get', { tahun: S.ybTahun }), api('kec_get')]); if (!r.ok) return toast(r.msg);
   S.yb = {}; r.bayaran.forEach(b => S.yb[b.no_kp + '|' + b.bulan] = b);
+  S.kec = k.ok ? k.senarai : [];
   S.ybAhli = ahli; S.ybTapis = S.ybTapis || 'semua';
   $('#isi').innerHTML = `<div class="baris" style="margin-bottom:12px"><div>${pilihBulan('tabYB', S.ybBulan, 'ybBulan')}</div><div style="flex:none;width:120px">${pilihTahun('tabYB', S.ybTahun, 'ybTahun')}</div></div>
-    <div id="ringYB"></div>${cariBox('cariYB', 'lukisYB')}<div id="cipYB"></div><div id="senYB"></div>${nota}`;
+    <div id="ringYB"></div><div id="kecYB"></div>${cariBox('cariYB', 'lukisYB')}<div id="cipYB"></div><div id="senYB"></div>${nota}`;
   lukisYB();
 }
 function lukisYB() {
-  const sudah = a => S.yb[a.no_kp + '|' + S.ybBulan];
-  const n = S.ybAhli.filter(sudah).length, t = S.ybAhli.length;
+  const sudah = a => S.yb[a.no_kp + '|' + S.ybBulan], bk = bulanKec();
+  const kecuali = S.ybAhli.filter(a => !sudah(a) && ahliKec(a.no_kp));
+  const wajib = S.ybAhli.filter(a => !kecuali.includes(a));
+  const n = wajib.filter(sudah).length, t = wajib.length;
   const jum = S.ybAhli.reduce((x, a) => x + (sudah(a) ? Number(sudah(a).jumlah || 0) : 0), 0);
-  $('#ringYB').innerHTML = ringkasan(rm(jum), `${n} / ${t} orang bayar`, `${t - n} belum bayar`, t ? n / t * 100 : 0);
-  $('#cipYB').innerHTML = cip('ybTapis', [['semua', `Semua (${t})`], ['belum', `Belum (${t - n})`], ['sudah', `Sudah (${n})`]], S.ybTapis, 'lukisYB');
+  $('#ringYB').innerHTML = bk
+    ? `<div class="ring" style="border-color:#4c3d7a"><div class="besar">${rm(jum)}</div><div class="sub"><span>📅 ${BULAN_PENUH[S.ybBulan]} dikecualikan${bk.sebab ? ' — ' + esc(bk.sebab) : ''}</span></div><div class="pudar" style="font-size:13px">Tiada yuran wajib bulan ini.</div></div>`
+    : ringkasan(rm(jum), `${n} / ${t} orang bayar${kecuali.length ? ` · ${kecuali.length} dikecualikan` : ''}`, `${t - n} belum bayar`, t ? n / t * 100 : 0);
+  const kecAhliAktif = (S.kec || []).filter(k => k.jenis === 'AHLI' && (!k.tamat || k.tamat >= ymKey())).length;
+  $('#kecYB').innerHTML = `<label class="cek" style="margin:0 0 10px;color:var(--pudar)"><input type="checkbox" ${bk ? 'checked' : ''} onchange="togolBulanKec(this)"> 📅 Kecualikan bulan ini (cuti / tanpa yuran)</label>
+    <button class="penuh" style="text-align:left;border-color:#4c3d7a;background:#1d1830;color:#B9A4FF;font-weight:700;margin-bottom:12px" onclick="paparKecAhli()">💜 Pengecualian khas pesilat${kecAhliAktif ? ` (${kecAhliAktif})` : ''}</button>`;
+  const cipL = [['semua', `Semua (${S.ybAhli.length})`], ['belum', `Belum (${bk ? 0 : t - n})`], ['sudah', `Sudah (${S.ybAhli.filter(sudah).length})`]];
+  if (kecuali.length) cipL.push(['kecuali', `Dikecualikan (${kecuali.length})`]);
+  $('#cipYB').innerHTML = cip('ybTapis', cipL, S.ybTapis, 'lukisYB');
   const q = ($('#cariYB').value || '').toLowerCase();
-  const l = S.ybAhli.map((a, i) => [a, i]).filter(([a]) => a.nama.toLowerCase().includes(q) && (S.ybTapis === 'semua' || (S.ybTapis === 'sudah') === !!sudah(a)));
-  $('#senYB').innerHTML = l.map(([a, i]) => { const b = sudah(a);
-    return `<div class="item" onclick="bukaYB(${i})"><div class="k"><b>${esc(a.nama)}</b><small>${esc(a.bengkung || a.no_ahli)}${b ? ' · ' + tarikhMY(b.tarikh) : ''}</small></div>
-      <div class="r">${b ? `${tag('RM' + Number(b.jumlah || 0).toFixed(0), 'HIJAU')}<span class="pudar">✎</span>` : `<button class="utama kecil" style="min-height:42px;padding:8px 16px">+ Rekod</button>`}</div></div>`; }).join('') || '<p class="pudar">Tiada.</p>';
+  const padan = a => S.ybTapis === 'semua' || (S.ybTapis === 'sudah' && sudah(a)) || (S.ybTapis === 'kecuali' && kecuali.includes(a))
+    || (S.ybTapis === 'belum' && !bk && !sudah(a) && !kecuali.includes(a));
+  const l = S.ybAhli.map((a, i) => [a, i]).filter(([a]) => a.nama.toLowerCase().includes(q) && padan(a));
+  $('#senYB').innerHTML = l.map(([a, i]) => { const b = sudah(a), ke = !b && ahliKec(a.no_kp);
+    const kanan = b ? `${tag('RM' + Number(b.jumlah || 0).toFixed(0), 'HIJAU')}<span class="pudar">✎</span>`
+      : ke ? `<span class="tag" style="background:#2a2140;color:#B9A4FF">DIKECUALIKAN</span>`
+      : bk ? `<span class="tag t-TIDAK">CUTI</span>`
+      : `<button class="utama kecil" style="min-height:42px;padding:8px 16px">+ Rekod</button>`;
+    return `<div class="item" onclick="bukaYB(${i})"><div class="k"><b>${esc(a.nama)}</b><small>${esc(a.bengkung || a.no_ahli)}${b ? ' · ' + tarikhMY(b.tarikh) : ke && ke.sebab ? ' · ' + esc(ke.sebab) : ''}</small></div><div class="r">${kanan}</div></div>`; }).join('') || '<p class="pudar">Tiada.</p>';
+}
+async function togolBulanKec(el) {
+  const bk = bulanKec();
+  if (bk) {
+    if (!confirm(`Batalkan pengecualian ${BULAN_PENUH[S.ybBulan]} ${S.ybTahun}?`)) { el.checked = true; return; }
+    const r = await api('kec_padam', { id: bk.id }); toast(r.msg); if (r.ok) S.kec = S.kec.filter(k => k.id !== bk.id);
+  } else {
+    const sebab = prompt(`Sebab ${BULAN_PENUH[S.ybBulan]} ${S.ybTahun} dikecualikan? (cth. Cuti sekolah, Ramadan)`, '');
+    if (sebab === null) { el.checked = false; return; }
+    const r = await api('kec_simpan', { jenis: 'BULAN', mula: ymKey(), sebab }); toast(r.msg);
+    if (r.ok) { const k = await api('kec_get'); S.kec = k.senarai || []; }
+  }
+  lukisYB();
+}
+function paparKecAhli() {
+  const nama = {}; S.ybAhli.forEach(a => nama[a.no_kp] = a.nama);
+  const l = (S.kec || []).filter(k => k.jenis === 'AHLI');
+  const y = S.ybTahun, opsBulan = (id, v) => `<select id="${id}"><option value="">${id === 'keTamat' ? 'Berterusan' : '— Bulan —'}</option>${[y - 1, y, y + 1].flatMap(t => BULAN_PENUH.slice(1).map((b, i) => { const k = `${t}-${String(i + 1).padStart(2, '0')}`; return `<option value="${k}" ${k === v ? 'selected' : ''}>${b.slice(0, 3)} ${t}</option>`; })).join('')}</select>`;
+  modal(`<h3 style="color:#B9A4FF;margin-top:0">💜 Pengecualian Khas Pesilat</h3>
+    <p class="pudar" style="font-size:13px;margin-top:0">Pesilat yang dikecualikan tidak dikira "belum bayar" (cth. anak yatim, asnaf, anak jurulatih).</p>
+    ${l.map(k => `<div class="item" style="cursor:default"><div class="k"><b>${esc(nama[k.no_kp] || k.no_kp)}</b><small>${esc(k.sebab || '-')} · ${labelYM(k.mula)} → ${k.tamat ? labelYM(k.tamat) : 'berterusan'}</small></div><button class="kecil bahaya" onclick="padamKec('${esc(k.id)}')">Batal</button></div>`).join('') || '<p class="pudar">Tiada pengecualian lagi.</p>'}
+    <h3 style="color:var(--emas);font-size:15px;margin:16px 0 0">Tambah pengecualian</h3>
+    <label>Pesilat</label><select id="keKp">${S.ybAhli.map(a => `<option value="${esc(a.no_kp)}">${esc(a.nama)}</option>`).join('')}</select>
+    <label>Sebab</label><input id="keSebab" list="keL" placeholder="cth. Anak yatim"><datalist id="keL"><option>Anak yatim</option><option>Asnaf / B40</option><option>Anak jurulatih</option><option>Adik-beradik</option><option>Biasiswa gelanggang</option></datalist>
+    <div class="baris"><div><label>Mula</label>${opsBulan('keMula', ymKey())}</div><div><label>Hingga</label>${opsBulan('keTamat', '')}</div></div>
+    <button class="utama penuh" style="margin-top:14px" onclick="simpanKec()">Simpan Pengecualian</button>
+    <button class="penuh" style="margin-top:8px" onclick="modal('')">Tutup</button>`);
+}
+async function simpanKec() {
+  const r = await api('kec_simpan', { jenis: 'AHLI', no_kp: $('#keKp').value, sebab: $('#keSebab').value, mula: $('#keMula').value, tamat: $('#keTamat').value });
+  toast(r.msg); if (r.ok) { const k = await api('kec_get'); S.kec = k.senarai || []; lukisYB(); paparKecAhli(); }
+}
+async function padamKec(id) {
+  if (!confirm('Batalkan pengecualian ini?')) return;
+  const r = await api('kec_padam', { id }); toast(r.msg); if (r.ok) { S.kec = S.kec.filter(k => k.id !== id); lukisYB(); paparKecAhli(); }
 }
 function bukaYB(i) {
   const a = S.ybAhli[i], bulan = S.ybBulan, b = S.yb[a.no_kp + '|' + bulan];
@@ -684,13 +737,13 @@ function eksportKew() {
 
 /* ---- Fizikal & BMI: kategori usia, kelas berat, BMI & berat ideal ---- */
 function umurTahunIni(a) { const y = Number(String(a.tarikh_lahir || '').slice(0, 4)) || Number(tarikhDariKP(a.no_kp).slice(0, 4)); return y ? new Date().getFullYear() - y : null; }
-function kategoriUsia(umur) { return umur == null ? null : KATEGORI_USIA.find(k => umur >= k.min && umur <= k.max) || null; }
+function kategoriUsia(umur) { return umur == null ? [] : KATEGORI_USIA.filter(k => umur >= k.min && umur <= k.max); }
+const namaKat = kats => kats.length ? kats.map(k => k.nama).join(' / ') : 'Tiada kategori';
 function kelasBerat(kat, berat) {
-  if (!kat || !kat.kelas.length || !(berat > 0)) return '';
-  const k = kat.kelas.find(c => berat > c[1] - 0.0001 && berat <= c[2]);
-  if (k) return `${k[0]} (${k[1]}–${k[2]} kg)`;
-  if (berat > kat.kelas[kat.kelas.length - 1][2]) return 'Kelas Bebas';
-  return `Bawah ${kat.kelas[0][1]} kg`;
+  if (!kat || !(berat > 0)) return '';
+  const k = kat.kelas.find(c => berat > c[1] && (c[2] == null || berat <= c[2]));
+  if (k) return k[2] == null ? `${k[0]} (>${k[1]} kg)` : `${k[0]} (${k[1]}–${k[2]} kg)`;
+  return `Bawah had (≤${kat.kelas[0][1]} kg)`;
 }
 function infoBMI(berat, tinggi) {
   if (!(berat > 0 && tinggi > 0)) return null;
@@ -706,24 +759,24 @@ async function tabFiz() {
   S.fizAhli = ahli.map(a => { const u = umurTahunIni(a); return Object.assign({}, a, { umur: u, kat: kategoriUsia(u) }); });
   S.fTapis = S.fTapis || 'semua';
   $('#isi').innerHTML = `<div class="ring"><div class="pudar" style="font-size:14px">Kategori usia tahun ${new Date().getFullYear()}</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${KATEGORI_USIA.map(k => { const n = S.fizAhli.filter(a => a.kat === k).length; return n ? tag(`${k.nama}: ${n}`, 'BIRU') : ''; }).join('')}</div></div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${KATEGORI_USIA.map(k => { const n = S.fizAhli.filter(a => a.kat.includes(k)).length; return n ? tag(`${k.nama} (${k.umur}): ${n}`, 'BIRU') : ''; }).join('')}</div></div>
     ${cariBox('cariF', 'lukisFiz')}<div id="cipF"></div><div id="senF"></div>${nota}`;
   lukisFiz();
 }
 function lukisFiz() {
-  const kats = KATEGORI_USIA.filter(k => S.fizAhli.some(a => a.kat === k));
+  const kats = KATEGORI_USIA.filter(k => S.fizAhli.some(a => a.kat.includes(k)));
   $('#cipF').innerHTML = cip('fTapis', [['semua', 'Semua']].concat(kats.map(k => [k.nama, k.nama])), S.fTapis, 'lukisFiz');
   const q = ($('#cariF').value || '').toLowerCase();
-  $('#senF').innerHTML = S.fizAhli.map((a, i) => [a, i]).filter(([a]) => a.nama.toLowerCase().includes(q) && (S.fTapis === 'semua' || (a.kat && a.kat.nama === S.fTapis))).map(([a, i]) => {
-    const f = S.fizTerkini[a.no_kp], b = f ? infoBMI(+f.berat, +f.tinggi) : null, kl = f && f.berat ? kelasBerat(a.kat, +f.berat) : '';
+  $('#senF').innerHTML = S.fizAhli.map((a, i) => [a, i]).filter(([a]) => a.nama.toLowerCase().includes(q) && (S.fTapis === 'semua' || a.kat.some(k => k.nama === S.fTapis))).map(([a, i]) => {
+    const f = S.fizTerkini[a.no_kp], b = f ? infoBMI(+f.berat, +f.tinggi) : null, kl = f && f.berat ? a.kat.map(k => kelasBerat(k, +f.berat).split(' (')[0]).join(' / ') : '';
     return `<div class="item" onclick="bukaFiz(${i})"><div class="k"><b>${esc(a.nama)}</b>
-      <small>${a.umur != null ? a.umur + ' thn · ' + (a.kat ? a.kat.nama : '-') : 'Tarikh lahir tiada'}${f && f.berat ? ' · ' + esc(f.berat) + ' kg' + (kl ? ' · ' + esc(kl) : '') : ''}</small></div>
+      <small>${a.umur != null ? a.umur + ' thn · ' + namaKat(a.kat) : 'Tarikh lahir tiada'}${f && f.berat ? ' · ' + esc(f.berat) + ' kg' + (kl ? ' · ' + esc(kl) : '') : ''}</small></div>
       <div class="r">${b ? tag('BMI ' + b.bmi, b.w) : `<button class="utama kecil" style="min-height:42px">+ Rekod</button>`}</div></div>`; }).join('') || '<p class="pudar">Tiada.</p>';
 }
 function bukaFiz(i) {
   const a = S.fizAhli[i], f = S.fizTerkini[a.no_kp]; S.fPilih = a;
   modal(`<h3 style="color:var(--emas);margin:0">${esc(a.nama)}</h3>
-    <p class="pudar" style="margin:4px 0 0">${a.umur != null ? `Umur ${a.umur} tahun (${new Date().getFullYear()}) · <b style="color:var(--teks)">${a.kat ? a.kat.nama : '-'}</b>` : 'Tarikh lahir tiada — kemas kini di menu Ahli'}</p>
+    <p class="pudar" style="margin:4px 0 0">${a.umur != null ? `Umur ${a.umur} tahun (${new Date().getFullYear()}) · <b style="color:var(--teks)">${namaKat(a.kat)}</b>` : 'Tarikh lahir tiada — kemas kini di menu Ahli'}</p>
     <div class="baris"><div><label>Berat (kg)</label><input id="fBerat" class="besarInput" inputmode="decimal" value="${esc(f ? f.berat : '')}" oninput="kiraFiz()"></div>
       <div><label>Tinggi (cm)</label><input id="fTinggi" class="besarInput" inputmode="decimal" value="${esc(f ? f.tinggi : '')}" oninput="kiraFiz()"></div></div>
     <div class="kotakHasil" id="fHasil"></div>
@@ -734,15 +787,15 @@ function bukaFiz(i) {
 }
 function kiraFiz() {
   const a = S.fPilih, b = parseFloat($('#fBerat').value), t = parseFloat($('#fTinggi').value), info = infoBMI(b, t);
-  $('#fHasil').innerHTML = `<div class="bar2"><span class="pudar">Kategori usia</span><b>${a.kat ? a.kat.nama : '-'}</b></div>
-    <div class="bar2"><span class="pudar">Kelas berat</span><b style="color:var(--emas)">${b > 0 ? (a.kat && a.kat.kelas.length ? kelasBerat(a.kat, b) : 'Tiada kelas') : '-'}</b></div>
+  $('#fHasil').innerHTML = (a.kat.length ? a.kat.map(k => `<div class="bar2"><span class="pudar">${esc(k.nama)} <small>(${esc(k.umur)} thn)</small></span><b style="color:var(--emas)">${b > 0 ? kelasBerat(k, b) : '-'}</b></div>`).join('')
+      : `<div class="bar2"><span class="pudar">Kategori usia</span><b>Tiada kategori</b></div>`) + `
     <div class="bar2"><span class="pudar">BMI</span><b>${info ? `${info.bmi} ${tag(info.k, info.w)}` : '<span class="pudar">isi berat & tinggi</span>'}</b></div>
     <div class="bar2"><span class="pudar">Berat ideal</span><b>${info ? info.ideal : '-'}</b></div>
     <div class="bar2"><span class="pudar">Sasaran</span><b>${info ? info.beza : '-'}</b></div>`;
 }
 async function simpanFiz() {
   const a = S.fPilih, b = $('#fBerat').value, t = $('#fTinggi').value;
-  const r = await api('fiz_simpan', { no_kp: a.no_kp, tarikh: hariIniStr(), berat: b, tinggi: t, catatan: kelasBerat(a.kat, parseFloat(b)) });
+  const r = await api('fiz_simpan', { no_kp: a.no_kp, tarikh: hariIniStr(), berat: b, tinggi: t, catatan: a.kat.map(k => k.nama + ' ' + kelasBerat(k, parseFloat(b))).join('; ') });
   toast(r.msg); if (r.ok) { S.fizTerkini[a.no_kp] = { berat: b, tinggi: t, tarikh: hariIniStr() }; modal(''); lukisFiz(); }
 }
 

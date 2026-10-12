@@ -42,6 +42,7 @@ var JADUAL = {
   KEHADIRAN: ['TARIKH','KOD_GELANGGANG','HADIR','BIL_HADIR','CATATAN','DIREKOD_OLEH'],
   YURAN_BULANAN: ['NO_KP','KOD_GELANGGANG','TAHUN','BULAN','JUMLAH','TARIKH_BAYAR','KAEDAH','DIREKOD_OLEH'],
   KEWANGAN: ['ID','KOD_GELANGGANG','TARIKH','JENIS','KATEGORI','KETERANGAN','JUMLAH','DIREKOD_OLEH'],
+  PENGECUALIAN: ['ID','KOD_GELANGGANG','JENIS','NO_KP','MULA','TAMAT','SEBAB','DIREKOD_OLEH'],
   FIZIKAL: ['ID','NO_KP','KOD_GELANGGANG','TARIKH','BERAT','TINGGI','BMI','TEKAN_TUBI','BANGKIT_TUBI','LARI','CATATAN','DIREKOD_OLEH']
 };
 
@@ -113,7 +114,7 @@ function jawab_(o) {
 }
 
 var AWAM = { ping: 1, negeri: 1, daftar: 1, login: 1, status_awal: 1, cipta_super: 1 };
-var TULIS = { hadir_simpan: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, lulus_gelanggang: 1, status_gelanggang: 1,
+var TULIS = { kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, lulus_gelanggang: 1, status_gelanggang: 1,
   status_pengguna: 1, set_ketua: 1, lantik_admin: 1, daftar_ahli: 1, kemaskini_ahli: 1, status_ahli: 1,
   rekod_yuran: 1, padam_yuran: 1, mohon_gelanggang: 1 };
 
@@ -121,7 +122,7 @@ function urus_(p) {
   var lock = null;
   try {
     var a = p.action;
-    if (!sh_('PENGGUNA') || !sh_('FIZIKAL')) binaSheet_();
+    if (!sh_('PENGGUNA') || !sh_('PENGECUALIAN')) binaSheet_();
     if (TULIS[a]) {
       lock = LockService.getScriptLock();
       if (!lock.tryLock(25000)) return { ok: false, msg: 'Sistem sibuk. Cuba lagi sebentar.' };
@@ -863,6 +864,34 @@ API.yb_get = function (u, p) {
   return { ok: true, bayaran: baca_('YURAN_BULANAN').filter(function (y) { return y.KOD_GELANGGANG === g.KOD && y.TAHUN === th; })
     .map(function (y) { return { no_kp: y.NO_KP, bulan: Number(y.BULAN), jumlah: y.JUMLAH, tarikh: y.TARIKH_BAYAR, kaedah: y.KAEDAH }; }) };
 };
+/* ---------- Pengecualian yuran ----------
+ * JENIS BULAN: seluruh gelanggang tiada yuran bulan itu (cuti). MULA = TAMAT = 'yyyy-MM'
+ * JENIS AHLI : pesilat dikecualikan dari MULA hingga TAMAT ('yyyy-MM'; TAMAT kosong = berterusan) */
+API.kec_get = function (u) {
+  var g = gelJur_(u);
+  return { ok: true, senarai: baca_('PENGECUALIAN').filter(function (k) { return k.KOD_GELANGGANG === g.KOD; }).map(function (k) {
+    return { id: k.ID, jenis: k.JENIS, no_kp: k.NO_KP, mula: k.MULA, tamat: k.TAMAT, sebab: k.SEBAB };
+  }) };
+};
+API.kec_simpan = function (u, p) {
+  var g = gelJur_(u), bln = /^\d{4}-\d{2}$/;
+  if (['BULAN', 'AHLI'].indexOf(p.jenis) < 0) return { ok: false, msg: 'Jenis tidak sah.' };
+  if (!bln.test(String(p.mula || ''))) return { ok: false, msg: 'Bulan mula tidak sah.' };
+  if (p.tamat && (!bln.test(p.tamat) || p.tamat < p.mula)) return { ok: false, msg: 'Bulan tamat tidak sah.' };
+  if (p.jenis === 'AHLI' && !ahliGel_(g.KOD)[p.no_kp]) return { ok: false, msg: 'Pilih ahli gelanggang ini.' };
+  if (p.jenis === 'BULAN' && baca_('PENGECUALIAN').some(function (k) { return k.KOD_GELANGGANG === g.KOD && k.JENIS === 'BULAN' && k.MULA === p.mula; }))
+    return { ok: false, msg: 'Bulan ini sudah dikecualikan.' };
+  tambah_('PENGECUALIAN', { ID: 'E' + Date.now(), KOD_GELANGGANG: g.KOD, JENIS: p.jenis, NO_KP: p.jenis === 'AHLI' ? p.no_kp : '',
+    MULA: p.mula, TAMAT: p.jenis === 'BULAN' ? p.mula : (p.tamat || ''), SEBAB: p.sebab || '', DIREKOD_OLEH: u.ID });
+  return { ok: true, msg: 'Pengecualian disimpan.' };
+};
+API.kec_padam = function (u, p) {
+  var g = gelJur_(u), k = cariSatu_('PENGECUALIAN', 'ID', p.id);
+  if (!k || k.KOD_GELANGGANG !== g.KOD) return { ok: false, msg: 'Rekod tiada.' };
+  padamBaris_('PENGECUALIAN', k._r);
+  return { ok: true, msg: 'Pengecualian dibatalkan.' };
+};
+
 API.yb_simpan = function (u, p) {
   var g = gelJur_(u), th = String(p.tahun), bl = String(Number(p.bulan));
   if (!/^\d{4}$/.test(th) || !(Number(bl) >= 1 && Number(bl) <= 12)) return { ok: false, msg: 'Bulan/tahun tidak sah.' };
