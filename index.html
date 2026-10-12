@@ -271,9 +271,10 @@ const MENU_JUR = [
   ['yb', '💳', 'Yuran', 'Yuran bulanan'],
   ['kew', '💰', 'Kewangan', 'Masuk & keluar'],
   ['fiz', '⚖️', 'Fizikal & BMI', 'Kelas berat & BMI'],
+  ['gelang', '🏟️', 'Gelanggang', 'Cawangan & logo'],
   ['akaun', '⚙️', 'Akaun', 'Kata laluan']
 ];
-const FN = () => ({ papan: tabPapan, lulus: tabLulus, gel: tabGel, jur: tabJur, ahli: tabAhli, daftar: tabDaftar, akaun: tabAkaun, hadir: tabHadir, yb: tabYB, kew: tabKew, fiz: tabFiz, menu: tabMenu });
+const FN = () => ({ papan: tabPapan, lulus: tabLulus, gel: tabGel, jur: tabJur, ahli: tabAhli, daftar: tabDaftar, akaun: tabAkaun, hadir: tabHadir, gelang: tabGelang, yb: tabYB, kew: tabKew, fiz: tabFiz, menu: tabMenu });
 function pergi(t) { S.tab = t; window.scrollTo(0, 0); mula(); }
 
 async function mula() {
@@ -287,7 +288,7 @@ async function mula() {
   const u = S.u, jur = u.peranan === 'JURULATIH';
   const sub = jur ? `${esc(u.nama_gelanggang)} · ${esc(u.kod_gelanggang)}${u.ketua ? ' · KETUA' : ''}`
     : u.peranan === 'ADMIN_NEGERI' ? `Admin Negeri ${esc(u.namaNegeri)}` : 'Super Admin · Semua negeri';
-  const head = `<header><img src="logo.png" alt=""><div class="t"><b>SilatApp</b><small>${esc(u.nama)} — ${sub}</small></div><button class="kecil" onclick="keluar()">Keluar</button></header>`;
+  const head = `<header><img src="${esc(logoGel())}" alt="" style="object-fit:cover"><div class="t"><b>SilatApp</b><small>${esc(u.nama)} — ${sub}</small></div><button class="kecil" onclick="keluar()">Keluar</button></header>`;
   if (jur) {
     if (!MENU_JUR.some(m => m[0] === S.tab)) S.tab = 'menu';
     const m = MENU_JUR.find(x => x[0] === S.tab);
@@ -302,7 +303,7 @@ async function mula() {
   FN()[S.tab]();
 }
 function tabMenu() {
-  $('#isi').innerHTML = `<div class="ring" style="display:flex;gap:14px;align-items:center"><img src="logo.png" style="width:56px;height:56px;border-radius:50%;background:#fff">
+  $('#isi').innerHTML = `<div class="ring" style="display:flex;gap:14px;align-items:center"><img src="${esc(logoGel())}" style="width:56px;height:56px;border-radius:50%;background:#fff;object-fit:cover">
     <div><div style="font-weight:800;font-size:17px">${esc(S.u.nama_gelanggang)}</div><div class="pudar" style="font-size:14px">${esc(S.u.kod_gelanggang)} · ${esc(S.u.namaNegeri)}</div></div></div>
     <div id="info"><p class="pudar" style="text-align:center">Memuatkan ringkasan...</p></div>
     <div class="menu">${MENU_JUR.map(m => `<button onclick="pergi('${m[0]}')"><span class="i">${m[1]}</span><b>${m[2]}</b><small>${m[3]}</small></button>`).join('')}</div>`;
@@ -318,7 +319,7 @@ async function infografik() {
   const umur = ahli.map(umurTahunIni), tiada = umur.filter(u => u == null).length;
   const bilK = kump.map(k => umur.filter(u => u != null && u >= k[2] && u <= k[3]).length);
   let baki = null;
-  if (rk.ok) { const masukLain = rk.rekod.filter(x => x.jenis === 'MASUK').reduce((s, x) => s + x.jumlah, 0), keluar = rk.rekod.filter(x => x.jenis === 'KELUAR').reduce((s, x) => s + x.jumlah, 0);
+  if (rk.ok && rk.rekod) { const masukLain = rk.rekod.filter(x => x.jenis === 'MASUK').reduce((s, x) => s + x.jumlah, 0), keluar = rk.rekod.filter(x => x.jenis === 'KELUAR').reduce((s, x) => s + x.jumlah, 0);
     baki = rk.bakiLalu + masukLain + rk.yuranBulanan.reduce((s, x) => s + x, 0) + rk.yuranTahunan - keluar; }
   const bilB = BENGKUNG.map(() => 0); let lain = 0;
   ahli.forEach(a => { const i = indeksBengkung(a.bengkung); if (i >= 0) bilB[i]++; else lain++; });
@@ -529,6 +530,8 @@ async function tabAhli() {
   }
   const r = await api('senarai_ahli', { kod: S.gelPilih, tahun: S.tahun });
   if (!r.ok) return $('#isi').innerHTML = pilih + `<p>${esc(r.msg)}</p>`;
+  if (u.peranan === 'JURULATIH') { const c = await api('caw_get'); S.cawList = c.ok ? c.cawangan : []; if (S.cawPilih == null) { try { S.cawPilih = localStorage.getItem('sp_caw') || ''; } catch (e) { S.cawPilih = ''; } } pilih = pilihCaw('tabAhli'); }
+  else S.cawPilih = '';
   S.ahli = r.ahli; S.gelAhli = r.gelanggang; S.aTapis = S.aTapis == null ? 'AKTIF' : S.aTapis;
   const aktif = r.ahli.filter(a => a.status_gel === 'AKTIF');
   const bayar = aktif.filter(a => a.yuran).length;
@@ -544,7 +547,7 @@ function senaraiAhli() {
   const q = ($('#cariA').value || '').toLowerCase(), st = S.aTapis;
   const kira = s => S.ahli.filter(a => !s || a.status_gel === s).length;
   $('#cipA').innerHTML = cip('aTapis', [['AKTIF', `Aktif (${kira('AKTIF')})`], ['', `Semua (${kira('')})`], ['TIDAK AKTIF', `Tidak Aktif (${kira('TIDAK AKTIF')})`], ['BERPINDAH', `Berpindah (${kira('BERPINDAH')})`]], st, 'senaraiAhli');
-  const l = S.ahli.filter(a => (!st || a.status_gel === st) && (a.nama + ' ' + a.no_ahli).toLowerCase().includes(q));
+  const l = S.ahli.filter(a => (!st || a.status_gel === st) && ikutCaw(a) && (a.nama + ' ' + a.no_ahli).toLowerCase().includes(q));
   $('#senA').innerHTML = l.map(a => `<div class="item" onclick="bukaAhli('${esc(a.no_ahli)}')"><div class="k"><b>${esc(a.nama)}</b><small>${esc(a.no_ahli)} · ${esc(namaBengkung(a.bengkung) || '-')}</small></div>
     <div class="r">${a.jenis === 'BERSAMA' ? tag('BERSAMA') : ''}${a.status_gel !== 'AKTIF' ? tag(a.status_gel) : ''}${a.yuran ? tag(a.yuran, 'HIJAU') : ''}</div></div>`).join('') || '<p class="pudar">Tiada ahli.</p>';
 }
@@ -557,7 +560,7 @@ async function bukaAhli(no) {
   const bolehUbah = a.jenis === 'UTAMA' && a.status_gel !== 'BERPINDAH';
   const warna = { AKTIF: 'var(--hijau)' }[a.status_gel] || 'var(--merah)';
   const dis = bolehUbah ? '' : 'disabled';
-  modal(`<div class="ahlikad"><img src="logo.png" alt=""><div style="min-width:0"><div class="pudar" style="font-size:11px">KAD AHLI · SRI GAYONG PANGLIMA ULUNG</div>
+  modal(`<div class="ahlikad"><img src="${esc(S.u.peranan === 'JURULATIH' ? logoGel() : 'logo.png')}" alt="" style="object-fit:cover"><div style="min-width:0"><div class="pudar" style="font-size:11px">KAD AHLI · SRI GAYONG PANGLIMA ULUNG</div>
       <div class="n">${esc(a.nama)}</div><div class="no">${esc(a.no_ahli)}</div>
       <div style="font-size:14px">Bengkung: <b>${esc(namaBengkung(a.bengkung) || '-')}</b></div>
       <div style="margin-top:4px"><span class="tag" style="background:${warna};color:#111">${esc(a.status_gel)}</span> <small class="pudar">${esc(S.gelAhli.nama)}</small></div></div></div>
@@ -567,6 +570,7 @@ async function bukaAhli(no) {
     <label>Tarikh Lahir</label><input type="date" id="mLahir" value="${esc(a.tarikh_lahir)}" ${dis}>
     <label>Bengkung</label>${pilihBengkung('mBeng', a.bengkung, dis)}
     <label>Tel. Waris</label><input id="mWaris" value="${esc(a.tel_waris)}" inputmode="tel" ${dis}>
+    ${(S.cawList || []).length && S.u.peranan === 'JURULATIH' ? `<label>Cawangan</label><select id="mCaw" onchange="tagSatu('${esc(a.no_kp)}',this.value)"><option value="">— Tiada —</option>${S.cawList.map(c => `<option value="${esc(c.id)}" ${c.id === a.cawangan ? 'selected' : ''}>${esc(c.nama)}</option>`).join('')}</select>` : ''}
     <p class="pudar" style="font-size:13px">Gelanggang utama: ${esc(a.gelanggang_utama)} · Daftar: ${esc(tarikhMY(a.tarikh_daftar))}${bolehUbah ? '' : '<br>Maklumat hanya boleh diubah oleh gelanggang utama.'}</p>
     ${bolehUbah ? `<button class="utama penuh" onclick="simpanAhli('${esc(no)}')">Simpan Maklumat</button>` : ''}
     ${a.status_gel !== 'BERPINDAH' ? `<label>Status di gelanggang ini</label>
@@ -596,7 +600,8 @@ async function rekodYuran(no, paksa) {
 }
 
 /* ================= DAFTAR AHLI ================= */
-function tabDaftar() {
+async function tabDaftar() {
+  if (S.u.peranan === 'JURULATIH' && !S.cawList) { const c = await api('caw_get'); S.cawList = c.ok ? c.cawangan : []; }
   $('#isi').innerHTML = `<div class="kad" id="kotakAhli"><h3>Daftar Ahli Baharu</h3>
     <label>No. Kad Pengenalan / MyKid</label><input id="aKP" placeholder="cth. 150512-08-1234" inputmode="numeric">
     <button class="utama penuh" style="margin-top:10px" onclick="semakKP()">Semak No. KP</button>
@@ -613,6 +618,7 @@ async function semakKP() {
       <div><label>Tarikh Lahir</label><input type="date" id="aLahir" value="${tarikhDariKP(r.no_kp)}"></div></div>
       <label>Bengkung Semasa</label>${pilihBengkung('aBeng', BENGKUNG[0])}
       <label>No. Tel. Waris</label><input id="aWaris" inputmode="tel">
+      ${(S.cawList || []).length ? `<label>Cawangan</label><select id="aCaw"><option value="">— Tiada —</option>${S.cawList.map(c => `<option value="${esc(c.id)}" ${c.id === S.cawPilih ? 'selected' : ''}>${esc(c.nama)}</option>`).join('')}</select>` : ''}
       ${pdpaAhli()}<button class="utama penuh" style="margin-top:14px" onclick="hantarAhli('')">Daftar Ahli</button>`;
     const j = Number(String(r.no_kp).slice(-1)); if (!isNaN(j)) $('#aJan').value = j % 2 ? 'L' : 'P';
   } else if (r.sudahDiSini) {
@@ -639,6 +645,7 @@ function tarikhDariKP(kp) {
 async function hantarAhli(mod) {
   const d = { no_kp: $('#aKP').value };
   if (!mod) Object.assign(d, { nama: $('#aNama').value, jantina: $('#aJan').value, tarikh_lahir: $('#aLahir').value, bengkung: $('#aBeng').value, tel_waris: $('#aWaris').value });
+  if ($('#aCaw')) d.cawangan = $('#aCaw').value; else if (S.cawPilih && S.cawPilih !== '__TIADA') d.cawangan = S.cawPilih;
   const k = $('#kotakAhli'); k.classList.add('muat');
   const r = await api('daftar_ahli', { data: d, mod, kod: S.gelPilih, pdpa: $('#aPdpa').checked });
   k.classList.remove('muat'); toast(r.msg, 5000);
@@ -646,12 +653,24 @@ async function hantarAhli(mod) {
 }
 
 /* ================= MODUL GELANGGANG (jurulatih sahaja) ================= */
-async function muatAhliJur() {
-  const r = await api('senarai_ahli', { tahun: S.tahun });
+async function muatAhliJur(semuaCaw) {
+  const [r, c] = await Promise.all([api('senarai_ahli', { tahun: S.tahun }), api('caw_get')]);
   if (!r.ok) { $('#isi').innerHTML = `<p>${esc(r.msg)}</p>`; return null; }
-  S.ahli = r.ahli; S.gelAhli = r.gelanggang;
-  return r.ahli.filter(a => a.status_gel === 'AKTIF');
+  S.ahli = r.ahli; S.gelAhli = r.gelanggang; S.cawList = c.ok ? c.cawangan : [];
+  if (S.cawPilih == null) { try { S.cawPilih = localStorage.getItem('sp_caw') || ''; } catch (e) { S.cawPilih = ''; } }
+  if (S.cawPilih && S.cawPilih !== '__TIADA' && !S.cawList.some(x => x.id === S.cawPilih)) S.cawPilih = '';
+  return r.ahli.filter(a => a.status_gel === 'AKTIF' && (semuaCaw || ikutCaw(a)));
 }
+/* --- Cawangan (lokasi latihan di bawah gelanggang induk) --- */
+const ikutCaw = a => !S.cawPilih || (S.cawPilih === '__TIADA' ? !a.cawangan : a.cawangan === S.cawPilih);
+const namaCaw = id => ((S.cawList || []).find(c => c.id === id) || {}).nama || '';
+function pilihCaw(fn) {
+  if (!(S.cawList || []).length) return '';
+  return `<select style="margin-bottom:12px;border-color:var(--emas)" onchange="S.cawPilih=this.value;try{localStorage.setItem('sp_caw',this.value)}catch(e){};${fn}()">
+    <option value="">🏟️ Semua cawangan</option>${S.cawList.map(c => `<option value="${esc(c.id)}" ${c.id === S.cawPilih ? 'selected' : ''}>📍 ${esc(c.nama)}</option>`).join('')}
+    <option value="__TIADA" ${S.cawPilih === '__TIADA' ? 'selected' : ''}>— Belum ditag cawangan</option></select>`;
+}
+const logoGel = () => (S.u && S.u.logo) || 'logo.png';
 const nota = '<p class="pudar" style="font-size:12px;text-align:center">🔒 Data ini hanya untuk gelanggang anda — tidak dihantar kepada Admin Negeri / Super Admin.</p>';
 function ringkasan(besar, kiri, kanan, peratus) {
   return `<div class="ring"><div class="besar">${besar}</div><div class="sub"><span>${kiri}</span><span style="color:var(--merah);font-weight:700">${kanan}</span></div>
@@ -662,9 +681,9 @@ function ringkasan(besar, kiri, kanan, peratus) {
 async function tabHadir() {
   const ahli = await muatAhliJur(); if (!ahli) return;
   S.hTarikh = S.hTarikh || hariIniStr();
-  const h = await api('hadir_get', { tarikh: S.hTarikh });
+  const h = await api('hadir_get', { tarikh: S.hTarikh, cawangan: S.cawPilih });
   S.hSet = new Set(h.hadir || []); S.hAhli = ahli; S.hTapis = S.hTapis || 'semua'; S.hAda = h.ada;
-  $('#isi').innerHTML = `<input type="date" value="${esc(S.hTarikh)}" onchange="S.hTarikh=this.value;tabHadir()" style="margin-bottom:12px">
+  $('#isi').innerHTML = `${pilihCaw('tabHadir')}<input type="date" value="${esc(S.hTarikh)}" onchange="S.hTarikh=this.value;tabHadir()" style="margin-bottom:12px">
     <div id="ringH"></div>
     <div class="baris" style="margin-bottom:6px"><button class="kecil" onclick="S.hAhli.forEach(a=>S.hSet.add(a.no_kp));lukisHadir()">✓ Tanda semua</button><button class="kecil" onclick="S.hSet.clear();lukisHadir()">Kosongkan</button></div>
     ${cariBox('cariH', 'lukisHadir')}<div id="cipH"></div><div id="senH"></div>
@@ -683,12 +702,12 @@ function lukisHadir() {
 }
 function togolH(kp) { S.hSet.has(kp) ? S.hSet.delete(kp) : S.hSet.add(kp); lukisHadir(); }
 async function simpanHadir() {
-  const r = await api('hadir_simpan', { tarikh: S.hTarikh, hadir: [...S.hSet], catatan: $('#hCat').value }); toast(r.msg); if (r.ok) tabHadir();
+  const r = await api('hadir_simpan', { tarikh: S.hTarikh, cawangan: S.cawPilih, hadir: [...S.hSet].filter(kp => S.hAhli.some(a => a.no_kp === kp)), catatan: $('#hCat').value }); toast(r.msg); if (r.ok) tabHadir();
 }
 async function laporanHadir() {
   const d = new Date(); S.lBulan = S.lBulan || d.getMonth() + 1; S.lTahun = S.lTahun || d.getFullYear();
   modal('<p class="pudar">Memuatkan...</p>');
-  const lap = await api('hadir_laporan', { bulan: S.lBulan, tahun: S.lTahun });
+  const lap = await api('hadir_laporan', { bulan: S.lBulan, tahun: S.lTahun, cawangan: S.cawPilih });
   const bs = (lap.sesi || []).length;
   modal(`<h3 style="color:var(--emas);margin-top:0">Laporan Kehadiran</h3>
     <div class="baris"><div>${pilihBulan('laporanHadir', S.lBulan, 'lBulan')}</div><div style="flex:none;width:110px">${pilihTahun('laporanHadir', S.lTahun, 'lTahun')}</div></div>
@@ -710,7 +729,7 @@ async function tabYB() {
   S.yb = {}; r.bayaran.forEach(b => S.yb[b.no_kp + '|' + b.bulan] = b);
   S.kec = k.ok ? k.senarai : [];
   S.ybAhli = ahli; S.ybTapis = S.ybTapis || 'semua';
-  $('#isi').innerHTML = `<div class="baris" style="margin-bottom:12px"><div>${pilihBulan('tabYB', S.ybBulan, 'ybBulan')}</div><div style="flex:none;width:120px">${pilihTahun('tabYB', S.ybTahun, 'ybTahun')}</div></div>
+  $('#isi').innerHTML = `${pilihCaw('tabYB')}<div class="baris" style="margin-bottom:12px"><div>${pilihBulan('tabYB', S.ybBulan, 'ybBulan')}</div><div style="flex:none;width:120px">${pilihTahun('tabYB', S.ybTahun, 'ybTahun')}</div></div>
     <div id="ringYB"></div><div id="kecYB"></div>${cariBox('cariYB', 'lukisYB')}<div id="cipYB"></div><div id="senYB"></div>${nota}`;
   lukisYB();
 }
@@ -848,7 +867,7 @@ async function tabFiz() {
   S.fizTerkini = {}; r.rekod.forEach(f => { if (!S.fizTerkini[f.no_kp]) S.fizTerkini[f.no_kp] = f; });
   S.fizAhli = ahli.map(a => { const u = umurTahunIni(a); return Object.assign({}, a, { umur: u, kat: kategoriUsia(u) }); });
   S.fTapis = S.fTapis || 'semua';
-  $('#isi').innerHTML = `<div class="ring"><div class="pudar" style="font-size:14px">Kategori usia tahun ${new Date().getFullYear()}</div>
+  $('#isi').innerHTML = `${pilihCaw('tabFiz')}<div class="ring"><div class="pudar" style="font-size:14px">Kategori usia tahun ${new Date().getFullYear()}</div>
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${KATEGORI_USIA.map(k => { const n = S.fizAhli.filter(a => a.kat.includes(k)).length; return n ? tag(`${k.nama} (${k.umur}): ${n}`, 'BIRU') : ''; }).join('')}</div></div>
     <button class="utama penuh" style="margin-bottom:12px" onclick="cetakKelas()">🖨️ Muat Turun Senarai Kelas Berat</button>
     ${cariBox('cariF', 'lukisFiz')}<div id="cipF"></div><div id="senF"></div>${nota}`;
@@ -936,8 +955,8 @@ function cetakKelas() {
   const el = $('#cetak');
   el.innerHTML = `<div class="alat"><button onclick="$('#cetak').style.display='none'">← Tutup</button><button class="utama" onclick="window.print()">🖨️ Cetak / Simpan PDF</button></div>
     <div class="kertas">
-      <div class="kp-head"><img src="logo.png" alt=""><div><h1>SRI GAYONG PANGLIMA ULUNG</h1><div class="g">${esc((g.nama || S.u.nama_gelanggang || '').toUpperCase())}</div>
-        <div class="m">Kod Gelanggang: ${esc(g.kod || S.u.kod_gelanggang)} &nbsp;|&nbsp; Negeri: ${esc(S.u.namaNegeri || '')} &nbsp;|&nbsp; Jurulatih: ${esc(S.u.nama)}</div></div></div>
+      <div class="kp-head"><img src="${esc(logoGel())}" alt=""><div><h1>SRI GAYONG PANGLIMA ULUNG</h1><div class="g">${esc((g.nama || S.u.nama_gelanggang || '').toUpperCase())}</div>
+        ${S.cawPilih && S.cawPilih !== '__TIADA' ? `<div class="m"><b>Cawangan: ${esc(namaCaw(S.cawPilih))}</b></div>` : ''}<div class="m">Kod Gelanggang: ${esc(g.kod || S.u.kod_gelanggang)} &nbsp;|&nbsp; Negeri: ${esc(S.u.namaNegeri || '')} &nbsp;|&nbsp; Jurulatih: ${esc(S.u.nama)}</div></div></div>
       <div class="kp-tajuk">SENARAI PESILAT MENGIKUT KATEGORI USIA, JANTINA DAN KELAS BERAT TAHUN ${th}</div>
       <div style="text-align:center;font-size:11px">Dijana pada ${kini.toLocaleDateString('ms-MY', { day: '2-digit', month: 'long', year: 'numeric' })} &nbsp;|&nbsp; Umur dikira mengikut tahun ${th}</div>
       ${ringkas}${isi || '<p>Tiada data berat pesilat lagi.</p>'}
@@ -946,6 +965,79 @@ function cetakKelas() {
     </div>`;
   el.style.display = 'block'; el.scrollTop = 0;
 }
+
+/* ---- Gelanggang: logo & cawangan ---- */
+async function tabGelang() {
+  const c = await api('caw_get'); S.cawList = c.ok ? c.cawangan : [];
+  const ahli = await api('senarai_ahli', { tahun: S.tahun }); S.ahli = ahli.ok ? ahli.ahli : [];
+  const aktif = S.ahli.filter(a => a.status_gel === 'AKTIF'), tiada = aktif.filter(a => !a.cawangan).length;
+  $('#isi').innerHTML = `<div class="kad"><h3>Logo Gelanggang</h3>
+      <div style="display:flex;gap:16px;align-items:center"><img id="pratonton" src="${esc(logoGel())}" style="width:96px;height:96px;border-radius:50%;background:#fff;object-fit:cover;flex:none;border:2px solid var(--emas)">
+      <div class="pudar" style="font-size:13px">Jenis fail: <b style="color:var(--teks)">JPG, PNG atau WEBP</b><br>Saiz maksimum: <b style="color:var(--teks)">5 MB</b><br>Cadangan: gambar <b style="color:var(--teks)">segi empat sama</b> (cth. 512 × 512 piksel). Sistem akan kecilkan secara automatik.</div></div>
+      <input type="file" id="fLogo" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="pilihLogo(this)">
+      <div class="baris" style="margin-top:14px"><button class="utama" onclick="$('#fLogo').click()">📷 Pilih Gambar</button>${S.u.logo ? `<button class="bahaya" style="flex:none" onclick="buangLogo()">Buang</button>` : ''}</div>
+      <p class="pudar" style="font-size:12px;margin-bottom:0">Logo dipaparkan di aplikasi, kad ahli, senarai cetak dan Portal Ibu Bapa.</p></div>
+    <div class="kad"><h3>Cawangan / Lokasi Latihan</h3>
+      <p class="pudar" style="font-size:13px;margin-top:0">Gelanggang induk anda (cth. Daerah Taiping) boleh ada beberapa cawangan. Tag pesilat ikut cawangan supaya senarai Kehadiran, Yuran & Fizikal boleh ditapis.</p>
+      ${S.cawList.map(c => `<div class="item"><div class="k" onclick="tagCaw('${esc(c.id)}')"><b style="text-transform:none">📍 ${esc(c.nama)}</b><small>${c.bil} pesilat${c.alamat ? ' · ' + esc(c.alamat) : ''}</small></div>
+        <div class="r"><button class="kecil" onclick="tagCaw('${esc(c.id)}')">Tag ahli</button><button class="kecil" onclick="borangCaw('${esc(c.id)}')">✎</button></div></div>`).join('') || '<p class="pudar">Belum ada cawangan.</p>'}
+      ${S.cawList.length && tiada ? `<p class="pudar" style="font-size:13px">${tiada} pesilat aktif belum ditag cawangan.</p>` : ''}
+      <button class="utama penuh" onclick="borangCaw()">+ Tambah Cawangan</button></div>`;
+}
+function borangCaw(id) {
+  const c = (S.cawList || []).find(x => x.id === id) || {};
+  modal(`<h3 style="color:var(--emas);margin-top:0">${id ? 'Kemas Kini' : 'Tambah'} Cawangan</h3>
+    <label>Nama cawangan</label><input id="cNama" value="${esc(c.nama || '')}" placeholder="cth. SK Taman Panglima">
+    <label>Alamat / lokasi (pilihan)</label><input id="cAlamat" value="${esc(c.alamat || '')}">
+    <button class="utama penuh" style="margin-top:14px" onclick="simpanCaw('${esc(id || '')}')">Simpan</button>
+    ${id ? `<button class="bahaya penuh" style="margin-top:8px" onclick="padamCaw('${esc(id)}')">Padam cawangan</button>` : ''}
+    <button class="penuh" style="margin-top:8px" onclick="modal('')">Batal</button>`);
+}
+async function simpanCaw(id) { const r = await api('caw_simpan', { id, nama: $('#cNama').value, alamat: $('#cAlamat').value }); toast(r.msg); if (r.ok) { modal(''); tabGelang(); } }
+async function padamCaw(id) { if (!confirm('Padam cawangan ini? Pesilatnya akan jadi tanpa cawangan.')) return; const r = await api('caw_padam', { id }); toast(r.msg); if (r.ok) { modal(''); if (S.cawPilih === id) S.cawPilih = ''; tabGelang(); } }
+function tagCaw(id) {
+  const c = S.cawList.find(x => x.id === id), aktif = S.ahli.filter(a => a.status_gel === 'AKTIF');
+  S.tagSet = new Set(aktif.filter(a => a.cawangan === id).map(a => a.no_kp)); S.tagId = id;
+  const lukis = () => { $('#tagSen').innerHTML = aktif.map(a => { const lain = a.cawangan && a.cawangan !== id ? namaCaw(a.cawangan) : '';
+    return `<div class="item ${S.tagSet.has(a.no_kp) ? 'on' : ''}" onclick="S.tagSet.has('${esc(a.no_kp)}')?S.tagSet.delete('${esc(a.no_kp)}'):S.tagSet.add('${esc(a.no_kp)}');tagCaw.lukis()"><div class="k"><b>${esc(a.nama)}</b><small>${lain ? 'Kini: ' + esc(lain) : esc(namaBengkung(a.bengkung) || a.no_ahli)}</small></div><div class="semak">✓</div></div>`; }).join('');
+    $('#tagBil').textContent = S.tagSet.size + ' dipilih'; };
+  tagCaw.lukis = lukis;
+  modal(`<h3 style="color:var(--emas);margin:0">📍 ${esc(c.nama)}</h3><p class="pudar" style="font-size:13px">Tanda pesilat yang berlatih di cawangan ini. <b id="tagBil"></b></p>
+    <div id="tagSen"></div><button class="utama penuh" style="position:sticky;bottom:0" onclick="simpanTag()">Simpan</button>`);
+  lukis();
+}
+async function simpanTag() {
+  const id = S.tagId, tag = {};
+  S.ahli.filter(a => a.status_gel === 'AKTIF').forEach(a => { if (S.tagSet.has(a.no_kp)) { if (a.cawangan !== id) tag[a.no_kp] = id; } else if (a.cawangan === id) tag[a.no_kp] = ''; });
+  const r = await api('caw_tag', { tag }); toast(r.msg); if (r.ok) { modal(''); tabGelang(); }
+}
+async function tagSatu(kp, id) { const r = await api('caw_tag', { tag: { [kp]: id } }); toast(r.msg); const a = S.ahli.find(x => x.no_kp === kp); if (r.ok && a) a.cawangan = id; }
+function pilihLogo(inp) {
+  const f = inp.files[0]; inp.value = ''; if (!f) return;
+  if (!/^image\/(png|jpeg|webp)$/.test(f.type)) return toast('Jenis fail tidak disokong. Guna JPG, PNG atau WEBP.');
+  if (f.size > 5 * 1024 * 1024) return toast(`Fail terlalu besar (${(f.size / 1048576).toFixed(1)} MB). Maksimum 5 MB.`);
+  const img = new Image(), url = URL.createObjectURL(f);
+  img.onload = async () => {
+    let saiz = 256, data = '';
+    for (let cuba = 0; cuba < 6; cuba++) {
+      const cv = document.createElement('canvas'), k = Math.min(1, saiz / Math.max(img.width, img.height));
+      cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      data = cv.toDataURL('image/webp', 0.85);
+      if (!data.startsWith('data:image/webp')) data = f.type === 'image/jpeg' ? cv.toDataURL('image/jpeg', 0.85) : cv.toDataURL('image/png');
+      if (data.length <= 45000) break;
+      saiz = Math.round(saiz * 0.8);
+    }
+    URL.revokeObjectURL(url);
+    if (data.length > 45000) return toast('Gambar terlalu terperinci. Cuba gambar lain.');
+    $('#pratonton').src = data;
+    const r = await api('logo_simpan', { data }); toast(r.msg);
+    if (r.ok) { S.u.logo = data; mula(); }
+  };
+  img.onerror = () => toast('Gambar tidak dapat dibaca.');
+  img.src = url;
+}
+async function buangLogo() { if (!confirm('Buang logo gelanggang?')) return; const r = await api('logo_simpan', { data: '' }); toast(r.msg); if (r.ok) { S.u.logo = ''; mula(); } }
 
 /* ================= AKAUN ================= */
 function tabAkaun() {

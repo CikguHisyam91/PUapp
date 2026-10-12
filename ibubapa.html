@@ -142,13 +142,14 @@ function lukis(r) {
   // Fizikal
   const f = r.fizikal[0], info = f ? infoBMI(+f.berat, +f.tinggi) : null;
   $('#isi').innerHTML = `
-  <div class="ahlikad"><img src="logo.png" alt=""><div style="min-width:0">
+  <div class="ahlikad"><img src="${esc(g.logo || 'logo.png')}" alt="" style="object-fit:cover"><div style="min-width:0">
     <div class="pudar" style="font-size:11px">KAD AHLI · SRI GAYONG PANGLIMA ULUNG</div>
     <div class="n">${esc(a.nama)}</div><div class="no">${esc(a.no_ahli)}</div>
     <div style="font-size:14px;display:flex;align-items:center;gap:6px;margin-top:2px">${bi >= 0 ? jalur(bi) : ''}<b>${esc(bi >= 0 ? BENGKUNG[bi] : (a.bengkung || '-'))}</b></div>
     <div style="margin-top:6px">${tag(a.status, a.status === 'AKTIF' ? 'HIJAU' : 'MERAH')} <small class="pudar">${umur != null ? umur + ' tahun' : ''}</small></div></div></div>
   <div class="kad"><h3>Gelanggang</h3>
     <div class="baris"><span class="pudar">Nama</span><b>${esc(g.nama)}</b></div>
+    ${g.cawangan ? `<div class="baris"><span class="pudar">Cawangan</span><b>${esc(g.cawangan)}</b></div>` : ''}
     <div class="baris"><span class="pudar">Negeri</span><b>${esc(g.negeri)}</b></div>
     ${g.ketua ? `<div class="baris"><span class="pudar">Ketua jurulatih</span><b>${esc(g.ketua)}</b></div>` : ''}
     ${g.telKetua ? `<a href="https://wa.me/6${esc(String(g.telKetua).replace(/\D/g, '').replace(/^6/, ''))}" style="text-decoration:none"><button class="penuh" style="margin-top:10px;border-color:#2d5a43;color:var(--hijau)">💬 WhatsApp Jurulatih</button></a>` : ''}</div>
