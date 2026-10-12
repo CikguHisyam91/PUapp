@@ -141,7 +141,9 @@ table.kp td.c,table.kp th.c{text-align:center}
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="app"><div style="min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#9097A3;font:15px system-ui,sans-serif">
+<img src="logo.png" alt="" style="width:110px;height:110px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px #E2B55A">
+<div>Memuatkan...</div></div></div>
 <div id="modal"><div class="isi" id="modalIsi"></div></div>
 <div id="toast"></div>
 <div id="cetak"></div>
@@ -168,11 +170,11 @@ async function api(action, data) {
   const body = JSON.stringify(Object.assign({ action, token: S.token }, data || {}));
   let r;
   try {
-    const res = await fetch(API_URL, { method: 'POST', credentials: 'omit', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body });
+    const res = await fetchMasa(API_URL, { method: 'POST', credentials: 'omit', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body });
     r = await res.json();
   } catch (e) {
     try {
-      const res = await fetch(API_URL + '?p=' + encodeURIComponent(body), { credentials: 'omit' });
+      const res = await fetchMasa(API_URL + '?p=' + encodeURIComponent(body), { credentials: 'omit' });
       r = await res.json();
     } catch (e2) { r = { ok: false, msg: 'Tiada sambungan ke pelayan. Semak internet.' }; }
   }
@@ -283,7 +285,8 @@ async function mula() {
   if (!S.token) return paparLogin();
   if (!S.u) {
     $('#app').innerHTML = `<div class="wrap pudar" style="text-align:center;padding-top:60px"><img src="logo.png" style="width:90px;border-radius:50%;background:#fff"><p>Memuatkan...</p></div>`;
-    const r = await api('saya'); if (!r.ok) return keluar(true);
+    const r = await api('saya');
+    if (!r.ok) { if (r.logout) return; $('#app').innerHTML = `<div class="wrap" style="text-align:center;padding-top:60px"><img src="logo.png" style="width:90px;border-radius:50%;background:#fff"><p>${esc(r.msg || 'Tidak dapat sambung ke pelayan.')}</p><button class="utama" onclick="mula()">Cuba lagi</button></div>`; return; }
     S.u = r.pengguna; S.negeri = r.negeri;
   }
   if (!S.negeri.length) { const r = await api('negeri'); S.negeri = r.negeri || []; }

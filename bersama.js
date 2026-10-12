@@ -96,3 +96,18 @@ function pasangApp(namaApp, kunci) {
     }, 1500);
   });
 }
+
+/* fetch dengan had masa (elak skrin tersangkut jika internet / pelayan lambat) */
+function fetchMasa(url, opt, ms) {
+  const c = new AbortController(), t = setTimeout(() => c.abort(), ms || 25000);
+  return fetch(url, Object.assign({}, opt, { signal: c.signal })).finally(() => clearTimeout(t));
+}
+
+/* Jika berlaku ralat tidak dijangka, papar mesej (bukan skrin hitam kosong) */
+window.addEventListener('error', e => {
+  const a = document.getElementById('app'); if (!a || a.dataset.ralat) return; a.dataset.ralat = 1;
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;background:#3a2020;color:#fff;border-radius:12px;padding:12px;font:13px sans-serif;z-index:300';
+  d.innerHTML = 'Ralat: ' + String(e.message || e).replace(/</g, '&lt;') + '<br><button onclick="location.reload()" style="margin-top:8px">Muat semula</button>';
+  document.body.appendChild(d);
+});
