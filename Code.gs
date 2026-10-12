@@ -14,7 +14,7 @@ var SETUP_KATALALUAN = '';    // cth. 'KataLaluanKuat123'
 
 /* Untuk import data sistem lama (Peringkat 4) */
 var IMPORT_ID_SHEET_LAMA = '1YfCDLeWkZR7VV0YWTHwPodXIk8I7H80pJrjefgU09Pw';  // Sheet Gelanggang Seri Mutiara
-var IMPORT_KOD_GELANGGANG = 'KDH-SMT';     // kod gelanggang Seri Mutiara dalam Pusat
+var IMPORT_KOD_GELANGGANG = 'PRK-SMT';     // kod gelanggang Seri Mutiara dalam Pusat
 var SEGERAK_MINIT = 5;                     // segerak auto setiap 5 minit
 
 /* ======================= TETAPAN ======================= */
