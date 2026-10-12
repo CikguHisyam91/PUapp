@@ -649,7 +649,7 @@ API.papan = function (u, p) {
   var had = Date.now() - HARI_AKTIF * 86400000;
 
   // Populasi: setiap ahli dikira SEKALI ikut gelanggang utama
-  var ikutNegeri = {}, jumlah = { L: 0, P: 0, semua: 0 };
+  var ikutNegeri = {}, jumlah = { L: 0, P: 0, semua: 0 }, statGel = {}, thIni = new Date().getFullYear();
   baca_('AHLI').forEach(function (a) {
     if (a.STATUS !== 'AKTIF') return;
     var g = gelMap[a.GELANGGANG_UTAMA]; if (!g) return;
@@ -657,6 +657,15 @@ API.papan = function (u, p) {
     var n = ikutNegeri[g.NEGERI] || (ikutNegeri[g.NEGERI] = { negeri: g.NEGERI, nama: namaNegeri_(g.NEGERI), L: 0, P: 0, semua: 0 });
     var j = /^P/i.test(a.JANTINA) ? 'P' : 'L';
     n[j]++; n.semua++; jumlah[j]++; jumlah.semua++;
+    // Statistik infografik ikut gelanggang utama (K = kanak-kanak ≤12, M = menengah 13–17, D = dewasa 18+, X = tiada tarikh lahir)
+    var sg = statGel[g.KOD] || (statGel[g.KOD] = { L: 0, P: 0, K: 0, M: 0, D: 0, X: 0, b: {} });
+    sg[j]++;
+    var y = Number(String(a.TARIKH_LAHIR || '').slice(0, 4));
+    if (!y) { var d = String(a.NO_KP || '').replace(/\D/g, ''); if (d.length >= 6) { y = Number(d.slice(0, 2)); y += y > thIni % 100 ? 1900 : 2000; } }
+    var um = y ? thIni - y : null;
+    sg[um == null ? 'X' : um <= 12 ? 'K' : um <= 17 ? 'M' : 'D']++;
+    var bk = String(a.BENGKUNG || '').trim() || '-';
+    sg.b[bk] = (sg.b[bk] || 0) + 1;
   });
 
   var bilAhli = {}, bilBersama = {};
@@ -682,7 +691,7 @@ API.papan = function (u, p) {
     var k = pengMap[g.KETUA_ID];
     gelList.push({ kod: g.KOD, nama: g.NAMA, negeri: g.NEGERI, status: g.STATUS, aktif60: !!ak, aktiviti: g.AKTIVITI_TERAKHIR,
       ketua: k ? k.NAMA : '', telKetua: k ? k.TELEFON : '', ahli: bilAhli[g.KOD] || 0, bersama: bilBersama[g.KOD] || 0,
-      bayar: bilYuran[g.KOD] || 0, kutipan: jumYuran[g.KOD] || 0 });
+      bayar: bilYuran[g.KOD] || 0, kutipan: jumYuran[g.KOD] || 0, stat: statGel[g.KOD] || { L: 0, P: 0, K: 0, M: 0, D: 0, X: 0, b: {} } });
   });
   gelList.sort(function (a, b) { return (a.negeri + a.nama).localeCompare(b.negeri + b.nama); });
 

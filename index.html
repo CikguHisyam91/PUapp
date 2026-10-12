@@ -403,26 +403,80 @@ function csv(nama, baris) {
 }
 
 /* ================= RINGKASAN (Super/Admin) ================= */
+/* --- Infografik gabungan (Super Admin / Admin Negeri) --- */
+function gabungStat(list) {
+  const t = { n: 0, L: 0, P: 0, K: 0, M: 0, D: 0, X: 0, b: BENGKUNG.map(() => 0), lain: 0 };
+  list.forEach(st => { ['L', 'P', 'K', 'M', 'D', 'X'].forEach(k => t[k] += st[k] || 0);
+    Object.entries(st.b || {}).forEach(([nm, c]) => { const i = indeksBengkung(nm); if (i >= 0) t.b[i] += c; else t.lain += c; }); });
+  t.n = t.L + t.P; return t;
+}
+function blokInfo(t, ringkas) {
+  const pc = x => t.n ? Math.round(x / t.n * 100) : 0, maxB = Math.max(1, ...t.b, t.lain);
+  const umur = [['Kanak-kanak', '≤ 12 thn', t.K], ['Menengah', '13–17 thn', t.M], ['Dewasa', '18+ thn', t.D]];
+  const bengkung = t.b.map((c, i) => c ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">${jalur(i)}<span style="flex:1;min-width:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(BENGKUNG[i])}</span>
+      <span style="width:70px;flex:none;height:6px;background:var(--kad2);border-radius:6px;overflow:hidden"><i style="display:block;height:100%;width:${c / maxB * 100}%;background:var(--emas)"></i></span><b style="width:30px;text-align:right;flex:none">${c}</b></div>` : '').join('');
+  return `<div class="baris" style="font-size:14px;margin-bottom:8px"><span>♂ Lelaki <b>${t.L}</b> <span class="pudar">(${pc(t.L)}%)</span></span><span style="text-align:right">♀ Perempuan <b>${t.P}</b> <span class="pudar">(${pc(t.P)}%)</span></span></div>
+    <div style="display:flex;height:10px;border-radius:8px;overflow:hidden;background:var(--kad2);margin-bottom:12px"><i style="width:${pc(t.L)}%;background:var(--biru)"></i><i style="width:${t.n ? 100 - pc(t.L) : 0}%;background:#E07BB0"></i></div>
+    <div class="grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:${ringkas ? 0 : 12}px">${umur.map(u => `<div class="stat" style="padding:10px"><b style="font-size:20px">${u[2]}</b><small>${u[0]}<br><span style="font-size:11px">${u[1]}</span></small>
+      <div class="bar" style="height:4px;margin-top:6px"><i style="width:${pc(u[2])}%;background:var(--emas)"></i></div></div>`).join('')}</div>
+    ${t.X ? `<div class="pudar" style="font-size:12px;margin:6px 0">${t.X} ahli tiada tarikh lahir</div>` : ''}
+    ${ringkas ? '' : `<div class="pudar" style="font-size:13px;margin:4px 0 10px">Pemegang bengkung</div>${bengkung || '<p class="pudar">Tiada data.</p>'}${t.lain ? `<div class="pudar" style="font-size:12px">Lain / tidak dikenal pasti: ${t.lain}</div>` : ''}`}`;
+}
 async function tabPapan() {
   const r = await api('papan', { tahun: S.tahun }); if (!r.ok) return $('#isi').innerHTML = `<p>${esc(r.msg)}</p>`;
-  S.papan = r;
+  S.papan = r; S.pNegeri = S.pNegeri || ''; S.pMod = S.pMod || 'umur';
+  lukisPapan();
+}
+function lukisPapan() {
+  const r = S.papan;
+  if (S.pNegeri) return lukisNegeri(S.pNegeri);
+  const semua = gabungStat(r.gelanggang.map(g => g.stat));
+  const ikutNeg = {}; r.gelanggang.forEach(g => (ikutNeg[g.negeri] = ikutNeg[g.negeri] || []).push(g));
+  const negKod = Object.keys(ikutNeg).sort((x, y) => nmNeg(x).localeCompare(nmNeg(y)));
+  const statNeg = negKod.map(k => [k, gabungStat(ikutNeg[k].map(g => g.stat)), ikutNeg[k]]);
+  const jumBengkung = semua.b.reduce((x, y) => x + y, 0) + semua.lain;
+  let senaraiNeg;
+  if (S.pMod === 'umur') {
+    senaraiNeg = `<div class="jad"><table><tr><th>Negeri</th><th>Gel.</th><th>Kanak²</th><th>Menengah</th><th>Dewasa</th><th>Jumlah</th></tr>
+      ${statNeg.map(([k, t, gs]) => `<tr style="cursor:pointer" onclick="S.pNegeri='${k}';lukisPapan()"><td><b style="color:var(--emas)">${esc(nmNeg(k))} ›</b></td><td>${gs.length}</td><td>${t.K}</td><td>${t.M}</td><td>${t.D}</td><td><b>${t.n}</b></td></tr>`).join('') || '<tr><td colspan="6" class="pudar">Tiada data</td></tr>'}</table></div>`;
+  } else {
+    senaraiNeg = statNeg.map(([k, t, gs]) => `<div class="item" style="display:block" onclick="S.pNegeri='${k}';lukisPapan()">
+      <div class="baris" style="margin-bottom:8px"><b style="color:var(--emas)">${esc(nmNeg(k))} ›</b><span class="pudar" style="text-align:right;font-size:13px">${gs.length} gelanggang · ${t.n} ahli</span></div>
+      ${t.b.map((c, i) => c ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">${jalur(i)}<span style="flex:1;min-width:0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(BENGKUNG[i])}</span><b style="font-size:13px">${c}</b></div>` : '').join('') || '<span class="pudar">Tiada data</span>'}</div>`).join('') || '<p class="pudar">Tiada data</p>';
+  }
   $('#isi').innerHTML = `
-  <div class="baris" style="margin-bottom:10px"><h3 style="margin:0;color:var(--emas)">Populasi Ahli Aktif</h3><div style="flex:none;width:110px">${pilihTahun('tabPapan', S.tahun)}</div></div>
+  <div class="baris" style="margin-bottom:10px"><h3 style="margin:0;color:var(--emas)">${S.u.peranan === 'ADMIN_NEGERI' ? 'Negeri ' + esc(S.u.namaNegeri) : 'Seluruh Malaysia'}</h3><div style="flex:none;width:110px">${pilihTahun('tabPapan', S.tahun)}</div></div>
   <div class="grid" style="margin-bottom:12px">
     <div class="stat"><b>${r.jumlah.semua}</b><small>Jumlah ahli aktif</small></div>
-    <div class="stat"><b>${r.jumlah.L}</b><small>Lelaki</small></div>
-    <div class="stat"><b>${r.jumlah.P}</b><small>Perempuan</small></div>
-    <div class="stat"><b>${r.gelAktif}</b><small>Gelanggang aktif (60 hari)</small></div>
-    <div class="stat"><b>${r.gelTidakAktif}</b><small>Gelanggang tidak aktif</small></div>
-    <div class="stat"><b>${r.menungguGel.length + r.menungguJur.length}</b><small>Menunggu kelulusan</small></div>
-  </div>${r.segerak ? `<p class="pudar" style="font-size:13px">Segerak terakhir dari sistem Seri Mutiara: ${esc(r.segerak)}</p>` : ''}
-  <div class="kad"><h3>Ikut Negeri</h3><div class="jad"><table><tr><th>Negeri</th><th>L</th><th>P</th><th>Jumlah</th></tr>
-    ${r.negeri.map(n => `<tr><td>${esc(n.nama)}</td><td>${n.L}</td><td>${n.P}</td><td><b>${n.semua}</b></td></tr>`).join('') || '<tr><td colspan="4" class="pudar">Tiada data</td></tr>'}</table></div></div>
-  <div class="baris" style="margin:16px 0 8px"><h3 style="margin:0;color:var(--emas)">Gelanggang</h3><button class="kecil" style="flex:none" onclick="eksportPapan()">Eksport CSV</button></div>
-  ${r.gelanggang.map(g => `<div class="item" onclick="S.gelPilih='${esc(g.kod)}';pergi('ahli')"><div class="k"><b>${esc(g.nama)}</b>
+    <div class="stat"><b>${jumBengkung}</b><small>Pemegang bengkung</small></div>
+    <div class="stat"><b>${r.gelAktif}<span style="font-size:14px" class="pudar"> / ${r.gelAktif + r.gelTidakAktif}</span></b><small>Gelanggang aktif (60 hari)</small></div>
+    <div class="stat" style="cursor:pointer" onclick="pergi('lulus')"><b>${r.menungguGel.length + r.menungguJur.length}</b><small>Menunggu kelulusan ›</small></div>
+  </div>
+  <div class="ring">${blokInfo(semua)}</div>
+  ${r.segerak ? `<p class="pudar" style="font-size:13px">Segerak terakhir dari sistem Seri Mutiara: ${esc(r.segerak)}</p>` : ''}
+  <div class="kad"><h3>Ikut Negeri</h3>${cip('pMod', [['umur', 'Kategori ahli'], ['bengkung', 'Bengkung']], S.pMod, 'lukisPapan')}${senaraiNeg}
+    <p class="pudar" style="font-size:12px;margin-bottom:0">Ketuk nama negeri untuk lihat butiran setiap gelanggang.</p></div>
+  <div class="baris" style="margin:16px 0 8px"><h3 style="margin:0;color:var(--emas)">Semua Gelanggang</h3><button class="kecil" style="flex:none" onclick="eksportPapan()">Eksport CSV</button></div>
+  ${r.gelanggang.map(kadGel).join('') || '<p class="pudar">Tiada gelanggang.</p>'}`;
+}
+function kadGel(g) {
+  return `<div class="item" onclick="S.gelPilih='${esc(g.kod)}';pergi('ahli')"><div class="k"><b>${esc(g.nama)}</b>
       <small>${esc(g.kod)} · ${esc(nmNeg(g.negeri))} · Ketua: ${esc(g.ketua || '-')} ${esc(g.telKetua)}</small><br>
-      <small>${g.ahli} ahli${g.bersama ? ` (${g.bersama} bersama)` : ''} · ${g.bayar} bayar yuran ${esc(r.tahun)}${g.kutipan ? ' · ' + rm(g.kutipan) : ''}</small></div>
-      <div class="r" style="flex-direction:column;align-items:flex-end">${tag(g.status)}<small class="pudar" style="font-size:11px">${g.aktif60 ? 'Aktif 60h' : 'Senyap 60h'}</small></div></div>`).join('') || '<p class="pudar">Tiada gelanggang.</p>'}`;
+      <small>${g.ahli} ahli${g.bersama ? ` (${g.bersama} bersama)` : ''} · ${g.bayar} bayar yuran ${esc(S.papan.tahun)}${g.kutipan ? ' · ' + rm(g.kutipan) : ''}</small></div>
+      <div class="r" style="flex-direction:column;align-items:flex-end">${tag(g.status)}<small class="pudar" style="font-size:11px">${g.aktif60 ? 'Aktif 60h' : 'Senyap 60h'}</small></div></div>`;
+}
+function lukisNegeri(k) {
+  const gs = S.papan.gelanggang.filter(g => g.negeri === k), t = gabungStat(gs.map(g => g.stat));
+  $('#isi').innerHTML = `<div class="baris" style="margin-bottom:12px"><button class="ikon" style="flex:none" onclick="S.pNegeri='';lukisPapan()">←</button><h3 style="margin:0;color:var(--emas)">${esc(nmNeg(k))}</h3></div>
+    <div class="grid" style="grid-template-columns:1fr 1fr;margin-bottom:12px"><div class="stat"><b>${gs.length}</b><small>Gelanggang</small></div><div class="stat"><b>${t.n}</b><small>Ahli aktif</small></div></div>
+    <div class="ring">${blokInfo(t)}</div>
+    <h3 style="color:var(--emas)">Gelanggang di ${esc(nmNeg(k))}</h3>
+    ${gs.map(g => { const st = gabungStat([g.stat]); return `<div class="kad">
+      <div class="baris" style="margin-bottom:6px;align-items:flex-start"><div><b>${esc(g.nama)}</b><br><small class="pudar">${esc(g.kod)} · Ketua: ${esc(g.ketua || '-')} ${esc(g.telKetua)}</small></div><div style="flex:none">${tag(g.status)}</div></div>
+      <div class="pudar" style="font-size:13px;margin-bottom:10px">${st.n} ahli aktif · ${g.bayar} bayar yuran ${esc(S.papan.tahun)}${g.aktif60 ? '' : ' · tiada aktiviti 60 hari'}</div>
+      ${blokInfo(st)}
+      <button class="kecil penuh" style="margin-top:8px" onclick="S.gelPilih='${esc(g.kod)}';pergi('ahli')">Lihat senarai ahli ›</button></div>`; }).join('') || '<p class="pudar">Tiada gelanggang.</p>'}`;
+  window.scrollTo(0, 0);
 }
 function eksportPapan() {
   const r = S.papan;
