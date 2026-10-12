@@ -195,7 +195,7 @@ async function mula() {
   }
   if (!S.negeri.length) { const r = await api('negeri'); S.negeri = r.negeri || []; }
   const u = S.u;
-  const tabs = u.peranan === 'JURULATIH' ? [['ahli','Ahli'],['daftar','Daftar Ahli'],['akaun','Akaun']]
+  const tabs = u.peranan === 'JURULATIH' ? [['ahli','Ahli'],['daftar','Daftar Ahli'],['hadir','Kehadiran'],['yb','Yuran Bulanan'],['kew','Kewangan'],['fiz','Fizikal & BMI'],['akaun','Akaun']]
     : u.peranan === 'ADMIN_NEGERI' ? [['papan','Ringkasan'],['lulus','Kelulusan'],['gel','Gelanggang'],['jur','Jurulatih'],['ahli','Ahli'],['akaun','Akaun']]
     : [['papan','Ringkasan'],['lulus','Kelulusan'],['gel','Gelanggang'],['jur','Pengguna'],['ahli','Ahli'],['akaun','Akaun']];
   if (!tabs.some(t => t[0] === S.tab)) S.tab = tabs[0][0];
@@ -204,7 +204,7 @@ async function mula() {
   $('#app').innerHTML = `<header><img src="logo.png" alt=""><div class="t"><b>SilatApp Pusat</b><small>${esc(u.nama)} — ${sub}</small></div><button class="kecil" onclick="keluar()">Keluar</button></header>
     <div class="tabs">${tabs.map(t => `<button class="${S.tab === t[0] ? 'aktif' : ''}" onclick="S.tab='${t[0]}';mula()">${t[1]}</button>`).join('')}</div>
     <div class="wrap" id="isi"><p class="pudar">Memuatkan...</p></div>`;
-  ({ papan: tabPapan, lulus: tabLulus, gel: tabGel, jur: tabJur, ahli: tabAhli, daftar: tabDaftar, akaun: tabAkaun })[S.tab]();
+  ({ papan: tabPapan, lulus: tabLulus, gel: tabGel, jur: tabJur, ahli: tabAhli, daftar: tabDaftar, akaun: tabAkaun, hadir: tabHadir, yb: tabYB, kew: tabKew, fiz: tabFiz })[S.tab]();
 }
 const nmNeg = k => (S.negeri.find(n => n[0] === k) || [k, k])[1];
 function pilihTahun(fn) {
@@ -441,6 +441,169 @@ async function hantarAhli(mod) {
   k.classList.remove('muat'); toast(r.msg, 5000);
   if (r.ok) tabDaftar();
 }
+
+
+/* ================= MODUL GELANGGANG (jurulatih sahaja) ================= */
+const BULAN = ['','Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
+const hariIniStr = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+const rm = n => 'RM' + Number(n || 0).toFixed(2);
+async function muatAhliJur() {
+  const r = await api('senarai_ahli', { tahun: S.tahun });
+  if (!r.ok) { $('#isi').innerHTML = `<p>${esc(r.msg)}</p>`; return null; }
+  S.ahli = r.ahli; S.gelAhli = r.gelanggang;
+  return r.ahli.filter(a => a.status_gel === 'AKTIF');
+}
+const nota = '<p class="pudar" style="font-size:12px">🔒 Data ini hanya untuk gelanggang anda — tidak dihantar kepada Admin Negeri / Super Admin.</p>';
+
+/* ---- Kehadiran ---- */
+async function tabHadir() {
+  const ahli = await muatAhliJur(); if (!ahli) return;
+  S.hTarikh = S.hTarikh || hariIniStr();
+  const d = new Date(); S.hBulan = S.hBulan || d.getMonth() + 1; S.hTahun = S.hTahun || d.getFullYear();
+  const [h, lap] = await Promise.all([api('hadir_get', { tarikh: S.hTarikh }), api('hadir_laporan', { bulan: S.hBulan, tahun: S.hTahun })]);
+  const set = new Set(h.hadir || []);
+  const bilSesi = (lap.sesi || []).length;
+  $('#isi').innerHTML = `<div class="kad"><h3>Rekod Kehadiran</h3>
+    <div class="baris"><div><label>Tarikh latihan</label><input type="date" value="${esc(S.hTarikh)}" onchange="S.hTarikh=this.value;tabHadir()"></div></div>
+    <p class="pudar">${h.ada ? '✔ Kehadiran tarikh ini sudah direkod — boleh dikemas kini.' : 'Belum direkod untuk tarikh ini.'}</p>
+    <div class="baris" style="margin-bottom:8px"><button class="kecil" onclick="document.querySelectorAll('.cH').forEach(c=>c.checked=true);kiraH()">Tanda semua</button><button class="kecil" onclick="document.querySelectorAll('.cH').forEach(c=>c.checked=false);kiraH()">Kosongkan</button><b id="bilH" style="text-align:right"></b></div>
+    <div class="jad"><table>${ahli.map(a => `<tr><td style="width:36px"><input type="checkbox" class="cH" value="${esc(a.no_kp)}" ${set.has(a.no_kp) ? 'checked' : ''} onchange="kiraH()" style="width:22px;height:22px"></td><td><b>${esc(a.nama)}</b><br><small class="pudar">${esc(a.no_ahli)} · ${esc(a.bengkung)}</small></td></tr>`).join('') || '<tr><td class="pudar">Tiada ahli aktif.</td></tr>'}</table></div>
+    <label>Catatan latihan</label><input id="hCat" value="${esc(h.catatan || '')}">
+    <div style="margin-top:10px"><button class="utama" onclick="simpanHadir()">Simpan Kehadiran</button></div></div>
+  <div class="kad"><div class="baris" style="margin-bottom:8px"><h3 style="margin:0">Laporan Bulanan</h3>
+    <select style="flex:none;width:auto" onchange="S.hBulan=+this.value;tabHadir()">${BULAN.slice(1).map((b, i) => `<option value="${i + 1}" ${i + 1 === S.hBulan ? 'selected' : ''}>${b}</option>`).join('')}</select>
+    <input style="flex:none;width:90px" value="${S.hTahun}" onchange="S.hTahun=+this.value;tabHadir()"></div>
+    <p class="pudar">${bilSesi} sesi latihan: ${(lap.sesi || []).map(x => `${x.tarikh.slice(8)}hb (${x.bil})`).join(', ') || '-'}</p>
+    <div class="jad"><table><tr><th>Ahli</th><th>Hadir</th><th>%</th></tr>${ahli.map(a => { const n = (lap.bil || {})[a.no_kp] || 0, pc = bilSesi ? Math.round(n / bilSesi * 100) : 0;
+      return `<tr><td>${esc(a.nama)}</td><td>${n}/${bilSesi}</td><td style="color:${pc >= 75 ? 'var(--hijau)' : pc >= 50 ? 'var(--kuning)' : 'var(--merah)'}">${pc}%</td></tr>`; }).join('')}</table></div>${nota}</div>`;
+  kiraH();
+}
+function kiraH() { const n = document.querySelectorAll('.cH:checked').length; if ($('#bilH')) $('#bilH').textContent = n + ' hadir'; }
+async function simpanHadir() {
+  const hadir = [...document.querySelectorAll('.cH:checked')].map(c => c.value);
+  const r = await api('hadir_simpan', { tarikh: S.hTarikh, hadir, catatan: $('#hCat').value }); toast(r.msg); if (r.ok) tabHadir();
+}
+
+/* ---- Yuran bulanan ---- */
+async function tabYB() {
+  const ahli = await muatAhliJur(); if (!ahli) return;
+  S.ybTahun = S.ybTahun || new Date().getFullYear();
+  const r = await api('yb_get', { tahun: S.ybTahun }); if (!r.ok) return toast(r.msg);
+  S.yb = {}; r.bayaran.forEach(b => S.yb[b.no_kp + '|' + b.bulan] = b);
+  const jumBulan = Array(13).fill(0); r.bayaran.forEach(b => jumBulan[b.bulan] += Number(b.jumlah || 0));
+  S.ybAhli = ahli;
+  $('#isi').innerHTML = `<div class="kad"><div class="baris" style="margin-bottom:8px"><h3 style="margin:0">Yuran Bulanan ${S.ybTahun}</h3>
+    <input style="flex:none;width:90px" value="${S.ybTahun}" onchange="S.ybTahun=+this.value;tabYB()"></div>
+    <p class="pudar" style="font-size:13px">Klik petak untuk rekod / padam bayaran. ✓ = sudah bayar.</p>
+    <div class="jad"><table style="font-size:13px"><tr><th>Ahli</th>${BULAN.slice(1).map(b => `<th style="text-align:center">${b}</th>`).join('')}</tr>
+    ${ahli.map((a, i) => `<tr><td style="white-space:nowrap">${esc(a.nama.length > 22 ? a.nama.slice(0, 22) + '…' : a.nama)}</td>${BULAN.slice(1).map((_, m) => { const b = S.yb[a.no_kp + '|' + (m + 1)];
+      return `<td style="text-align:center;cursor:pointer;${b ? 'color:var(--hijau);font-weight:700' : 'color:var(--garis)'}" onclick="bukaYB(${i},${m + 1})">${b ? '✓' : '·'}</td>`; }).join('')}</tr>`).join('')}
+    <tr><th>Jumlah</th>${jumBulan.slice(1).map(j => `<th style="text-align:center;font-size:11px">${j ? j.toFixed(0) : ''}</th>`).join('')}</tr></table></div>
+    <p>Jumlah kutipan ${S.ybTahun}: <b style="color:var(--emas)">${rm(jumBulan.reduce((a, b) => a + b, 0))}</b></p>${nota}</div>`;
+}
+function bukaYB(i, bulan) {
+  const a = S.ybAhli[i], b = S.yb[a.no_kp + '|' + bulan];
+  S.ybPilih = { a, bulan };
+  modal(`<h3 style="color:var(--emas);margin-top:0">Yuran ${BULAN[bulan]} ${S.ybTahun}</h3><p><b>${esc(a.nama)}</b><br><small class="pudar">${esc(a.no_ahli)}</small></p>
+    <div class="baris"><div><label>Jumlah (RM)</label><input id="ybJum" inputmode="decimal" value="${esc(b ? b.jumlah : (localStorage.getItem('sp_yb') || ''))}"></div>
+    <div><label>Tarikh bayar</label><input type="date" id="ybTarikh" value="${esc(b ? b.tarikh : hariIniStr())}"></div></div>
+    <label>Kaedah</label><select id="ybKaedah">${['TUNAI','ONLINE','QR'].map(k => `<option ${b && b.kaedah === k ? 'selected' : ''}>${k}</option>`).join('')}</select>
+    <div class="baris" style="margin-top:12px"><button onclick="modal('')">Tutup</button>${b ? `<button class="bahaya" onclick="padamYB()">Padam</button>` : ''}<button class="utama" onclick="simpanYB()">Simpan</button></div>`);
+}
+async function simpanYB() {
+  const { a, bulan } = S.ybPilih; try { localStorage.setItem('sp_yb', $('#ybJum').value); } catch (e) {}
+  const r = await api('yb_simpan', { no_kp: a.no_kp, bulan, tahun: S.ybTahun, jumlah: $('#ybJum').value, tarikh: $('#ybTarikh').value, kaedah: $('#ybKaedah').value });
+  toast(r.msg); if (r.ok) { modal(''); tabYB(); }
+}
+async function padamYB() {
+  if (!confirm('Padam rekod bayaran ini?')) return;
+  const { a, bulan } = S.ybPilih; const r = await api('yb_padam', { no_kp: a.no_kp, bulan, tahun: S.ybTahun });
+  toast(r.msg); if (r.ok) { modal(''); tabYB(); }
+}
+
+/* ---- Kewangan ---- */
+async function tabKew() {
+  S.kTahun = S.kTahun || new Date().getFullYear();
+  const r = await api('kew_get', { tahun: S.kTahun }); if (!r.ok) return $('#isi').innerHTML = `<p>${esc(r.msg)}</p>`;
+  S.kew = r;
+  const masukLain = r.rekod.filter(x => x.jenis === 'MASUK').reduce((a, x) => a + x.jumlah, 0);
+  const keluar = r.rekod.filter(x => x.jenis === 'KELUAR').reduce((a, x) => a + x.jumlah, 0);
+  const yb = r.yuranBulanan.reduce((a, b) => a + b, 0);
+  const masuk = masukLain + yb + r.yuranTahunan, baki = r.bakiLalu + masuk - keluar;
+  $('#isi').innerHTML = `<div class="kad"><div class="baris" style="margin-bottom:8px"><h3 style="margin:0">Kewangan Gelanggang ${S.kTahun}</h3>
+    <input style="flex:none;width:90px" value="${S.kTahun}" onchange="S.kTahun=+this.value;tabKew()"></div>
+    <div class="grid"><div class="stat"><b>${rm(r.bakiLalu)}</b><small>Baki bawa ke hadapan</small></div>
+      <div class="stat"><b style="color:var(--hijau)">${rm(masuk)}</b><small>Masuk (yuran bulanan ${rm(yb)}, tahunan ${rm(r.yuranTahunan)}, lain ${rm(masukLain)})</small></div>
+      <div class="stat"><b style="color:var(--merah)">${rm(keluar)}</b><small>Keluar</small></div>
+      <div class="stat"><b>${rm(baki)}</b><small>Baki semasa</small></div></div></div>
+  <div class="kad"><h3>Tambah Rekod</h3>
+    <div class="baris"><div><label>Tarikh</label><input type="date" id="kTarikh" value="${hariIniStr()}"></div>
+      <div><label>Jenis</label><select id="kJenis"><option value="MASUK">Masuk (terimaan)</option><option value="KELUAR">Keluar (perbelanjaan)</option></select></div></div>
+    <div class="baris"><div><label>Kategori</label><input id="kKat" list="kKatL" placeholder="cth. Derma, Peralatan"><datalist id="kKatL">${['Derma','Tajaan','Jualan','Peralatan','Pakaian','Pengangkutan','Makanan','Pertandingan','Sewa','Lain-lain'].map(x => `<option>${x}</option>`).join('')}</datalist></div>
+      <div><label>Jumlah (RM)</label><input id="kJum" inputmode="decimal"></div></div>
+    <label>Keterangan</label><input id="kKet">
+    <div style="margin-top:10px"><button class="utama" onclick="simpanKew()">Simpan</button></div></div>
+  <div class="kad"><div class="baris" style="margin-bottom:8px"><h3 style="margin:0">Rekod ${S.kTahun}</h3><button class="kecil" style="flex:none" onclick="eksportKew()">CSV</button></div>
+    <div class="jad"><table><tr><th>Tarikh</th><th>Butiran</th><th>Jumlah</th><th></th></tr>
+    ${r.rekod.map(x => `<tr><td>${esc(x.tarikh)}</td><td>${esc(x.kategori)}<br><small class="pudar">${esc(x.keterangan)}</small></td><td style="color:${x.jenis === 'MASUK' ? 'var(--hijau)' : 'var(--merah)'}">${x.jenis === 'MASUK' ? '+' : '−'}${rm(x.jumlah)}</td><td><button class="kecil bahaya" onclick="padamKew('${esc(x.id)}')">✕</button></td></tr>`).join('') || '<tr><td colspan="4" class="pudar">Tiada rekod lain. (Yuran dikira automatik.)</td></tr>'}</table></div>${nota}</div>`;
+}
+async function simpanKew() {
+  const r = await api('kew_simpan', { tarikh: $('#kTarikh').value, jenis: $('#kJenis').value, kategori: $('#kKat').value, keterangan: $('#kKet').value, jumlah: $('#kJum').value });
+  toast(r.msg); if (r.ok) tabKew();
+}
+async function padamKew(id) { if (!confirm('Padam rekod ini?')) return; const r = await api('kew_padam', { id }); toast(r.msg); if (r.ok) tabKew(); }
+function eksportKew() {
+  const r = S.kew, rows = [['Tarikh','Jenis','Kategori','Keterangan','Jumlah (RM)']].concat(r.rekod.map(x => [x.tarikh, x.jenis, x.kategori, x.keterangan, x.jumlah]));
+  r.yuranBulanan.forEach((j, m) => { if (j) rows.push([S.kTahun + '-' + String(m).padStart(2, '0'), 'MASUK', 'Yuran Bulanan', BULAN[m], j]); });
+  if (r.yuranTahunan) rows.push([String(S.kTahun), 'MASUK', 'Yuran Tahunan', '', r.yuranTahunan]);
+  csv('kewangan_' + S.kTahun, rows);
+}
+
+/* ---- Fizikal & BMI ---- */
+function kategoriBMI(b) {
+  b = Number(b); if (!b) return ['', ''];
+  if (b < 18.5) return ['Kurang berat', 'var(--biru)']; if (b < 25) return ['Normal', 'var(--hijau)'];
+  if (b < 30) return ['Berat berlebihan', 'var(--kuning)']; return ['Obes', 'var(--merah)'];
+}
+async function tabFiz() {
+  const ahli = await muatAhliJur(); if (!ahli) return;
+  const r = await api('fiz_get'); if (!r.ok) return toast(r.msg);
+  S.fiz = r.rekod; const terkini = {}; r.rekod.forEach(f => { if (!terkini[f.no_kp]) terkini[f.no_kp] = f; });
+  const nama = {}; S.ahli.forEach(a => nama[a.no_kp] = a.nama);
+  $('#isi').innerHTML = `<div class="kad"><h3>Rekod Ujian Fizikal & BMI</h3>
+    <label>Ahli</label><select id="fKp">${ahli.map(a => `<option value="${esc(a.no_kp)}">${esc(a.nama)}</option>`).join('')}</select>
+    <div class="baris"><div><label>Tarikh</label><input type="date" id="fTarikh" value="${hariIniStr()}"></div>
+      <div><label>Berat (kg)</label><input id="fBerat" inputmode="decimal" oninput="kiraBMI()"></div>
+      <div><label>Tinggi (cm)</label><input id="fTinggi" inputmode="decimal" oninput="kiraBMI()"></div></div>
+    <p id="fBMI" class="pudar">BMI: -</p>
+    <div class="baris"><div><label>Tekan tubi (bil.)</label><input id="fTekan" inputmode="numeric"></div>
+      <div><label>Bangkit tubi (bil.)</label><input id="fBangkit" inputmode="numeric"></div>
+      <div><label>Larian (masa, cth. 12:30)</label><input id="fLari"></div></div>
+    <label>Catatan</label><input id="fCat">
+    <div style="margin-top:10px"><button class="utama" onclick="simpanFiz()">Simpan</button></div></div>
+  <div class="kad"><h3>Status Terkini Ahli</h3><div class="jad"><table><tr><th>Ahli</th><th>BMI</th><th>Tekan / Bangkit / Lari</th><th>Tarikh</th></tr>
+    ${ahli.map(a => { const f = terkini[a.no_kp]; if (!f) return `<tr><td>${esc(a.nama)}</td><td colspan="3" class="pudar">Belum diuji</td></tr>`;
+      const [k, w] = kategoriBMI(f.bmi);
+      return `<tr class="klik" onclick="sejarahFiz('${esc(a.no_kp)}')"><td>${esc(a.nama)}</td><td><b style="color:${w}">${esc(f.bmi || '-')}</b><br><small class="pudar">${k}</small></td><td>${esc(f.tekan || '-')} / ${esc(f.bangkit || '-')} / ${esc(f.lari || '-')}</td><td>${esc(f.tarikh)}</td></tr>`; }).join('')}</table></div>
+    <p class="pudar" style="font-size:13px">Klik nama untuk lihat sejarah ujian.</p>${nota}</div>`;
+}
+function kiraBMI() {
+  const b = parseFloat($('#fBerat').value), t = parseFloat($('#fTinggi').value);
+  if (b > 0 && t > 0) { const v = (b / Math.pow(t / 100, 2)).toFixed(1), [k, w] = kategoriBMI(v); $('#fBMI').innerHTML = `BMI: <b style="color:${w}">${v}</b> (${k})`; }
+  else $('#fBMI').textContent = 'BMI: -';
+}
+async function simpanFiz() {
+  const r = await api('fiz_simpan', { no_kp: $('#fKp').value, tarikh: $('#fTarikh').value, berat: $('#fBerat').value, tinggi: $('#fTinggi').value,
+    tekan: $('#fTekan').value, bangkit: $('#fBangkit').value, lari: $('#fLari').value, catatan: $('#fCat').value });
+  toast(r.msg); if (r.ok) tabFiz();
+}
+function sejarahFiz(kp) {
+  const a = S.ahli.find(x => x.no_kp === kp), l = S.fiz.filter(f => f.no_kp === kp);
+  modal(`<h3 style="color:var(--emas);margin-top:0">${esc(a ? a.nama : '')}</h3><div class="jad"><table><tr><th>Tarikh</th><th>Berat/Tinggi</th><th>BMI</th><th>T/B/L</th><th></th></tr>
+    ${l.map(f => `<tr><td>${esc(f.tarikh)}</td><td>${esc(f.berat || '-')}kg / ${esc(f.tinggi || '-')}cm</td><td style="color:${kategoriBMI(f.bmi)[1]}">${esc(f.bmi || '-')}</td><td>${esc(f.tekan || '-')}/${esc(f.bangkit || '-')}/${esc(f.lari || '-')}${f.catatan ? `<br><small class="pudar">${esc(f.catatan)}</small>` : ''}</td><td><button class="kecil bahaya" onclick="padamFiz('${esc(f.id)}')">✕</button></td></tr>`).join('')}</table></div>
+    <div style="margin-top:12px;text-align:right"><button onclick="modal('')">Tutup</button></div>`);
+}
+async function padamFiz(id) { if (!confirm('Padam rekod ini?')) return; const r = await api('fiz_padam', { id }); toast(r.msg); if (r.ok) { modal(''); tabFiz(); } }
 
 /* ================= AKAUN ================= */
 function tabAkaun() {
