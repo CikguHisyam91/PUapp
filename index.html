@@ -231,7 +231,7 @@ async function tabPapan() {
       <div class="stat"><b>${r.gelAktif}</b><small>Gelanggang aktif (60 hari)</small></div>
       <div class="stat"><b>${r.gelTidakAktif}</b><small>Gelanggang tidak aktif</small></div>
       <div class="stat"><b>${r.menungguGel.length + r.menungguJur.length}</b><small>Menunggu kelulusan</small></div>
-    </div></div>
+    </div>${r.segerak ? `<p class="pudar" style="font-size:13px;margin-bottom:0">Segerak terakhir dari sistem Seri Mutiara: ${esc(r.segerak)}</p>` : ''}</div>
   <div class="kad"><h3>Ikut Negeri</h3><div class="jad"><table><tr><th>Negeri</th><th>Lelaki</th><th>Perempuan</th><th>Jumlah</th></tr>
     ${r.negeri.map(n => `<tr><td>${esc(n.nama)}</td><td>${n.L}</td><td>${n.P}</td><td><b>${n.semua}</b></td></tr>`).join('') || '<tr><td colspan="4" class="pudar">Tiada data</td></tr>'}</table></div></div>
   <div class="kad"><div class="baris" style="margin-bottom:10px"><h3 style="margin:0">Gelanggang</h3><div style="flex:none"><button class="kecil" onclick="eksportPapan()">Eksport CSV</button></div></div>

@@ -13,8 +13,9 @@ var SETUP_TELEFON = '';       // cth. '0123456789'
 var SETUP_KATALALUAN = '';    // cth. 'KataLaluanKuat123'
 
 /* Untuk import data sistem lama (Peringkat 4) */
-var IMPORT_ID_SHEET_LAMA = '';      // ID Google Sheet sistem lama
-var IMPORT_KOD_GELANGGANG = '';     // cth. 'KDH-SMT'
+var IMPORT_ID_SHEET_LAMA = '1YfCDLeWkZR7VV0YWTHwPodXIk8I7H80pJrjefgU09Pw';  // Sheet Gelanggang Seri Mutiara
+var IMPORT_KOD_GELANGGANG = 'KDH-SMT';     // kod gelanggang Seri Mutiara dalam Pusat
+var SEGERAK_MINIT = 5;                     // segerak auto setiap 5 minit
 
 /* ======================= TETAPAN ======================= */
 var NEGERI = [
@@ -692,16 +693,41 @@ API.papan = function (u, p) {
   });
 
   var r = { ok: true, tahun: tahun, jumlah: jumlah, negeri: Object.keys(ikutNegeri).sort().map(function (k) { return ikutNegeri[k]; }),
+    segerak: PropertiesService.getScriptProperties().getProperty('SEGERAK_TERAKHIR') || '',
     gelAktif: aktif, gelTidakAktif: tidakAktif, gelanggang: gelList, menungguGel: menungguGel, menungguJur: menungguJur };
   try { c.put(kunci, JSON.stringify(r), 300); } catch (x) {}
   return r;
 };
 
 /* ======================= IMPORT SISTEM LAMA ======================= */
-/* Cara guna: isi IMPORT_ID_SHEET_LAMA & IMPORT_KOD_GELANGGANG di atas, pilih "jalankanImport", klik Run. */
+/* Cara guna:
+ *  - Sekali sahaja: pilih "pasangSegerakAuto" → Run. Selepas itu data Seri Mutiara
+ *    disalin ke Pusat setiap 5 minit secara automatik (sistem lama tidak diubah).
+ *  - Segerak segera secara manual: pilih "jalankanImport" → Run.
+ *  - Hentikan auto: pilih "hentikanSegerakAuto" → Run. */
 function jalankanImport() {
   var r = importDariSheetLama(IMPORT_ID_SHEET_LAMA, IMPORT_KOD_GELANGGANG);
   Logger.log(JSON.stringify(r, null, 2));
+}
+function pasangSegerakAuto() {
+  hentikanSegerakAuto();
+  ScriptApp.newTrigger('jalankanImport').timeBased().everyMinutes(SEGERAK_MINIT).create();
+  jalankanImport();
+  Logger.log('BERJAYA: Segerak auto dipasang (setiap ' + SEGERAK_MINIT + ' minit).');
+}
+function hentikanSegerakAuto() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'jalankanImport') ScriptApp.deleteTrigger(t);
+  });
+}
+function statusLama_(v) {
+  var s = String(v || 'AKTIF').toUpperCase().trim();
+  if (s === 'TIDAK AKTIF' || s === 'TIDAK_AKTIF' || s === 'TAK AKTIF') return 'TIDAK AKTIF';
+  if (['AKTIF', 'DIGANTUNG', 'DIBATALKAN'].indexOf(s) >= 0) return s;
+  if (/GANTUNG/.test(s)) return 'DIGANTUNG';
+  if (/BATAL|BERHENTI/.test(s)) return 'DIBATALKAN';
+  if (/TIDAK|TAK/.test(s)) return 'TIDAK AKTIF';
+  return 'AKTIF';
 }
 
 function importDariSheetLama(idSheetLama, kodGelanggang) {
@@ -710,25 +736,40 @@ function importDariSheetLama(idSheetLama, kodGelanggang) {
   if (!g) throw new Error('Gelanggang ' + kodGelanggang + ' tiada dalam Pusat. Daftar & luluskan dahulu.');
   var lama = SpreadsheetApp.openById(idSheetLama); // BACA SAHAJA — tiada tulisan ke sheet lama
   var lock = LockService.getScriptLock(); lock.waitLock(30000);
-  var hasil = { ahliBaru: 0, ahliSediaAda: 0, ahliDilangkau: 0, yuranBaru: 0, yuranSediaAda: 0 };
+  var hasil = { ahliBaru: 0, ahliDikemaskini: 0, ahliSama: 0, ahliDilangkau: 0, yuranBaru: 0, yuranSediaAda: 0 };
   try {
     var ahliLama = bacaLama_(lama, 'AHLI');
     ahliLama.forEach(function (r) {
       var kp = bersihKP_(r.NO_KP);
       if (!kp || !r.NAMA_PENUH) { hasil.ahliDilangkau++; return; }
+      var st = statusLama_(r.STATUS);
       var a = cariSatu_('AHLI', 'NO_KP', kp);
       if (a) {
-        hasil.ahliSediaAda++;
-        if (!a.ID_LAMA && r.ID_AHLI) kemaskini_('AHLI', a._r, { ID_LAMA: r.ID_AHLI });
         var ada = baca_('KEAHLIAN_GELANGGANG').some(function (k) { return k.NO_KP === kp && k.KOD_GELANGGANG === g.KOD; });
         if (!ada) daftarAhliTeras_(g, { no_kp: kp }, 'bersama', 'IMPORT');
+        // Kemas kini maklumat hanya jika Seri Mutiara ialah gelanggang utama ahli ini
+        if (a.GELANGGANG_UTAMA !== g.KOD) { hasil.ahliSama++; return; }
+        var baru = { NAMA: String(r.NAMA_PENUH).trim().toUpperCase(), JANTINA: jantina_(r.JANTINA), TARIKH_LAHIR: tarikh_(r.TARIKH_LAHIR),
+          BENGKUNG: String(r.BENGKUNG_SEMASA || ''), TEL_WARIS: String(r.NO_TEL_WARIS || ''), STATUS: st, ID_LAMA: String(r.ID_AHLI || a.ID_LAMA) };
+        var ubah = {};
+        Object.keys(baru).forEach(function (k) { if (baru[k] && baru[k] !== a[k]) ubah[k] = baru[k]; });
+        if (Object.keys(ubah).length) {
+          kemaskini_('AHLI', a._r, ubah);
+          if (ubah.STATUS) {
+            var k = baca_('KEAHLIAN_GELANGGANG').filter(function (x) { return x.NO_KP === kp && x.KOD_GELANGGANG === g.KOD && x.STATUS !== 'BERPINDAH'; })[0];
+            if (k) kemaskini_('KEAHLIAN_GELANGGANG', k._r, { STATUS: st });
+          }
+          hasil.ahliDikemaskini++;
+        } else hasil.ahliSama++;
         return;
       }
-      var st = String(r.STATUS || 'AKTIF').toUpperCase();
-      if (['AKTIF', 'TIDAK AKTIF', 'DIGANTUNG', 'DIBATALKAN'].indexOf(st) < 0) st = 'AKTIF';
       daftarAhliTeras_(g, { no_kp: kp, nama: r.NAMA_PENUH, jantina: jantina_(r.JANTINA), tarikh_lahir: tarikh_(r.TARIKH_LAHIR),
         bengkung: r.BENGKUNG_SEMASA, tel_waris: r.NO_TEL_WARIS, tarikh_daftar: tarikh_(r.TARIKH_DAFTAR) || hariIni_(),
         status: st, id_lama: r.ID_AHLI }, '', 'IMPORT');
+      if (st !== 'AKTIF') {
+        var k2 = baca_('KEAHLIAN_GELANGGANG').filter(function (x) { return x.NO_KP === kp && x.KOD_GELANGGANG === g.KOD; })[0];
+        if (k2) kemaskini_('KEAHLIAN_GELANGGANG', k2._r, { STATUS: st });
+      }
       hasil.ahliBaru++;
     });
     var yuranLama = bacaLama_(lama, 'YURAN');
@@ -743,9 +784,12 @@ function importDariSheetLama(idSheetLama, kodGelanggang) {
         TARIKH_BAYAR: tarikh_(r.TARIKH_BAYAR), DIREKOD_OLEH: 'IMPORT' });
       hasil.yuranBaru++;
     });
-    log_('IMPORT', 'IMPORT_GELANGGANG', g.KOD + ' ' + JSON.stringify(hasil));
-    catatAktiviti_(g.KOD);
-    naikVersi_();
+    if (hasil.ahliBaru || hasil.ahliDikemaskini || hasil.yuranBaru) {
+      log_('IMPORT', 'SEGERAK_GELANGGANG', g.KOD + ' ' + JSON.stringify(hasil));
+      catatAktiviti_(g.KOD);
+      naikVersi_();
+    }
+    PropertiesService.getScriptProperties().setProperty('SEGERAK_TERAKHIR', masa_());
   } finally { SpreadsheetApp.flush(); lock.releaseLock(); }
   return hasil;
 }
