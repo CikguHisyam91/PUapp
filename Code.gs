@@ -32,7 +32,7 @@ var HARI_AKTIF = 60;
 var JADUAL = {
   NEGERI: ['KOD','NAMA'],
   GELANGGANG: ['KOD','NAMA','NEGERI','ALAMAT','KETUA_ID','TARIKH_DAFTAR','STATUS','AKTIVITI_TERAKHIR','LOGO'],
-  PENGGUNA: ['ID','HASH','SALT','NAMA','TELEFON','PERANAN','NEGERI','KOD_GELANGGANG','KETUA','STATUS','TARIKH_DAFTAR','GAGAL','KUNCI_HINGGA'],
+  PENGGUNA: ['ID','HASH','SALT','NAMA','TELEFON','PERANAN','NEGERI','KOD_GELANGGANG','KETUA','STATUS','TARIKH_DAFTAR','GAGAL','KUNCI_HINGGA','WAJIB_TUKAR'],
   SESI: ['TOKEN','ID','LUPUT'],
   AHLI: ['NO_AHLI','NO_KP','NAMA','JANTINA','TARIKH_LAHIR','BENGKUNG','GELANGGANG_UTAMA','STATUS','TARIKH_DAFTAR','TEL_WARIS','ID_LAMA'],
   KEAHLIAN_GELANGGANG: ['NO_KP','KOD_GELANGGANG','JENIS','STATUS','TARIKH_MULA','TARIKH_TAMAT','CAWANGAN'],
@@ -122,7 +122,7 @@ function jawab_(o) {
 }
 
 var AWAM = { ibubapa: 1, ping: 1, negeri: 1, daftar: 1, login: 1, status_awal: 1, cipta_super: 1 };
-var TULIS = { caw_simpan: 1, caw_padam: 1, caw_tag: 1, logo_simpan: 1, kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, lulus_gelanggang: 1, status_gelanggang: 1,
+var TULIS = { reset_katalaluan: 1, caw_simpan: 1, caw_padam: 1, caw_tag: 1, logo_simpan: 1, kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, lulus_gelanggang: 1, status_gelanggang: 1,
   status_pengguna: 1, set_ketua: 1, lantik_admin: 1, daftar_ahli: 1, kemaskini_ahli: 1, status_ahli: 1,
   rekod_yuran: 1, padam_yuran: 1, mohon_gelanggang: 1 };
 
@@ -130,7 +130,7 @@ function urus_(p) {
   var lock = null;
   try {
     var a = p.action;
-    var VERSI_SKEMA = '3';
+    var VERSI_SKEMA = '4';
     if (PropertiesService.getScriptProperties().getProperty('SKEMA') !== VERSI_SKEMA || !sh_('PENGGUNA')) {
       binaSheet_(); PropertiesService.getScriptProperties().setProperty('SKEMA', VERSI_SKEMA);
     }
@@ -348,7 +348,7 @@ function profil_(u) {
   var g = u.KOD_GELANGGANG ? cariSatu_('GELANGGANG', 'KOD', u.KOD_GELANGGANG) : null;
   return { id: u.ID, nama: u.NAMA, telefon: u.TELEFON, peranan: u.PERANAN, negeri: u.NEGERI,
     namaNegeri: namaNegeri_(u.NEGERI), kod_gelanggang: u.KOD_GELANGGANG, nama_gelanggang: g ? g.NAMA : '', logo: g ? g.LOGO : '',
-    ketua: u.KETUA === 'YA' };
+    ketua: u.KETUA === 'YA', wajib_tukar: u.WAJIB_TUKAR === 'YA' };
 }
 
 /* ======================= TINDAKAN BERTOKEN ======================= */
@@ -367,7 +367,7 @@ API.tukar_katalaluan = function (u, p) {
   if (hash_(p.lama || '', u.SALT) !== u.HASH) return { ok: false, msg: 'Kata laluan lama salah.' };
   if (String(p.baru || '').length < 8) return { ok: false, msg: 'Kata laluan baharu sekurang-kurangnya 8 aksara.' };
   var salt = Utilities.getUuid();
-  kemaskini_('PENGGUNA', u._r, { HASH: hash_(p.baru, salt), SALT: salt });
+  kemaskini_('PENGGUNA', u._r, { HASH: hash_(p.baru, salt), SALT: salt, WAJIB_TUKAR: '' });
   log_(u.ID, 'TUKAR_KATALALUAN', '');
   return { ok: true, msg: 'Kata laluan ditukar.' };
 };
@@ -1077,4 +1077,24 @@ API.logo_simpan = function (u, p) {
   kemaskini_('GELANGGANG', g._r, { LOGO: d });
   log_(u.ID, 'LOGO_GELANGGANG', g.KOD + (d ? ' dikemas kini' : ' dibuang'));
   return { ok: true, msg: d ? 'Logo gelanggang disimpan.' : 'Logo dibuang. Logo persatuan digunakan.' };
+};
+
+/* ======================= RESET KATA LALUAN (Super Admin) =======================
+ * Kata laluan asal TIDAK boleh dilihat (disimpan sebagai hash). Super Admin jana kata laluan sementara;
+ * pengguna wajib tukar selepas log masuk. Semua sesi lama pengguna itu dibatalkan. */
+API.reset_katalaluan = function (u, p) {
+  wajib_(u, ['SUPER_ADMIN']);
+  var x = cariSatu_('PENGGUNA', 'ID', p.id);
+  if (!x) return { ok: false, msg: 'Pengguna tidak dijumpai.' };
+  if (x.ID === u.ID) return { ok: false, msg: 'Untuk akaun sendiri, guna menu Akaun → Tukar Kata Laluan.' };
+  var huruf = 'ABCDEFGHJKLMNPQRSTUVWXYZ', sem = 'SG';
+  for (var i = 0; i < 2; i++) sem += huruf.charAt(Math.floor(Math.random() * huruf.length));
+  for (var j = 0; j < 4; j++) sem += Math.floor(Math.random() * 10);
+  var salt = Utilities.getUuid();
+  kemaskini_('PENGGUNA', x._r, { HASH: hash_(sem, salt), SALT: salt, GAGAL: '0', KUNCI_HINGGA: '', WAJIB_TUKAR: 'YA' });
+  var sh = sh_('SESI'), rs = baca_('SESI'), c = CacheService.getScriptCache();
+  for (var k = rs.length - 1; k >= 0; k--) if (rs[k].ID === x.ID) { c.remove('t_' + rs[k].TOKEN); sh.deleteRow(rs[k]._r); }
+  delete _tbl.SESI;
+  log_(u.ID, 'RESET_KATALALUAN', x.ID);
+  return { ok: true, sementara: sem, nama: x.NAMA, id: x.ID, telefon: x.TELEFON };
 };

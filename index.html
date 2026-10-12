@@ -289,6 +289,7 @@ async function mula() {
     if (!r.ok) { if (r.logout) return; $('#app').innerHTML = `<div class="wrap" style="text-align:center;padding-top:60px"><img src="logo.png" style="width:90px;border-radius:50%;background:#fff"><p>${esc(r.msg || 'Tidak dapat sambung ke pelayan.')}</p><button class="utama" onclick="mula()">Cuba lagi</button></div>`; return; }
     S.u = r.pengguna; S.negeri = r.negeri;
   }
+  if (S.u.wajib_tukar) return paparTukarWajib();
   if (!S.negeri.length) { const r = await api('negeri'); S.negeri = r.negeri || []; }
   const u = S.u, jur = u.peranan === 'JURULATIH';
   const sub = jur ? `${esc(u.nama_gelanggang)} · ${esc(u.kod_gelanggang)}${u.ketua ? ' · KETUA' : ''}`
@@ -506,7 +507,8 @@ function senaraiJur() {
     <small class="pudar">${esc(NAMA_PERANAN[p.peranan])} · ${p.peranan === 'JURULATIH' ? esc(p.nama_gelanggang) + ' (' + esc(p.kod_gelanggang) + ')' : esc(nmNeg(p.negeri))}</small>
     <div class="baris balut" style="margin-top:10px">
     ${p.status !== 'AKTIF' ? `<button class="kecil" onclick="statusJur('${esc(p.id)}','AKTIF')">Aktifkan</button>` : `<button class="kecil bahaya" onclick="statusJur('${esc(p.id)}','DIGANTUNG')">${p.peranan === 'ADMIN_NEGERI' ? 'Buang / Gantung' : 'Gantung'}</button>`}
-    ${p.peranan === 'JURULATIH' ? `<button class="kecil" onclick="setKetua('${esc(p.id)}',${!p.ketua})">${p.ketua ? 'Buang Ketua' : 'Jadikan Ketua'}</button>` : ''}</div></div>`).join('') || '<p class="pudar">Tiada.</p>';
+    ${p.peranan === 'JURULATIH' ? `<button class="kecil" onclick="setKetua('${esc(p.id)}',${!p.ketua})">${p.ketua ? 'Buang Ketua' : 'Jadikan Ketua'}</button>` : ''}
+    ${S.u.peranan === 'SUPER_ADMIN' ? `<button class="kecil" onclick="resetPw('${esc(p.id)}','${esc(p.nama)}')">🔑 Reset kata laluan</button>` : ''}</div></div>`).join('') || '<p class="pudar">Tiada.</p>';
 }
 function borangAdmin() {
   modal(`<h3 style="color:var(--emas);margin-top:0">Lantik Admin Negeri</h3>
@@ -515,6 +517,19 @@ function borangAdmin() {
     <label>Nama</label><input id="aNama"><label>Telefon</label><input id="aTel" inputmode="tel">
     <label>Kata laluan sementara (min 8) — kosongkan jika ID sudah wujud</label><input id="aPw">
     <div class="baris" style="margin-top:14px"><button onclick="modal('')">Batal</button><button class="utama" onclick="lantikAdmin()">Lantik</button></div>`);
+}
+async function resetPw(id, nama) {
+  if (!confirm(`Reset kata laluan ${nama} (${id})?\n\nKata laluan lama tidak boleh digunakan lagi. Sistem akan jana kata laluan sementara.`)) return;
+  const r = await api('reset_katalaluan', { id }); if (!r.ok) return toast(r.msg);
+  const tel = String(r.telefon || '').replace(/\D/g, '').replace(/^6?0/, '60');
+  const msg = `Assalamualaikum ${r.nama}. Kata laluan SilatApp anda telah direset.\nID: ${r.id}\nKata laluan sementara: ${r.sementara}\nSila log masuk di ${location.origin + location.pathname} dan tukar kata laluan baharu.`;
+  modal(`<h3 style="color:var(--emas);margin-top:0">🔑 Kata Laluan Sementara</h3>
+    <p style="margin:0">${esc(r.nama)}<br><span class="pudar">ID: <b style="color:var(--teks)">${esc(r.id)}</b></span></p>
+    <div style="font-size:32px;font-weight:800;letter-spacing:3px;text-align:center;background:var(--kad2);border:2px dashed var(--emas);border-radius:14px;padding:16px;margin:14px 0;user-select:all">${esc(r.sementara)}</div>
+    <p class="pudar" style="font-size:13px">Berikan kepada pengguna. Mereka <b>wajib menukar</b> kata laluan sebaik log masuk. Kata laluan ini dipaparkan sekali sahaja.</p>
+    ${tel.length > 9 ? `<a href="https://wa.me/${tel}?text=${encodeURIComponent(msg)}" target="_blank" style="text-decoration:none"><button class="penuh" style="border-color:#2d5a43;color:var(--hijau)">💬 Hantar melalui WhatsApp</button></a>` : ''}
+    <button class="penuh" style="margin-top:8px" onclick="navigator.clipboard&&navigator.clipboard.writeText(${esc(JSON.stringify(msg))}).then(()=>toast('Disalin'))">📋 Salin mesej</button>
+    <button class="utama penuh" style="margin-top:8px" onclick="modal('')">Selesai</button>`);
 }
 async function setKetua(id, ketua) { const r = await api('set_ketua', { id, ketua }); toast(r.msg); if (r.ok) mula(); }
 async function lantikAdmin() {
@@ -1043,6 +1058,23 @@ function pilihLogo(inp) {
   img.src = url;
 }
 async function buangLogo() { if (!confirm('Buang logo gelanggang?')) return; const r = await api('logo_simpan', { data: '' }); toast(r.msg); if (r.ok) { S.u.logo = ''; mula(); } }
+
+/* ---- Wajib tukar kata laluan selepas reset ---- */
+function paparTukarWajib() {
+  $('#app').innerHTML = `<div class="wrap"><div class="login"><div class="logo"><img src="logo.png" alt=""></div>
+    <h1>Tukar Kata Laluan</h1><p class="pudar" style="text-align:center;margin-top:0">Kata laluan anda telah direset oleh Super Admin. Sila tetapkan kata laluan baharu.</p>
+    <div class="kad" id="kotakWajib">
+      <label style="margin-top:0">Kata laluan sementara</label><input type="password" id="wLama">
+      <label>Kata laluan baharu (min. 8 aksara)</label><input type="password" id="wBaru">
+      <label>Ulang kata laluan baharu</label><input type="password" id="wBaru2">
+      <button class="utama penuh" style="margin-top:16px" onclick="simpanWajib()">Simpan & Teruskan</button>
+      <button class="penuh" style="margin-top:8px" onclick="keluar()">Log Keluar</button></div></div></div>`;
+}
+async function simpanWajib() {
+  if ($('#wBaru').value !== $('#wBaru2').value) return toast('Kata laluan baharu tidak sama.');
+  const r = await api('tukar_katalaluan', { lama: $('#wLama').value, baru: $('#wBaru').value }); toast(r.msg);
+  if (r.ok) { S.u.wajib_tukar = false; mula(); }
+}
 
 /* ================= AKAUN ================= */
 function tabAkaun() {
