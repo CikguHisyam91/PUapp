@@ -104,12 +104,45 @@ th{color:var(--pudar);font-weight:500;white-space:nowrap}
 .kotakHasil .bar2{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--garis)}
 .kotakHasil .bar2:last-child{border:0}
 .kotakHasil .bar2 b{text-align:right}
+/* ===== Paparan cetak (hitam putih) ===== */
+#cetak{display:none;position:fixed;inset:0;z-index:100;background:#fff;color:#000;overflow:auto}
+#cetak .alat{position:sticky;top:0;display:flex;gap:8px;padding:10px 14px;background:#111;z-index:2}
+#cetak .alat button{flex:1}
+#cetak .kertas{max-width:800px;margin:0 auto;padding:18px 16px 40px;font:13px/1.4 Arial,Helvetica,sans-serif;color:#000}
+.kp-head{display:flex;align-items:center;gap:14px;border-bottom:3px double #000;padding-bottom:10px}
+.kp-head img{width:70px;height:70px;filter:grayscale(1)}
+.kp-head h1{font-size:17px;margin:0;letter-spacing:.5px}
+.kp-head .g{font-size:15px;font-weight:700;margin-top:2px}
+.kp-head .m{font-size:11px;margin-top:2px}
+.kp-tajuk{text-align:center;font-size:15px;font-weight:700;margin:14px 0 4px;text-decoration:underline}
+.kp-ring{width:100%;border-collapse:collapse;margin:8px 0 14px;font-size:11px}
+.kp-ring td,.kp-ring th{border:1px solid #000;padding:3px 6px;text-align:center}
+.kp-usia{background:#000;color:#fff;padding:7px 10px;font-weight:700;font-size:14px;margin-top:18px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.kp-jan{border:2px solid #000;border-top:0;padding:5px 10px;font-weight:700;font-size:13px;letter-spacing:1px}
+.kp-kelas{font-weight:700;margin:10px 0 4px;font-size:13px;border-bottom:1px solid #000;padding-bottom:2px}
+table.kp{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:6px;page-break-inside:avoid}
+table.kp th,table.kp td{border:1px solid #000;padding:4px 6px;text-align:left;color:#000}
+table.kp th{background:#e6e6e6;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+table.kp td.c,table.kp th.c{text-align:center}
+.kp-blok{page-break-inside:avoid}
+.kp-ttd{display:flex;justify-content:space-between;gap:30px;margin-top:40px;font-size:12px}
+.kp-ttd div{flex:1;border-top:1px dotted #000;padding-top:4px}
+.kp-nota{font-size:10px;margin-top:14px;border-top:1px solid #000;padding-top:6px}
+@media print{
+  @page{size:A4;margin:12mm}
+  body>*:not(#cetak){display:none!important}
+  #cetak{position:static;display:block!important;overflow:visible}
+  #cetak .alat{display:none}
+  #cetak .kertas{max-width:none;padding:0}
+  .kp-usia.baru{page-break-before:always}
+}
 </style>
 </head>
 <body>
 <div id="app"></div>
 <div id="modal"><div class="isi" id="modalIsi"></div></div>
 <div id="toast"></div>
+<div id="cetak"></div>
 <script>
 /* ====== TETAPAN: URL Web App Apps Script ====== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbwYLSghcfcLVKLg2plYc9Slj8E0KuNu8LX7HOugVTSIWxwCfv2hcBZB_l0uc5JArfxV/exec';
@@ -761,6 +794,7 @@ async function tabFiz() {
   S.fTapis = S.fTapis || 'semua';
   $('#isi').innerHTML = `<div class="ring"><div class="pudar" style="font-size:14px">Kategori usia tahun ${new Date().getFullYear()}</div>
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${KATEGORI_USIA.map(k => { const n = S.fizAhli.filter(a => a.kat.includes(k)).length; return n ? tag(`${k.nama} (${k.umur}): ${n}`, 'BIRU') : ''; }).join('')}</div></div>
+    <button class="utama penuh" style="margin-bottom:12px" onclick="cetakKelas()">🖨️ Muat Turun Senarai Kelas Berat</button>
     ${cariBox('cariF', 'lukisFiz')}<div id="cipF"></div><div id="senF"></div>${nota}`;
   lukisFiz();
 }
@@ -807,6 +841,54 @@ async function simpanFiz() {
   const a = S.fPilih, b = $('#fBerat').value, t = $('#fTinggi').value;
   const r = await api('fiz_simpan', { no_kp: a.no_kp, tarikh: hariIniStr(), berat: b, tinggi: t, catatan: a.kat.map(k => k.nama + ' ' + kelasBerat(k, parseFloat(b))).join('; ') });
   toast(r.msg); if (r.ok) { S.fizTerkini[a.no_kp] = { berat: b, tinggi: t, tarikh: hariIniStr() }; modal(''); lukisFiz(); }
+}
+
+/* ---- Senarai kelas berat untuk dicetak / PDF ---- */
+function cetakKelas() {
+  const g = S.gelAhli || {}, th = new Date().getFullYear(), kini = new Date();
+  const JAN = [['L', 'LELAKI'], ['P', 'PEREMPUAN']];
+  const jan = a => /^P/i.test(a.jantina) ? 'P' : 'L';
+  let isi = '', ring = [], bilBelum = [], noUsia = 0;
+  KATEGORI_USIA.forEach(kat => {
+    const ahliK = S.fizAhli.filter(a => a.kat.includes(kat));
+    if (!ahliK.length) return;
+    let blokKat = '', jumKat = 0;
+    JAN.forEach(([jk, jn]) => {
+      const ahliJ = ahliK.filter(a => jan(a) === jk);
+      if (!ahliJ.length) return;
+      let blokJ = '';
+      kat.kelas.forEach(kl => {
+        const l = ahliJ.filter(a => { const f = S.fizTerkini[a.no_kp], b = f ? +f.berat : 0; return b > 0 && b > kl[1] && (kl[2] == null || b <= kl[2]); })
+          .sort((x, y) => (+S.fizTerkini[x.no_kp].berat) - (+S.fizTerkini[y.no_kp].berat));
+        if (!l.length) return;
+        jumKat += l.length;
+        ring.push([kat.nama, jn, kl[0].replace('Kelas ', ''), l.length]);
+        blokJ += `<div class="kp-blok"><div class="kp-kelas">${esc(kl[0].toUpperCase())} &nbsp;(${kl[2] == null ? 'melebihi ' + kl[1] : kl[1] + ' – ' + kl[2]} kg) &nbsp;—&nbsp; ${l.length} orang</div>
+          <table class="kp"><tr><th class="c" style="width:34px">BIL</th><th>NAMA PESILAT</th><th style="width:110px">NO. AHLI</th><th class="c" style="width:48px">UMUR</th><th class="c" style="width:62px">BERAT (kg)</th><th class="c" style="width:62px">TINGGI (cm)</th><th class="c" style="width:78px">TARIKH TIMBANG</th><th class="c" style="width:40px">✓</th></tr>
+          ${l.map((a, i) => { const f = S.fizTerkini[a.no_kp]; return `<tr><td class="c">${i + 1}</td><td>${esc(a.nama)}</td><td>${esc(a.no_ahli)}</td><td class="c">${a.umur}</td><td class="c">${esc(f.berat)}</td><td class="c">${esc(f.tinggi || '-')}</td><td class="c">${esc(tarikhMY(f.tarikh))}</td><td></td></tr>`; }).join('')}</table></div>`;
+      });
+      const belum = ahliJ.filter(a => { const f = S.fizTerkini[a.no_kp]; return !(f && +f.berat > 0) || +f.berat <= kat.kelas[0][1]; });
+      belum.forEach(a => { if (!bilBelum.includes(a)) bilBelum.push(a); });
+      if (blokJ) blokKat += `<div class="kp-jan">${jn}</div>${blokJ}`;
+    });
+    if (blokKat) { isi += `<div class="kp-usia ${noUsia++ ? 'baru' : ''}">KATEGORI ${esc(kat.nama)} &nbsp;(${esc(kat.umur)} TAHUN) &nbsp;—&nbsp; ${jumKat} orang</div>${blokKat}`; }
+  });
+  if (bilBelum.length) isi += `<div class="kp-usia baru">BELUM DITIMBANG / TIADA KELAS — ${bilBelum.length} orang</div>
+    <table class="kp" style="margin-top:8px"><tr><th class="c" style="width:34px">BIL</th><th>NAMA PESILAT</th><th style="width:110px">NO. AHLI</th><th class="c" style="width:48px">UMUR</th><th class="c" style="width:60px">JANTINA</th><th>KATEGORI USIA</th></tr>
+    ${bilBelum.map((a, i) => `<tr><td class="c">${i + 1}</td><td>${esc(a.nama)}</td><td>${esc(a.no_ahli)}</td><td class="c">${a.umur ?? '-'}</td><td class="c">${jan(a)}</td><td>${esc(namaKat(a.kat))}</td></tr>`).join('')}</table>`;
+  const ringkas = ring.length ? `<table class="kp-ring"><tr><th>KATEGORI USIA</th><th>JANTINA</th><th>KELAS</th><th>BIL.</th></tr>${ring.map(r => `<tr><td>${esc(r[0])}</td><td>${r[1]}</td><td>${esc(r[2])}</td><td>${r[3]}</td></tr>`).join('')}</table>` : '';
+  const el = $('#cetak');
+  el.innerHTML = `<div class="alat"><button onclick="$('#cetak').style.display='none'">← Tutup</button><button class="utama" onclick="window.print()">🖨️ Cetak / Simpan PDF</button></div>
+    <div class="kertas">
+      <div class="kp-head"><img src="logo.png" alt=""><div><h1>SRI GAYONG PANGLIMA ULUNG</h1><div class="g">${esc((g.nama || S.u.nama_gelanggang || '').toUpperCase())}</div>
+        <div class="m">Kod Gelanggang: ${esc(g.kod || S.u.kod_gelanggang)} &nbsp;|&nbsp; Negeri: ${esc(S.u.namaNegeri || '')} &nbsp;|&nbsp; Jurulatih: ${esc(S.u.nama)}</div></div></div>
+      <div class="kp-tajuk">SENARAI PESILAT MENGIKUT KATEGORI USIA, JANTINA DAN KELAS BERAT TAHUN ${th}</div>
+      <div style="text-align:center;font-size:11px">Dijana pada ${kini.toLocaleDateString('ms-MY', { day: '2-digit', month: 'long', year: 'numeric' })} &nbsp;|&nbsp; Umur dikira mengikut tahun ${th}</div>
+      ${ringkas}${isi || '<p>Tiada data berat pesilat lagi.</p>'}
+      <div class="kp-nota">Nota: Pesilat yang umurnya berada dalam dua kategori (cth. 16 tahun: Remaja &amp; Sukma) disenaraikan dalam kedua-dua kategori. Berat dikira masuk kelas jika melebihi had minimum dan tidak melebihi had maksimum.</div>
+      <div class="kp-ttd"><div>Disediakan oleh:<br><br>Nama: ${esc(S.u.nama)}<br>Tarikh:</div><div>Disemak oleh:<br><br>Nama:<br>Tarikh:</div></div>
+    </div>`;
+  el.style.display = 'block'; el.scrollTop = 0;
 }
 
 /* ================= AKAUN ================= */
