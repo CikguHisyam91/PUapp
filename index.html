@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SilatApp Pusat</title>
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0F1115">
+<style>
+:root{--bg:#0F1115;--kad:#181B22;--kad2:#20242D;--garis:#2C313C;--teks:#E8E9EC;--pudar:#9097A3;--emas:#E2B55A;--hijau:#3FB97B;--merah:#E0605A;--kuning:#E2B55A;--biru:#5A9BE2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--teks);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--emas)}
+.wrap{max-width:1000px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--garis);background:#0B0D10;position:sticky;top:0;z-index:5}
+header img{width:40px;height:40px;border-radius:50%;background:#fff}
+header .t{flex:1;min-width:0}
+header .t b{display:block;color:var(--emas);font-size:16px}
+header .t small{color:var(--pudar);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 16px;border-bottom:1px solid var(--garis)}
+.tabs button{flex:none}
+button,.btn{background:var(--kad2);color:var(--teks);border:1px solid var(--garis);border-radius:8px;padding:9px 14px;font:inherit;cursor:pointer}
+button.utama{background:var(--emas);color:#1a1405;border-color:var(--emas);font-weight:600}
+button.aktif{border-color:var(--emas);color:var(--emas)}
+button.kecil{padding:5px 10px;font-size:13px}
+button.bahaya{border-color:var(--merah);color:var(--merah)}
+button:disabled{opacity:.5}
+input,select,textarea{width:100%;background:#0B0D10;color:var(--teks);border:1px solid var(--garis);border-radius:8px;padding:10px;font:inherit}
+input:focus,select:focus{outline:none;border-color:var(--emas)}
+label{display:block;margin:10px 0 4px;color:var(--pudar);font-size:13px}
+.kad{background:var(--kad);border:1px solid var(--garis);border-radius:12px;padding:16px;margin-bottom:14px}
+.kad h3{margin:0 0 10px;color:var(--emas);font-size:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:var(--kad2);border-radius:10px;padding:12px}
+.stat b{display:block;font-size:24px;color:var(--emas)}
+.stat small{color:var(--pudar)}
+.jad{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px;border-bottom:1px solid var(--garis);text-align:left;vertical-align:top}
+th{color:var(--pudar);font-weight:500;white-space:nowrap}
+tr.klik{cursor:pointer}tr.klik:hover{background:var(--kad2)}
+.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap}
+.t-AKTIF{background:#1f3a2c;color:var(--hijau)}
+.t-MENUNGGU{background:#3a321f;color:var(--kuning)}
+.t-TIDAK.AKTIF,.t-TIDAK{background:#2a2d33;color:var(--pudar)}
+.t-DIGANTUNG,.t-DISEKAT,.t-DITOLAK,.t-DIBATALKAN{background:#3a2020;color:var(--merah)}
+.t-BERPINDAH,.t-BERSAMA{background:#1f2c3a;color:var(--biru)}
+.baris{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.baris>*{flex:1;min-width:140px}
+.pudar{color:var(--pudar)}
+.login{max-width:400px;margin:30px auto}
+.login .logo{text-align:center}
+.login .logo img{width:150px;height:150px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px var(--emas)}
+.login h1{color:var(--emas);text-align:center;margin:12px 0 2px;font-size:22px}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--kad2);border:1px solid var(--emas);padding:12px 16px;border-radius:10px;max-width:92%;display:none;z-index:50}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:flex-start;justify-content:center;overflow:auto;z-index:20;padding:20px 10px}
+#modal .isi{background:var(--kad);border:1px solid var(--garis);border-radius:12px;padding:16px;width:100%;max-width:520px}
+.ahlikad{background:linear-gradient(135deg,#1c1f27,#0B0D10);border:2px solid var(--emas);border-radius:14px;padding:16px;display:flex;gap:14px;align-items:center}
+.ahlikad img{width:72px;height:72px;border-radius:50%;background:#fff}
+.ahlikad .n{font-size:17px;font-weight:700}
+.ahlikad .no{color:var(--emas);font-size:20px;font-weight:700;letter-spacing:1px}
+.pdpa{font-size:13px;color:var(--pudar);background:#0B0D10;border:1px solid var(--garis);border-radius:8px;padding:10px;margin-top:10px}
+.cek{display:flex;gap:8px;align-items:flex-start;margin-top:8px}.cek input{width:auto;margin-top:3px}
+.muat{opacity:.6;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modal"><div class="isi" id="modalIsi"></div></div>
+<div id="toast"></div>
+<script>
+/* ====== TETAPAN: tampal URL Web App Apps Script anda di sini ====== */
+const API_URL = 'TAMPAL_URL_WEB_APP_DI_SINI';
+/* ================================================================= */
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const tag = s => s ? `<span class="tag t-${esc(String(s).split(' ')[0])}">${esc(s)}</span>` : '';
+let S = { token: localStorage.getItem('sp_token') || '', u: null, negeri: [], tab: '', tahun: String(new Date().getFullYear()), gelPilih: '' };
+const NAMA_PERANAN = { SUPER_ADMIN: 'Super Admin', ADMIN_NEGERI: 'Admin Negeri', JURULATIH: 'Jurulatih' };
+const BENGKUNG = ['Putih','Hijau','Merah','Kuning','Kuning Cula 1','Kuning Cula 2','Kuning Cula 3','Kuning Cula 4','Kuning Cula 5','Kuning Cula 6','Hitam','Lain-lain'];
+
+function toast(m, ms) { const t = $('#toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(() => t.style.display = 'none', ms || 3500); }
+function modal(html) { $('#modalIsi').innerHTML = html; $('#modal').style.display = html ? 'flex' : 'none'; }
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal') modal(''); });
+
+async function api(action, data) {
+  const body = JSON.stringify(Object.assign({ action, token: S.token }, data || {}));
+  let r;
+  try {
+    const res = await fetch(API_URL, { method: 'POST', credentials: 'omit', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body });
+    r = await res.json();
+  } catch (e) {
+    try { // sandaran GET
+      const res = await fetch(API_URL + '?p=' + encodeURIComponent(body), { credentials: 'omit' });
+      r = await res.json();
+    } catch (e2) { r = { ok: false, msg: 'Tiada sambungan ke pelayan. Semak internet / API_URL.' }; }
+  }
+  if (r.logout) { keluar(true); }
+  return r;
+}
+
+/* ================= LOG MASUK / DAFTAR ================= */
+function paparLogin() {
+  $('#app').innerHTML = `<div class="wrap"><div class="login">
+    <div class="logo"><img src="logo.png" alt="Logo Sri Gayong Panglima Ulung"></div>
+    <h1>SilatApp Pusat</h1><p class="pudar" style="text-align:center;margin-top:0">Sri Gayong Panglima Ulung</p>
+    <div class="kad" id="kotakLogin">
+      <label>ID Pengguna</label><input id="lId" autocomplete="username" autocapitalize="none">
+      <label>Kata Laluan</label><input id="lPw" type="password" autocomplete="current-password">
+      <div style="margin-top:14px" class="baris"><button class="utama" onclick="logMasuk()">Log Masuk</button></div>
+      <p class="pudar" style="text-align:center;margin-bottom:0">Jurulatih baharu? <a href="#" onclick="paparDaftar();return false">Daftar di sini</a></p>
+    </div></div></div>`;
+  $('#lPw').addEventListener('keydown', e => { if (e.key === 'Enter') logMasuk(); });
+}
+async function logMasuk() {
+  const k = $('#kotakLogin'); k.classList.add('muat');
+  const r = await api('login', { id: $('#lId').value, katalaluan: $('#lPw').value });
+  k.classList.remove('muat');
+  if (!r.ok) return toast(r.msg);
+  S.token = r.token; localStorage.setItem('sp_token', r.token); S.u = r.pengguna; mula();
+}
+async function paparDaftar() {
+  $('#app').innerHTML = `<div class="wrap"><div class="login"><div class="logo"><img src="logo.png" alt=""></div>
+    <h1>Daftar Jurulatih</h1><div class="kad" id="kotakDaftar"><p class="pudar">Memuatkan...</p></div></div></div>`;
+  const r = await api('negeri');
+  if (!r.ok) return toast(r.msg);
+  S.negeri = r.negeri; S.gelAwam = r.gelanggang;
+  $('#kotakDaftar').innerHTML = `
+    <label>ID Pengguna (huruf kecil/nombor, 4–30 aksara)</label><input id="dId" autocapitalize="none">
+    <label>Kata Laluan (min. 8 aksara)</label><input id="dPw" type="password">
+    <label>Nama Penuh</label><input id="dNama">
+    <label>No. Telefon</label><input id="dTel" inputmode="tel">
+    <label>Negeri</label><select id="dNeg" onchange="isiGelDaftar()"><option value="">— Pilih negeri —</option>${S.negeri.map(n => `<option value="${n[0]}">${esc(n[1])}</option>`).join('')}</select>
+    <label>Gelanggang</label><select id="dGel" onchange="$('#gelBaru').style.display=this.value==='__BARU'?'block':'none'"><option value="">— Pilih negeri dahulu —</option></select>
+    <div id="gelBaru" style="display:none">
+      <label>Nama Gelanggang Baharu</label><input id="dGNama">
+      <label>Alamat Gelanggang</label><textarea id="dGAlamat" rows="2"></textarea>
+      <p class="pudar" style="font-size:13px">Anda akan ditanda sebagai KETUA gelanggang ini.</p>
+    </div>
+    <div class="pdpa"><b>Notis PDPA:</b> Maklumat peribadi anda (nama, telefon) dikumpul hanya untuk urusan pentadbiran persatuan silat, disimpan secara selamat dan tidak didedahkan kepada pihak luar, selaras Akta Perlindungan Data Peribadi 2010.</div>
+    <label class="cek"><input type="checkbox" id="dPdpa"> Saya faham dan bersetuju dengan notis PDPA di atas.</label>
+    <div style="margin-top:14px" class="baris"><button onclick="paparLogin()">Kembali</button><button class="utama" onclick="hantarDaftar()">Hantar</button></div>`;
+}
+function isiGelDaftar() {
+  const n = $('#dNeg').value, l = S.gelAwam.filter(g => g.negeri === n);
+  $('#dGel').innerHTML = `<option value="">— Pilih gelanggang —</option>` + l.map(g => `<option value="${esc(g.kod)}">${esc(g.nama)} (${esc(g.kod)})</option>`).join('') + `<option value="__BARU">+ Mohon gelanggang baharu</option>`;
+  $('#gelBaru').style.display = 'none';
+}
+async function hantarDaftar() {
+  const gel = $('#dGel').value;
+  const d = { id: $('#dId').value, katalaluan: $('#dPw').value, nama: $('#dNama').value, telefon: $('#dTel').value, negeri: $('#dNeg').value, pdpa: $('#dPdpa').checked };
+  if (gel === '__BARU') d.gelanggang_baru = { nama: $('#dGNama').value, alamat: $('#dGAlamat').value };
+  else d.kod_gelanggang = gel;
+  const k = $('#kotakDaftar'); k.classList.add('muat');
+  const r = await api('daftar', d); k.classList.remove('muat');
+  toast(r.msg, 6000);
+  if (r.ok) paparLogin();
+}
+async function keluar(senyap) {
+  if (!senyap && S.token) api('logout');
+  S.token = ''; S.u = null; localStorage.removeItem('sp_token'); paparLogin();
+}
+
+/* ================= KERANGKA UTAMA ================= */
+async function mula() {
+  if (!S.token) return paparLogin();
+  if (!S.u) {
+    $('#app').innerHTML = `<div class="wrap pudar" style="text-align:center;padding-top:60px"><img src="logo.png" style="width:90px;border-radius:50%;background:#fff"><p>Memuatkan...</p></div>`;
+    const r = await api('saya'); if (!r.ok) return keluar(true);
+    S.u = r.pengguna; S.negeri = r.negeri;
+  }
+  if (!S.negeri.length) { const r = await api('negeri'); S.negeri = r.negeri || []; }
+  const u = S.u;
+  const tabs = u.peranan === 'JURULATIH' ? [['ahli','Ahli'],['daftar','Daftar Ahli'],['akaun','Akaun']]
+    : u.peranan === 'ADMIN_NEGERI' ? [['papan','Ringkasan'],['lulus','Kelulusan'],['gel','Gelanggang'],['jur','Jurulatih'],['ahli','Ahli'],['akaun','Akaun']]
+    : [['papan','Ringkasan'],['lulus','Kelulusan'],['gel','Gelanggang'],['jur','Pengguna'],['ahli','Ahli'],['akaun','Akaun']];
+  if (!tabs.some(t => t[0] === S.tab)) S.tab = tabs[0][0];
+  const sub = u.peranan === 'JURULATIH' ? `${esc(u.nama_gelanggang)} · ${esc(u.kod_gelanggang)}${u.ketua ? ' · KETUA' : ''}`
+    : u.peranan === 'ADMIN_NEGERI' ? `Admin Negeri ${esc(u.namaNegeri)}` : 'Super Admin · Semua negeri';
+  $('#app').innerHTML = `<header><img src="logo.png" alt=""><div class="t"><b>SilatApp Pusat</b><small>${esc(u.nama)} — ${sub}</small></div><button class="kecil" onclick="keluar()">Keluar</button></header>
+    <div class="tabs">${tabs.map(t => `<button class="${S.tab === t[0] ? 'aktif' : ''}" onclick="S.tab='${t[0]}';mula()">${t[1]}</button>`).join('')}</div>
+    <div class="wrap" id="isi"><p class="pudar">Memuatkan...</p></div>`;
+  ({ papan: tabPapan, lulus: tabLulus, gel: tabGel, jur: tabJur, ahli: tabAhli, daftar: tabDaftar, akaun: tabAkaun })[S.tab]();
+}
+const nmNeg = k => (S.negeri.find(n => n[0] === k) || [k, k])[1];
+function pilihTahun(fn) {
+  const y = new Date().getFullYear(); let o = '';
+  for (let i = y + 1; i >= y - 5; i--) o += `<option ${String(i) === S.tahun ? 'selected' : ''}>${i}</option>`;
+  return `<select onchange="S.tahun=this.value;${fn}()" style="width:auto">${o}</select>`;
+}
+function csv(nama, baris) {
+  const t = baris.map(r => r.map(v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + t], { type: 'text/csv' })); a.download = nama + '.csv'; a.click();
+}
+
+/* ================= RINGKASAN (Super/Admin) ================= */
+async function tabPapan() {
+  const r = await api('papan', { tahun: S.tahun }); if (!r.ok) return $('#isi').innerHTML = `<p>${esc(r.msg)}</p>`;
+  S.papan = r;
+  $('#isi').innerHTML = `
+  <div class="kad"><div class="baris" style="margin-bottom:10px"><h3 style="margin:0">Populasi Ahli Aktif</h3><div style="flex:none">Tahun yuran: ${pilihTahun('tabPapan')}</div></div>
+    <div class="grid">
+      <div class="stat"><b>${r.jumlah.semua}</b><small>Jumlah ahli aktif</small></div>
+      <div class="stat"><b>${r.jumlah.L}</b><small>Lelaki</small></div>
+      <div class="stat"><b>${r.jumlah.P}</b><small>Perempuan</small></div>
+      <div class="stat"><b>${r.gelAktif}</b><small>Gelanggang aktif (60 hari)</small></div>
+      <div class="stat"><b>${r.gelTidakAktif}</b><small>Gelanggang tidak aktif</small></div>
+      <div class="stat"><b>${r.menungguGel.length + r.menungguJur.length}</b><small>Menunggu kelulusan</small></div>
+    </div></div>
+  <div class="kad"><h3>Ikut Negeri</h3><div class="jad"><table><tr><th>Negeri</th><th>Lelaki</th><th>Perempuan</th><th>Jumlah</th></tr>
+    ${r.negeri.map(n => `<tr><td>${esc(n.nama)}</td><td>${n.L}</td><td>${n.P}</td><td><b>${n.semua}</b></td></tr>`).join('') || '<tr><td colspan="4" class="pudar">Tiada data</td></tr>'}</table></div></div>
+  <div class="kad"><div class="baris" style="margin-bottom:10px"><h3 style="margin:0">Gelanggang</h3><div style="flex:none"><button class="kecil" onclick="eksportPapan()">Eksport CSV</button></div></div>
+    <div class="jad"><table><tr><th>Gelanggang</th><th>Ketua</th><th>Ahli</th><th>Bayar yuran ${esc(r.tahun)}</th><th>Status</th></tr>
+    ${r.gelanggang.map(g => `<tr class="klik" onclick="S.gelPilih='${esc(g.kod)}';S.tab='ahli';mula()"><td><b>${esc(g.nama)}</b><br><small class="pudar">${esc(g.kod)} · ${esc(nmNeg(g.negeri))}</small></td>
+      <td>${esc(g.ketua)}<br><small class="pudar">${esc(g.telKetua)}</small></td><td>${g.ahli}${g.bersama ? `<br><small class="pudar">${g.bersama} bersama</small>` : ''}</td>
+      <td>${g.bayar}${g.kutipan ? `<br><small class="pudar">RM${g.kutipan.toFixed(2)}</small>` : ''}</td>
+      <td>${tag(g.status)}<br><small class="pudar">${g.aktif60 ? 'Aktif 60 hari' : 'Tiada aktiviti 60 hari'}</small></td></tr>`).join('') || '<tr><td colspan="5" class="pudar">Tiada gelanggang</td></tr>'}</table></div></div>`;
+}
+function eksportPapan() {
+  const r = S.papan;
+  csv('ringkasan_gelanggang_' + r.tahun, [['Kod','Gelanggang','Negeri','Ketua','Telefon Ketua','Bil Ahli Aktif','Ahli Bersama','Bayar Yuran ' + r.tahun,'Kutipan (RM)','Status','Aktiviti Terakhir']]
+    .concat(r.gelanggang.map(g => [g.kod, g.nama, nmNeg(g.negeri), g.ketua, g.telKetua, g.ahli, g.bersama, g.bayar, g.kutipan, g.status, g.aktiviti])));
+}
+
+/* ================= KELULUSAN ================= */
+async function tabLulus() {
+  const r = await api('papan', { tahun: S.tahun }); if (!r.ok) return $('#isi').innerHTML = `<p>${esc(r.msg)}</p>`;
+  $('#isi').innerHTML = `
+  <div class="kad"><h3>Gelanggang Baharu Menunggu (${r.menungguGel.length})</h3>
+    ${r.menungguGel.map(g => `<div class="kad" style="background:var(--kad2)"><b>${esc(g.nama)}</b> — ${esc(nmNeg(g.negeri))}<br>
+      <small class="pudar">${esc(g.alamat)}<br>Pemohon: ${esc(g.pemohon)} (${esc(g.tel)}) · ${esc(g.tarikh)}</small>
+      <div class="baris" style="margin-top:8px"><input id="k3_${esc(g.kod)}" maxlength="3" placeholder="Kod 3 huruf, cth. SMT" style="text-transform:uppercase">
+      <button class="utama kecil" onclick="lulusGel('${esc(g.kod)}')">Luluskan</button>
+      <button class="bahaya kecil" onclick="statusGel('${esc(g.kod)}','TIDAK AKTIF','Tolak permohonan gelanggang ini?')">Tolak</button></div></div>`).join('') || '<p class="pudar">Tiada.</p>'}</div>
+  <div class="kad"><h3>Jurulatih Menunggu (${r.menungguJur.length})</h3>
+    ${r.menungguJur.map(j => `<div class="kad" style="background:var(--kad2)"><b>${esc(j.nama)}</b> ${j.ketua ? tag('KETUA') : ''}<br>
+      <small class="pudar">ID: ${esc(j.id)} · ${esc(j.telefon)}<br>${esc(j.nama_gelanggang)} (${esc(j.kod_gelanggang)}) ${esc(j.status_gelanggang)} · ${esc(nmNeg(j.negeri))} · ${esc(j.tarikh)}</small>
+      <div class="baris" style="margin-top:8px"><button class="utama kecil" onclick="statusJur('${esc(j.id)}','AKTIF')">Luluskan</button>
+      <button class="bahaya kecil" onclick="statusJur('${esc(j.id)}','DITOLAK')">Tolak</button></div></div>`).join('') || '<p class="pudar">Tiada.</p>'}
+    <p class="pudar" style="font-size:13px">Tip: luluskan gelanggang baharu dahulu, kemudian jurulatihnya.</p></div>`;
+}
+async function lulusGel(kod) {
+  const k3 = $('#k3_' + CSS.escape(kod)).value;
+  const r = await api('lulus_gelanggang', { kod, kod3: k3 }); toast(r.msg, 5000); if (r.ok) mula();
+}
+async function statusGel(kod, status, soal) {
+  if (soal && !confirm(soal)) return;
+  const r = await api('status_gelanggang', { kod, status }); toast(r.msg); if (r.ok) mula();
+}
+async function statusJur(id, status) {
+  if (status !== 'AKTIF' && !confirm('Tukar status ' + id + ' kepada ' + status + '?')) return;
+  const r = await api('status_pengguna', { id, status }); toast(r.msg); if (r.ok) mula();
+}
+
+/* ================= GELANGGANG ================= */
+async function tabGel() {
+  const r = await api('senarai_gelanggang'); if (!r.ok) return $('#isi').innerHTML = `<p>${esc(r.msg)}</p>`;
+  const sa = S.u.peranan === 'SUPER_ADMIN';
+  $('#isi').innerHTML = `<div class="kad"><h3>Senarai Gelanggang (${r.gelanggang.length})</h3><div class="jad"><table>
+    <tr><th>Gelanggang</th><th>Ketua</th><th>Status</th><th>Tindakan</th></tr>
+    ${r.gelanggang.map(g => `<tr><td><b>${esc(g.nama)}</b><br><small class="pudar">${esc(g.kod)} · ${esc(nmNeg(g.negeri))}<br>${esc(g.alamat)}<br>Aktiviti: ${esc(g.aktiviti || '-')}</small></td>
+      <td>${esc(g.ketua)}<br><small class="pudar">${esc(g.telKetua)}</small></td><td>${tag(g.status)}</td>
+      <td><div style="display:flex;flex-direction:column;gap:4px">
+      ${g.status === 'AKTIF' ? `<button class="kecil" onclick="statusGel('${esc(g.kod)}','TIDAK AKTIF','Gantung (tidak aktifkan) gelanggang ini?')">Tidak aktifkan</button>` : ''}
+      ${g.status === 'TIDAK AKTIF' || (sa && g.status === 'DISEKAT') ? `<button class="kecil" onclick="statusGel('${esc(g.kod)}','AKTIF')">Aktifkan</button>` : ''}
+      ${sa && g.status !== 'DISEKAT' && g.status !== 'MENUNGGU' ? `<button class="kecil bahaya" onclick="statusGel('${esc(g.kod)}','DISEKAT','SEKAT gelanggang ini? Jurulatihnya tidak boleh log masuk.')">Sekat</button>` : ''}
+      ${g.status === 'MENUNGGU' ? '<small class="pudar">Lihat tab Kelulusan</small>' : ''}</div></td></tr>`).join('')}</table></div></div>`;
+}
+
+/* ================= JURULATIH / PENGGUNA ================= */
+async function tabJur() {
+  const r = await api('senarai_pengguna'); if (!r.ok) return $('#isi').innerHTML = `<p>${esc(r.msg)}</p>`;
+  const sa = S.u.peranan === 'SUPER_ADMIN';
+  $('#isi').innerHTML = (sa ? `<div class="kad"><h3>Lantik Admin Negeri</h3>
+      <div class="baris"><div><label>ID Pengguna</label><input id="aId" autocapitalize="none"></div><div><label>Negeri</label><select id="aNeg">${S.negeri.map(n => `<option value="${n[0]}">${esc(n[1])}</option>`).join('')}</select></div></div>
+      <div class="baris"><div><label>Nama</label><input id="aNama"></div><div><label>Telefon</label><input id="aTel"></div></div>
+      <label>Kata laluan sementara (min 8) — kosongkan jika ID sudah wujud</label><input id="aPw">
+      <div style="margin-top:10px"><button class="utama" onclick="lantikAdmin()">Lantik</button></div></div>` : '') +
+    `<div class="kad"><div class="baris" style="margin-bottom:8px"><h3 style="margin:0">${sa ? 'Semua Pengguna' : 'Jurulatih Negeri'} (${r.pengguna.length})</h3><input id="cariJ" placeholder="Cari..." oninput="tapisJur()" style="flex:none;width:160px"></div>
+    <div class="jad"><table id="jadJ"><tr><th>Nama</th><th>Peranan / Gelanggang</th><th>Status</th><th>Tindakan</th></tr>
+    ${r.pengguna.map(p => `<tr data-c="${esc((p.nama + ' ' + p.id + ' ' + p.nama_gelanggang + ' ' + p.negeri).toLowerCase())}"><td><b>${esc(p.nama)}</b><br><small class="pudar">${esc(p.id)} · ${esc(p.telefon)}</small></td>
+      <td>${esc(NAMA_PERANAN[p.peranan])} ${p.ketua ? tag('KETUA') : ''}<br><small class="pudar">${p.peranan === 'JURULATIH' ? esc(p.nama_gelanggang) + ' (' + esc(p.kod_gelanggang) + ')' : esc(nmNeg(p.negeri))}</small></td>
+      <td>${tag(p.status)}</td><td><div style="display:flex;flex-direction:column;gap:4px">
+      ${p.status !== 'AKTIF' ? `<button class="kecil" onclick="statusJur('${esc(p.id)}','AKTIF')">Aktifkan</button>` : `<button class="kecil bahaya" onclick="statusJur('${esc(p.id)}','DIGANTUNG')">${p.peranan === 'ADMIN_NEGERI' ? 'Buang/Gantung' : 'Gantung'}</button>`}
+      ${p.peranan === 'JURULATIH' ? `<button class="kecil" onclick="setKetua('${esc(p.id)}',${!p.ketua})">${p.ketua ? 'Buang Ketua' : 'Jadikan Ketua'}</button>` : ''}
+      </div></td></tr>`).join('')}</table></div></div>`;
+}
+function tapisJur() { const q = $('#cariJ').value.toLowerCase(); document.querySelectorAll('#jadJ tr[data-c]').forEach(t => t.style.display = t.dataset.c.includes(q) ? '' : 'none'); }
+async function setKetua(id, ketua) { const r = await api('set_ketua', { id, ketua }); toast(r.msg); if (r.ok) mula(); }
+async function lantikAdmin() {
+  const r = await api('lantik_admin', { id: $('#aId').value, negeri: $('#aNeg').value, nama: $('#aNama').value, telefon: $('#aTel').value, katalaluan: $('#aPw').value });
+  toast(r.msg, 6000); if (r.ok) mula();
+}
+
+/* ================= AHLI ================= */
+async function tabAhli() {
+  const u = S.u;
+  let pilih = '';
+  if (u.peranan !== 'JURULATIH') {
+    const g = await api('senarai_gelanggang');
+    const l = (g.gelanggang || []).filter(x => x.status !== 'MENUNGGU');
+    if (!S.gelPilih && l.length) S.gelPilih = l[0].kod;
+    pilih = `<div class="kad"><label style="margin-top:0">Pilih gelanggang</label><select onchange="S.gelPilih=this.value;tabAhli()">${l.map(x => `<option value="${esc(x.kod)}" ${x.kod === S.gelPilih ? 'selected' : ''}>${esc(x.nama)} (${esc(x.kod)})</option>`).join('')}</select></div>`;
+    if (!l.length) return $('#isi').innerHTML = '<p class="pudar">Tiada gelanggang.</p>';
+  }
+  const r = await api('senarai_ahli', { kod: S.gelPilih, tahun: S.tahun });
+  if (!r.ok) return $('#isi').innerHTML = pilih + `<p>${esc(r.msg)}</p>`;
+  S.ahli = r.ahli; S.gelAhli = r.gelanggang;
+  const aktif = r.ahli.filter(a => a.status_gel === 'AKTIF').length, bayar = r.ahli.filter(a => a.yuran && a.status_gel === 'AKTIF').length;
+  $('#isi').innerHTML = pilih + `<div class="kad">
+    <div class="baris" style="margin-bottom:8px"><h3 style="margin:0">${esc(r.gelanggang.nama)}</h3><div style="flex:none">Tahun: ${pilihTahun('tabAhli')}</div></div>
+    <div class="grid" style="margin-bottom:10px"><div class="stat"><b>${aktif}</b><small>Ahli aktif</small></div><div class="stat"><b>${bayar}</b><small>Bayar yuran ${esc(r.tahun)}</small></div><div class="stat"><b>${r.ahli.length}</b><small>Jumlah rekod</small></div></div>
+    <div class="baris"><input id="cariA" placeholder="Cari nama / no. ahli..." oninput="senaraiAhli()"><select id="tapisA" onchange="senaraiAhli()" style="flex:none;width:auto"><option value="">Semua status</option><option selected>AKTIF</option><option>TIDAK AKTIF</option><option>DIGANTUNG</option><option>DIBATALKAN</option><option>BERPINDAH</option></select>
+    <button class="kecil" style="flex:none" onclick="eksportAhli()">CSV</button></div>
+    <div class="jad"><table id="jadA"></table></div></div>`;
+  senaraiAhli();
+}
+function senaraiAhli() {
+  const q = ($('#cariA').value || '').toLowerCase(), st = $('#tapisA').value;
+  const l = S.ahli.filter(a => (!st || a.status_gel === st) && (a.nama + ' ' + a.no_ahli).toLowerCase().includes(q));
+  $('#jadA').innerHTML = `<tr><th>Ahli</th><th>Bengkung</th><th>Status</th><th>Yuran ${esc(S.tahun)}</th></tr>` +
+    (l.map(a => `<tr class="klik" onclick="bukaAhli('${esc(a.no_ahli)}')"><td><b>${esc(a.nama)}</b><br><small class="pudar">${esc(a.no_ahli)} · ${esc(a.no_kp)}</small></td>
+      <td>${esc(a.bengkung)}</td><td>${tag(a.status_gel)} ${a.jenis === 'BERSAMA' ? tag('BERSAMA') : ''}</td><td>${a.yuran ? '✅ ' + esc(a.yuran) : '<span class="pudar">—</span>'}</td></tr>`).join('') || '<tr><td colspan="4" class="pudar">Tiada ahli.</td></tr>');
+}
+function eksportAhli() {
+  csv('ahli_' + S.gelAhli.kod, [['No Ahli','No KP','Nama','Jantina','Tarikh Lahir','Bengkung','Status','Jenis','Gelanggang Utama','Tarikh Daftar','Tel Waris','Yuran ' + S.tahun,'ID Lama']]
+    .concat(S.ahli.map(a => [a.no_ahli, a.no_kp, a.nama, a.jantina, a.tarikh_lahir, a.bengkung, a.status_gel, a.jenis, a.gelanggang_utama, a.tarikh_daftar, a.tel_waris, a.yuran, a.id_lama])));
+}
+async function bukaAhli(no) {
+  const a = S.ahli.find(x => x.no_ahli === no); if (!a) return;
+  const bolehUbah = a.jenis === 'UTAMA' && a.status_gel !== 'BERPINDAH';
+  const warna = { AKTIF: 'var(--hijau)', MENUNGGU: 'var(--kuning)' }[a.status_gel] || 'var(--merah)';
+  modal(`<div class="ahlikad"><img src="logo.png" alt=""><div style="min-width:0"><div class="pudar" style="font-size:12px">KAD AHLI · SRI GAYONG PANGLIMA ULUNG</div>
+      <div class="n">${esc(a.nama)}</div><div class="no">${esc(a.no_ahli)}</div>
+      <div>Bengkung: <b>${esc(a.bengkung || '-')}</b></div>
+      <div style="margin-top:4px"><span class="tag" style="background:${warna};color:#111">${esc(a.status_gel)}</span> <small class="pudar">${esc(S.gelAhli.nama)}</small></div></div></div>
+    <h3 style="color:var(--emas);margin:16px 0 4px">Maklumat</h3>
+    <div class="baris"><div><label>Nama</label><input id="mNama" value="${esc(a.nama)}" ${bolehUbah ? '' : 'disabled'}></div></div>
+    <div class="baris"><div><label>No. KP</label><input value="${esc(a.no_kp)}" disabled></div>
+      <div><label>Jantina</label><select id="mJan" ${bolehUbah ? '' : 'disabled'}><option value="L" ${a.jantina === 'L' ? 'selected' : ''}>Lelaki</option><option value="P" ${a.jantina === 'P' ? 'selected' : ''}>Perempuan</option></select></div></div>
+    <div class="baris"><div><label>Tarikh Lahir</label><input type="date" id="mLahir" value="${esc(a.tarikh_lahir)}" ${bolehUbah ? '' : 'disabled'}></div>
+      <div><label>Bengkung</label><select id="mBeng" ${bolehUbah ? '' : 'disabled'}>${BENGKUNG.concat(BENGKUNG.includes(a.bengkung) || !a.bengkung ? [] : [a.bengkung]).map(b => `<option ${b === a.bengkung ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select></div></div>
+    <label>Tel. Waris</label><input id="mWaris" value="${esc(a.tel_waris)}" ${bolehUbah ? '' : 'disabled'}>
+    <p class="pudar" style="font-size:13px">Gelanggang utama: ${esc(a.gelanggang_utama)} · Daftar: ${esc(a.tarikh_daftar)}${a.id_lama ? ' · ID lama: ' + esc(a.id_lama) : ''}${bolehUbah ? '' : '<br>Maklumat hanya boleh diubah oleh gelanggang utama.'}</p>
+    ${bolehUbah ? `<button class="utama" onclick="simpanAhli('${esc(no)}')">Simpan Maklumat</button>` : ''}
+    ${a.status_gel !== 'BERPINDAH' ? `<h3 style="color:var(--emas);margin:16px 0 4px">Status di gelanggang ini</h3>
+    <div class="baris"><select id="mStatus">${['AKTIF','TIDAK AKTIF','DIGANTUNG','DIBATALKAN'].map(s => `<option ${s === a.status_gel ? 'selected' : ''}>${s}</option>`).join('')}</select><button onclick="tukarStatusAhli('${esc(no)}')">Tukar Status</button></div>
+    <h3 style="color:var(--emas);margin:16px 0 4px">Rekod Yuran Tahunan</h3>
+    <div class="baris"><div><label>Tahun</label><input id="yTahun" value="${esc(S.tahun)}" inputmode="numeric"></div><div><label>Jumlah (RM)</label><input id="yJum" inputmode="decimal"></div><div><label>Tarikh bayar</label><input type="date" id="yTarikh" value="${new Date().toISOString().slice(0, 10)}"></div></div>
+    <div style="margin-top:8px"><button class="utama" onclick="rekodYuran('${esc(no)}')">Rekod Yuran</button></div>` : ''}
+    <div id="sejarah" class="pudar" style="margin-top:12px;font-size:13px">Memuatkan sejarah...</div>
+    <div style="margin-top:14px;text-align:right"><button onclick="modal('')">Tutup</button></div>`);
+  const s = await api('sejarah_yuran', { no_ahli: no });
+  if (s.ok && $('#sejarah')) $('#sejarah').innerHTML = `<b>Sejarah yuran:</b> ${s.yuran.map(y => `${esc(y.tahun)} (RM${esc(y.jumlah)}, ${esc(y.gel)})`).join(' · ') || 'tiada'}<br>
+    <b>Keahlian:</b> ${s.keahlian.map(k => `${esc(k.kod)} ${esc(k.jenis)} ${esc(k.status)} (${esc(k.mula)}${k.tamat ? '→' + esc(k.tamat) : ''})`).join(' · ')}`;
+}
+async function simpanAhli(no) {
+  const r = await api('kemaskini_ahli', { no_ahli: no, data: { nama: $('#mNama').value, jantina: $('#mJan').value, tarikh_lahir: $('#mLahir').value, bengkung: $('#mBeng').value, tel_waris: $('#mWaris').value } });
+  toast(r.msg); if (r.ok) { modal(''); tabAhli(); }
+}
+async function tukarStatusAhli(no) {
+  const r = await api('status_ahli', { no_ahli: no, kod: S.gelAhli.kod, status: $('#mStatus').value });
+  toast(r.msg); if (r.ok) { modal(''); tabAhli(); }
+}
+async function rekodYuran(no, paksa) {
+  const d = { no_ahli: no, kod: S.gelAhli.kod, tahun: $('#yTahun').value, jumlah: $('#yJum').value, tarikh: $('#yTarikh').value, paksa: !!paksa };
+  const r = await api('rekod_yuran', d);
+  if (r.amaran) { if (confirm(r.msg)) return rekodYuran(no, true); return; }
+  toast(r.msg); if (r.ok) { modal(''); tabAhli(); }
+}
+
+/* ================= DAFTAR AHLI ================= */
+function tabDaftar() {
+  $('#isi').innerHTML = `<div class="kad" id="kotakAhli"><h3>Daftar Ahli Baharu</h3>
+    <label>No. Kad Pengenalan / MyKid</label><div class="baris"><input id="aKP" placeholder="cth. 150512-08-1234" inputmode="numeric"><button style="flex:none" onclick="semakKP()">Semak</button></div>
+    <div id="hasilKP"></div></div>`;
+}
+async function semakKP() {
+  const r = await api('semak_kp', { no_kp: $('#aKP').value, kod: S.gelPilih });
+  if (!r.ok) return toast(r.msg);
+  const h = $('#hasilKP');
+  if (!r.wujud) {
+    h.innerHTML = `<p style="color:var(--hijau)">✔ No. KP belum berdaftar. Isi maklumat:</p>
+      <label>Nama Penuh</label><input id="aNama">
+      <div class="baris"><div><label>Jantina</label><select id="aJan"><option value="L">Lelaki</option><option value="P">Perempuan</option></select></div>
+      <div><label>Tarikh Lahir</label><input type="date" id="aLahir" value="${tarikhDariKP(r.no_kp)}"></div></div>
+      <div class="baris"><div><label>Bengkung Semasa</label><select id="aBeng">${BENGKUNG.map(b => `<option>${b}</option>`).join('')}</select></div>
+      <div><label>No. Tel. Waris</label><input id="aWaris" inputmode="tel"></div></div>
+      ${pdpaAhli()}<div style="margin-top:12px"><button class="utama" onclick="hantarAhli('')">Daftar Ahli</button></div>`;
+    const j = Number(String(r.no_kp).slice(-1)); if (!isNaN(j)) $('#aJan').value = j % 2 ? 'L' : 'P';
+  } else if (r.sudahDiSini) {
+    h.innerHTML = `<p style="color:var(--kuning)">Ahli ini (<b>${esc(r.ahli.nama)}</b>, ${esc(r.ahli.no_ahli)}) sudah berdaftar di gelanggang anda.</p>`;
+  } else {
+    h.innerHTML = `<div class="kad" style="background:var(--kad2);margin-top:10px"><p style="color:var(--kuning);margin-top:0">⚠ No. KP ini sudah berdaftar.</p>
+      <b>${esc(r.ahli.nama)}</b> — ${esc(r.ahli.no_ahli)} ${tag(r.ahli.status)}<br><small class="pudar">Gelanggang utama: ${esc(r.ahli.utama)}<br>
+      ${r.keahlian.map(k => `${esc(k.nama)} · ${esc(k.jenis)} · ${esc(k.status)}`).join('<br>')}</small></div>
+      ${pdpaAhli()}
+      <div class="baris" style="margin-top:12px"><button class="utama" onclick="hantarAhli('pindah')">Pindah ke gelanggang ini</button><button onclick="hantarAhli('bersama')">Tambah sebagai Ahli Bersama</button></div>
+      <p class="pudar" style="font-size:13px"><b>Pindah</b>: gelanggang ini jadi gelanggang utama; rekod lama jadi BERPINDAH. <b>Ahli Bersama</b>: kekal di gelanggang asal, juga berlatih di sini. No. ahli kekal sama.</p>`;
+  }
+}
+function pdpaAhli() {
+  return `<div class="pdpa"><b>Notis PDPA:</b> Maklumat ahli digunakan hanya untuk pentadbiran keahlian silat. No. KP dipaparkan separa kepada pihak lain.</div>
+    <label class="cek"><input type="checkbox" id="aPdpa"> Ahli / ibu bapa / penjaga telah bersetuju maklumat ini disimpan.</label>`;
+}
+function tarikhDariKP(kp) {
+  const d = String(kp).replace(/\D/g, ''); if (d.length < 6) return '';
+  let y = Number(d.slice(0, 2)); const now = new Date().getFullYear() % 100; y = y > now ? 1900 + y : 2000 + y;
+  return `${y}-${d.slice(2, 4)}-${d.slice(4, 6)}`;
+}
+async function hantarAhli(mod) {
+  const d = { no_kp: $('#aKP').value };
+  if (!mod) Object.assign(d, { nama: $('#aNama').value, jantina: $('#aJan').value, tarikh_lahir: $('#aLahir').value, bengkung: $('#aBeng').value, tel_waris: $('#aWaris').value });
+  const k = $('#kotakAhli'); k.classList.add('muat');
+  const r = await api('daftar_ahli', { data: d, mod, kod: S.gelPilih, pdpa: $('#aPdpa').checked });
+  k.classList.remove('muat'); toast(r.msg, 5000);
+  if (r.ok) tabDaftar();
+}
+
+/* ================= AKAUN ================= */
+function tabAkaun() {
+  const u = S.u;
+  $('#isi').innerHTML = `<div class="kad"><h3>Akaun Saya</h3><p>${esc(u.nama)}<br><span class="pudar">ID: ${esc(u.id)} · ${esc(NAMA_PERANAN[u.peranan])} · ${esc(u.telefon)}</span></p></div>
+    <div class="kad"><h3>Tukar Kata Laluan</h3><label>Kata laluan lama</label><input type="password" id="pLama"><label>Kata laluan baharu (min 8)</label><input type="password" id="pBaru">
+    <div style="margin-top:10px"><button class="utama" onclick="tukarPw()">Tukar</button></div></div>`;
+}
+async function tukarPw() { const r = await api('tukar_katalaluan', { lama: $('#pLama').value, baru: $('#pBaru').value }); toast(r.msg); }
+
+if (API_URL.indexOf('http') !== 0) {
+  document.getElementById('app').innerHTML = '<div class="wrap"><div class="kad"><h3>Belum disambung</h3><p>Sila tampal URL Web App Apps Script ke dalam <b>API_URL</b> dalam fail index.html.</p></div></div>';
+} else mula();
+</script>
+</body>
+</html>
