@@ -2,67 +2,107 @@
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>SilatApp Pusat</title>
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#0F1115">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <style>
 :root{--bg:#0F1115;--kad:#181B22;--kad2:#20242D;--garis:#2C313C;--teks:#E8E9EC;--pudar:#9097A3;--emas:#E2B55A;--hijau:#3FB97B;--merah:#E0605A;--kuning:#E2B55A;--biru:#5A9BE2}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--teks);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--teks);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 a{color:var(--emas)}
-.wrap{max-width:1000px;margin:0 auto;padding:16px}
-header{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--garis);background:#0B0D10;position:sticky;top:0;z-index:5}
-header img{width:40px;height:40px;border-radius:50%;background:#fff}
+.wrap{max-width:760px;margin:0 auto;padding:14px 14px 110px}
+header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--garis);background:#0B0D10;position:sticky;top:0;z-index:10}
+header img{width:38px;height:38px;border-radius:50%;background:#fff;flex:none}
 header .t{flex:1;min-width:0}
-header .t b{display:block;color:var(--emas);font-size:16px}
-header .t small{color:var(--pudar);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 16px;border-bottom:1px solid var(--garis)}
+header .t b{display:block;font-size:17px}
+header .t small{color:var(--pudar);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}
+.ikon{width:44px;height:44px;flex:none;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;background:var(--kad);border:1px solid var(--garis);color:var(--teks);font-size:20px;padding:0;cursor:pointer;min-height:0}
+.tajuk{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--garis);position:sticky;top:59px;background:var(--bg);z-index:9}
+.tajuk h2{flex:1;margin:0;font-size:19px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 14px;border-bottom:1px solid var(--garis);scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
 .tabs button{flex:none}
-button,.btn{background:var(--kad2);color:var(--teks);border:1px solid var(--garis);border-radius:8px;padding:9px 14px;font:inherit;cursor:pointer}
-button.utama{background:var(--emas);color:#1a1405;border-color:var(--emas);font-weight:600}
+button,.btn{background:var(--kad2);color:var(--teks);border:1px solid var(--garis);border-radius:12px;padding:11px 16px;font:inherit;font-size:15px;cursor:pointer;min-height:44px}
+button.utama{background:var(--emas);color:#1a1405;border-color:var(--emas);font-weight:700}
 button.aktif{border-color:var(--emas);color:var(--emas)}
-button.kecil{padding:5px 10px;font-size:13px}
-button.bahaya{border-color:var(--merah);color:var(--merah)}
+button.kecil{padding:6px 12px;font-size:14px;min-height:36px}
+button.bahaya{border-color:var(--merah);color:var(--merah);background:transparent}
+button.penuh{width:100%}
 button:disabled{opacity:.5}
-input,select,textarea{width:100%;background:#0B0D10;color:var(--teks);border:1px solid var(--garis);border-radius:8px;padding:10px;font:inherit}
-input:focus,select:focus{outline:none;border-color:var(--emas)}
-label{display:block;margin:10px 0 4px;color:var(--pudar);font-size:13px}
-.kad{background:var(--kad);border:1px solid var(--garis);border-radius:12px;padding:16px;margin-bottom:14px}
+input,select,textarea{width:100%;background:var(--kad2);color:var(--teks);border:1px solid var(--garis);border-radius:12px;padding:12px 14px;font:inherit;font-size:16px;min-height:48px}
+select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--teks) 50%),linear-gradient(135deg,var(--teks) 50%,transparent 50%);background-position:calc(100% - 20px) 21px,calc(100% - 15px) 21px;background-size:5px 5px;background-repeat:no-repeat;padding-right:36px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--emas)}
+label{display:block;margin:12px 0 6px;color:var(--pudar);font-size:14px}
+.kad{background:var(--kad);border:1px solid var(--garis);border-radius:16px;padding:16px;margin-bottom:12px}
 .kad h3{margin:0 0 10px;color:var(--emas);font-size:16px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-.stat{background:var(--kad2);border-radius:10px;padding:12px}
-.stat b{display:block;font-size:24px;color:var(--emas)}
-.stat small{color:var(--pudar)}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:600px){.grid{grid-template-columns:repeat(3,1fr)}}
+.stat{background:var(--kad2);border-radius:12px;padding:12px}
+.stat b{display:block;font-size:22px;color:var(--emas)}
+.stat small{color:var(--pudar);font-size:13px}
 .jad{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{padding:8px;border-bottom:1px solid var(--garis);text-align:left;vertical-align:top}
+th,td{padding:9px 8px;border-bottom:1px solid var(--garis);text-align:left;vertical-align:top}
 th{color:var(--pudar);font-weight:500;white-space:nowrap}
-tr.klik{cursor:pointer}tr.klik:hover{background:var(--kad2)}
-.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap}
-.t-AKTIF{background:#1f3a2c;color:var(--hijau)}
-.t-MENUNGGU{background:#3a321f;color:var(--kuning)}
-.t-TIDAK.AKTIF,.t-TIDAK{background:#2a2d33;color:var(--pudar)}
-.t-DIGANTUNG,.t-DISEKAT,.t-DITOLAK,.t-DIBATALKAN{background:#3a2020;color:var(--merah)}
-.t-BERPINDAH,.t-BERSAMA{background:#1f2c3a;color:var(--biru)}
-.baris{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.baris>*{flex:1;min-width:140px}
+.baris{display:flex;gap:10px;align-items:center}
+.baris>*{flex:1;min-width:0}
+.baris.balut{flex-wrap:wrap}.baris.balut>*{min-width:140px}
 .pudar{color:var(--pudar)}
-.login{max-width:400px;margin:30px auto}
+.tag{display:inline-block;padding:3px 10px;border-radius:8px;font-size:13px;font-weight:700;white-space:nowrap}
+.t-AKTIF,.t-HIJAU{background:#1f3a2c;color:var(--hijau)}
+.t-MENUNGGU,.t-KUNING{background:#3a321f;color:var(--kuning)}
+.t-TIDAK{background:#2a2d33;color:var(--pudar)}
+.t-DIGANTUNG,.t-DISEKAT,.t-DITOLAK,.t-DIBATALKAN,.t-MERAH{background:#3a2020;color:var(--merah)}
+.t-BERPINDAH,.t-BERSAMA,.t-BIRU,.t-KETUA{background:#1f2c3a;color:var(--biru)}
+.ring{background:var(--kad);border:1px solid var(--garis);border-radius:16px;padding:18px;margin-bottom:12px}
+.ring .besar{font-size:30px;font-weight:800}
+.ring .sub{display:flex;justify-content:space-between;align-items:center;color:var(--pudar);font-size:14px;margin:4px 0 12px;gap:8px}
+.bar{height:8px;background:var(--kad2);border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:var(--hijau);border-radius:8px}
+.cip{display:flex;gap:8px;overflow-x:auto;margin:6px 0 12px;scrollbar-width:none}
+.cip::-webkit-scrollbar{display:none}
+.cip button{flex:none;border-radius:20px;padding:8px 16px;min-height:40px;background:var(--kad);color:var(--pudar);font-weight:600}
+.cip button.on{background:#EDEEF0;color:#111;border-color:#EDEEF0}
+.item{display:flex;align-items:center;gap:12px;background:var(--kad);border:1px solid var(--garis);border-radius:14px;padding:14px 16px;margin-bottom:8px;cursor:pointer}
+.item .k{flex:1;min-width:0}
+.item .k b{display:block;font-size:15px;line-height:1.3;text-transform:uppercase}
+.item .k small{color:var(--pudar);font-size:13px}
+.item .r{flex:none;display:flex;align-items:center;gap:8px}
+.semak{width:46px;height:46px;border-radius:12px;border:2px solid var(--garis);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:transparent;flex:none}
+.item.on .semak{background:var(--hijau);border-color:var(--hijau);color:#0b1a12}
+.item.on{border-color:#2d5a43}
+.menu{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(min-width:600px){.menu{grid-template-columns:repeat(3,1fr)}}
+.menu button{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:18px 16px;border-radius:16px;background:var(--kad);text-align:left;min-height:110px}
+.menu button .i{font-size:28px}
+.menu button b{font-size:16px}
+.menu button small{color:var(--pudar);font-size:12px}
+.terapung{position:fixed;left:0;right:0;bottom:0;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 30%);z-index:8}
+.terapung>div{max-width:760px;margin:0 auto}
+.login{max-width:420px;margin:24px auto}
 .login .logo{text-align:center}
-.login .logo img{width:150px;height:150px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px var(--emas)}
+.login .logo img{width:140px;height:140px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px var(--emas)}
 .login h1{color:var(--emas);text-align:center;margin:12px 0 2px;font-size:22px}
-#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--kad2);border:1px solid var(--emas);padding:12px 16px;border-radius:10px;max-width:92%;display:none;z-index:50}
-#modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:flex-start;justify-content:center;overflow:auto;z-index:20;padding:20px 10px}
-#modal .isi{background:var(--kad);border:1px solid var(--garis);border-radius:12px;padding:16px;width:100%;max-width:520px}
-.ahlikad{background:linear-gradient(135deg,#1c1f27,#0B0D10);border:2px solid var(--emas);border-radius:14px;padding:16px;display:flex;gap:14px;align-items:center}
-.ahlikad img{width:72px;height:72px;border-radius:50%;background:#fff}
-.ahlikad .n{font-size:17px;font-weight:700}
-.ahlikad .no{color:var(--emas);font-size:20px;font-weight:700;letter-spacing:1px}
-.pdpa{font-size:13px;color:var(--pudar);background:#0B0D10;border:1px solid var(--garis);border-radius:8px;padding:10px;margin-top:10px}
-.cek{display:flex;gap:8px;align-items:flex-start;margin-top:8px}.cek input{width:auto;margin-top:3px}
+#toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--kad2);border:1px solid var(--emas);padding:12px 16px;border-radius:12px;width:max-content;max-width:92%;display:none;z-index:60}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:flex-end;justify-content:center;z-index:50}
+#modal .isi{background:var(--kad);border:1px solid var(--garis);border-radius:20px 20px 0 0;padding:8px 16px calc(18px + env(safe-area-inset-bottom));width:100%;max-width:560px;max-height:92vh;overflow:auto}
+#modal .isi:before{content:"";display:block;width:44px;height:5px;border-radius:5px;background:var(--garis);margin:4px auto 12px}
+@media(min-width:700px){#modal{align-items:center}#modal .isi{border-radius:20px}}
+.ahlikad{background:linear-gradient(135deg,#1c1f27,#0B0D10);border:2px solid var(--emas);border-radius:16px;padding:16px;display:flex;gap:14px;align-items:center}
+.ahlikad img{width:68px;height:68px;border-radius:50%;background:#fff;flex:none}
+.ahlikad .n{font-size:16px;font-weight:700}
+.ahlikad .no{color:var(--emas);font-size:19px;font-weight:800;letter-spacing:1px}
+.pdpa{font-size:13px;color:var(--pudar);background:var(--kad2);border:1px solid var(--garis);border-radius:12px;padding:12px;margin-top:12px}
+.cek{display:flex;gap:10px;align-items:flex-start;margin-top:10px;color:var(--teks)}.cek input{width:22px;height:22px;min-height:0;margin-top:1px;flex:none}
 .muat{opacity:.6;pointer-events:none}
+.besarInput{font-size:26px;font-weight:800;text-align:center}
+.kotakHasil{background:var(--kad2);border-radius:14px;padding:6px 14px;margin-top:12px}
+.kotakHasil .bar2{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--garis)}
+.kotakHasil .bar2:last-child{border:0}
+.kotakHasil .bar2 b{text-align:right}
 </style>
 </head>
 <body>
@@ -70,19 +110,41 @@ tr.klik{cursor:pointer}tr.klik:hover{background:var(--kad2)}
 <div id="modal"><div class="isi" id="modalIsi"></div></div>
 <div id="toast"></div>
 <script>
-/* ====== TETAPAN: tampal URL Web App Apps Script anda di sini ====== */
+/* ====== TETAPAN: URL Web App Apps Script ====== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbwYLSghcfcLVKLg2plYc9Slj8E0KuNu8LX7HOugVTSIWxwCfv2hcBZB_l0uc5JArfxV/exec';
-/* ================================================================= */
+
+/* ====== KATEGORI USIA & KELAS BERAT (Silat Olahraga / Tanding) ======
+   SILA SEMAK & UBAH ikut peraturan pertandingan terkini.
+   umur = tahun semasa − tahun lahir.
+   janaKelas(berat mula, langkah kg, bilangan kelas) → Kelas A, B, C ...
+   Berat melebihi kelas terakhir = Kelas Bebas. */
+function janaKelas(mula, langkah, bil) {
+  const out = []; for (let i = 0; i < bil; i++) out.push(['Kelas ' + String.fromCharCode(65 + i), mula + i * langkah, mula + (i + 1) * langkah]);
+  return out;
+}
+const KATEGORI_USIA = [
+  { nama: 'Kanak-kanak', min: 0, max: 8, kelas: [] },
+  { nama: 'Usia Dini', min: 9, max: 11, kelas: janaKelas(26, 2, 12) },
+  { nama: 'Pra-Remaja', min: 12, max: 13, kelas: janaKelas(28, 2, 14) },
+  { nama: 'Remaja', min: 14, max: 16, kelas: janaKelas(39, 4, 12) },
+  { nama: 'Dewasa', min: 17, max: 35, kelas: janaKelas(45, 5, 10) },
+  { nama: 'Veteran', min: 36, max: 200, kelas: [] }
+];
+/* ================================================================ */
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const tag = s => s ? `<span class="tag t-${esc(String(s).split(' ')[0])}">${esc(s)}</span>` : '';
+const tag = (s, w) => s ? `<span class="tag t-${esc(w || String(s).split(' ')[0])}">${esc(s)}</span>` : '';
 let S = { token: localStorage.getItem('sp_token') || '', u: null, negeri: [], tab: '', tahun: String(new Date().getFullYear()), gelPilih: '' };
 const NAMA_PERANAN = { SUPER_ADMIN: 'Super Admin', ADMIN_NEGERI: 'Admin Negeri', JURULATIH: 'Jurulatih' };
 const BENGKUNG = ['Putih','Hijau','Merah','Kuning','Kuning Cula 1','Kuning Cula 2','Kuning Cula 3','Kuning Cula 4','Kuning Cula 5','Kuning Cula 6','Hitam','Lain-lain'];
+const BULAN_PENUH = ['','JANUARI','FEBRUARI','MAC','APRIL','MEI','JUN','JULAI','OGOS','SEPTEMBER','OKTOBER','NOVEMBER','DISEMBER'];
+const hariIniStr = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+const rm = n => 'RM' + Number(n || 0).toFixed(2);
+const tarikhMY = t => t && t.length >= 10 ? `${t.slice(8, 10)}/${t.slice(5, 7)}/${t.slice(0, 4)}` : (t || '');
 
 function toast(m, ms) { const t = $('#toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(() => t.style.display = 'none', ms || 3500); }
-function modal(html) { $('#modalIsi').innerHTML = html; $('#modal').style.display = html ? 'flex' : 'none'; }
+function modal(html) { $('#modalIsi').innerHTML = html; $('#modal').style.display = html ? 'flex' : 'none'; document.body.style.overflow = html ? 'hidden' : ''; }
 $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') modal(''); });
 
 async function api(action, data) {
@@ -92,14 +154,15 @@ async function api(action, data) {
     const res = await fetch(API_URL, { method: 'POST', credentials: 'omit', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body });
     r = await res.json();
   } catch (e) {
-    try { // sandaran GET
+    try {
       const res = await fetch(API_URL + '?p=' + encodeURIComponent(body), { credentials: 'omit' });
       r = await res.json();
-    } catch (e2) { r = { ok: false, msg: 'Tiada sambungan ke pelayan. Semak internet / API_URL.' }; }
+    } catch (e2) { r = { ok: false, msg: 'Tiada sambungan ke pelayan. Semak internet.' }; }
   }
-  if (r.logout) { keluar(true); }
+  if (r.logout) keluar(true);
   return r;
 }
+const memuat = () => { const i = $('#isi'); if (i) i.innerHTML = '<p class="pudar" style="text-align:center;padding:30px 0">Memuatkan...</p>'; };
 
 /* ================= LOG MASUK / DAFTAR ================= */
 async function paparLogin() {
@@ -109,9 +172,9 @@ async function paparLogin() {
     <div class="logo"><img src="logo.png" alt="Logo Sri Gayong Panglima Ulung"></div>
     <h1>SilatApp Pusat</h1><p class="pudar" style="text-align:center;margin-top:0">Sri Gayong Panglima Ulung</p>
     <div class="kad" id="kotakLogin">
-      <label>ID Pengguna</label><input id="lId" autocomplete="username" autocapitalize="none">
+      <label style="margin-top:0">ID Pengguna</label><input id="lId" autocomplete="username" autocapitalize="none">
       <label>Kata Laluan</label><input id="lPw" type="password" autocomplete="current-password">
-      <div style="margin-top:14px" class="baris"><button class="utama" onclick="logMasuk()">Log Masuk</button></div>
+      <button class="utama penuh" style="margin-top:16px" onclick="logMasuk()">Log Masuk</button>
       <p class="pudar" style="text-align:center;margin-bottom:0">Jurulatih baharu? <a href="#" onclick="paparDaftar();return false">Daftar di sini</a></p>
     </div></div></div>`;
   $('#lPw').addEventListener('keydown', e => { if (e.key === 'Enter') logMasuk(); });
@@ -121,12 +184,12 @@ function paparCiptaSuper() {
     <div class="logo"><img src="logo.png" alt="Logo"></div>
     <h1>Selamat Datang</h1><p class="pudar" style="text-align:center;margin-top:0">Langkah pertama: cipta akaun Super Admin anda (sekali sahaja).</p>
     <div class="kad" id="kotakSuper">
-      <label>ID Pengguna (huruf kecil, cth. superadmin)</label><input id="sId" value="superadmin" autocapitalize="none">
+      <label style="margin-top:0">ID Pengguna</label><input id="sId" value="superadmin" autocapitalize="none">
       <label>Nama Penuh</label><input id="sNama">
       <label>No. Telefon</label><input id="sTel" inputmode="tel">
       <label>Kata Laluan (min. 8 aksara)</label><input id="sPw" type="password">
       <label>Ulang Kata Laluan</label><input id="sPw2" type="password">
-      <div style="margin-top:14px" class="baris"><button class="utama" onclick="ciptaSuper()">Cipta Akaun</button></div>
+      <button class="utama penuh" style="margin-top:16px" onclick="ciptaSuper()">Cipta Akaun</button>
     </div></div></div>`;
 }
 async function ciptaSuper() {
@@ -141,7 +204,7 @@ async function logMasuk() {
   const r = await api('login', { id: $('#lId').value, katalaluan: $('#lPw').value });
   k.classList.remove('muat');
   if (!r.ok) return toast(r.msg);
-  S.token = r.token; localStorage.setItem('sp_token', r.token); S.u = r.pengguna; mula();
+  S.token = r.token; localStorage.setItem('sp_token', r.token); S.u = r.pengguna; S.tab = ''; mula();
 }
 async function paparDaftar() {
   $('#app').innerHTML = `<div class="wrap"><div class="login"><div class="logo"><img src="logo.png" alt=""></div>
@@ -150,7 +213,7 @@ async function paparDaftar() {
   if (!r.ok) return toast(r.msg);
   S.negeri = r.negeri; S.gelAwam = r.gelanggang;
   $('#kotakDaftar').innerHTML = `
-    <label>ID Pengguna (huruf kecil/nombor, 4–30 aksara)</label><input id="dId" autocapitalize="none">
+    <label style="margin-top:0">ID Pengguna (huruf kecil/nombor, 4–30 aksara)</label><input id="dId" autocapitalize="none">
     <label>Kata Laluan (min. 8 aksara)</label><input id="dPw" type="password">
     <label>Nama Penuh</label><input id="dNama">
     <label>No. Telefon</label><input id="dTel" inputmode="tel">
@@ -163,7 +226,7 @@ async function paparDaftar() {
     </div>
     <div class="pdpa"><b>Notis PDPA:</b> Maklumat peribadi anda (nama, telefon) dikumpul hanya untuk urusan pentadbiran persatuan silat, disimpan secara selamat dan tidak didedahkan kepada pihak luar, selaras Akta Perlindungan Data Peribadi 2010.</div>
     <label class="cek"><input type="checkbox" id="dPdpa"> Saya faham dan bersetuju dengan notis PDPA di atas.</label>
-    <div style="margin-top:14px" class="baris"><button onclick="paparLogin()">Kembali</button><button class="utama" onclick="hantarDaftar()">Hantar</button></div>`;
+    <div style="margin-top:16px" class="baris"><button onclick="paparLogin()">Kembali</button><button class="utama" onclick="hantarDaftar()">Hantar</button></div>`;
 }
 function isiGelDaftar() {
   const n = $('#dNeg').value, l = S.gelAwam.filter(g => g.negeri === n);
@@ -182,10 +245,22 @@ async function hantarDaftar() {
 }
 async function keluar(senyap) {
   if (!senyap && S.token) api('logout');
-  S.token = ''; S.u = null; localStorage.removeItem('sp_token'); paparLogin();
+  S.token = ''; S.u = null; S.tab = ''; localStorage.removeItem('sp_token'); paparLogin();
 }
 
 /* ================= KERANGKA UTAMA ================= */
+const MENU_JUR = [
+  ['ahli', '👥', 'Ahli', 'Senarai & kad ahli'],
+  ['daftar', '➕', 'Daftar Ahli', 'Pendaftaran baharu'],
+  ['hadir', '✅', 'Kehadiran', 'Rekod latihan'],
+  ['yb', '💳', 'Yuran', 'Yuran bulanan'],
+  ['kew', '💰', 'Kewangan', 'Masuk & keluar'],
+  ['fiz', '⚖️', 'Fizikal & BMI', 'Kelas berat & BMI'],
+  ['akaun', '⚙️', 'Akaun', 'Kata laluan']
+];
+const FN = () => ({ papan: tabPapan, lulus: tabLulus, gel: tabGel, jur: tabJur, ahli: tabAhli, daftar: tabDaftar, akaun: tabAkaun, hadir: tabHadir, yb: tabYB, kew: tabKew, fiz: tabFiz, menu: tabMenu });
+function pergi(t) { S.tab = t; window.scrollTo(0, 0); mula(); }
+
 async function mula() {
   if (!S.token) return paparLogin();
   if (!S.u) {
@@ -194,24 +269,41 @@ async function mula() {
     S.u = r.pengguna; S.negeri = r.negeri;
   }
   if (!S.negeri.length) { const r = await api('negeri'); S.negeri = r.negeri || []; }
-  const u = S.u;
-  const tabs = u.peranan === 'JURULATIH' ? [['ahli','Ahli'],['daftar','Daftar Ahli'],['hadir','Kehadiran'],['yb','Yuran Bulanan'],['kew','Kewangan'],['fiz','Fizikal & BMI'],['akaun','Akaun']]
-    : u.peranan === 'ADMIN_NEGERI' ? [['papan','Ringkasan'],['lulus','Kelulusan'],['gel','Gelanggang'],['jur','Jurulatih'],['ahli','Ahli'],['akaun','Akaun']]
-    : [['papan','Ringkasan'],['lulus','Kelulusan'],['gel','Gelanggang'],['jur','Pengguna'],['ahli','Ahli'],['akaun','Akaun']];
-  if (!tabs.some(t => t[0] === S.tab)) S.tab = tabs[0][0];
-  const sub = u.peranan === 'JURULATIH' ? `${esc(u.nama_gelanggang)} · ${esc(u.kod_gelanggang)}${u.ketua ? ' · KETUA' : ''}`
+  const u = S.u, jur = u.peranan === 'JURULATIH';
+  const sub = jur ? `${esc(u.nama_gelanggang)} · ${esc(u.kod_gelanggang)}${u.ketua ? ' · KETUA' : ''}`
     : u.peranan === 'ADMIN_NEGERI' ? `Admin Negeri ${esc(u.namaNegeri)}` : 'Super Admin · Semua negeri';
-  $('#app').innerHTML = `<header><img src="logo.png" alt=""><div class="t"><b>SilatApp Pusat</b><small>${esc(u.nama)} — ${sub}</small></div><button class="kecil" onclick="keluar()">Keluar</button></header>
-    <div class="tabs">${tabs.map(t => `<button class="${S.tab === t[0] ? 'aktif' : ''}" onclick="S.tab='${t[0]}';mula()">${t[1]}</button>`).join('')}</div>
-    <div class="wrap" id="isi"><p class="pudar">Memuatkan...</p></div>`;
-  ({ papan: tabPapan, lulus: tabLulus, gel: tabGel, jur: tabJur, ahli: tabAhli, daftar: tabDaftar, akaun: tabAkaun, hadir: tabHadir, yb: tabYB, kew: tabKew, fiz: tabFiz })[S.tab]();
+  const head = `<header><img src="logo.png" alt=""><div class="t"><b>SilatApp</b><small>${esc(u.nama)} — ${sub}</small></div><button class="kecil" onclick="keluar()">Keluar</button></header>`;
+  if (jur) {
+    if (!MENU_JUR.some(m => m[0] === S.tab)) S.tab = 'menu';
+    const m = MENU_JUR.find(x => x[0] === S.tab);
+    $('#app').innerHTML = head + (m ? `<div class="tajuk"><button class="ikon" onclick="pergi('menu')">←</button><h2>${m[2]}</h2><button class="ikon" onclick="mula()">⟳</button></div>` : '') + `<div class="wrap" id="isi"></div>`;
+  } else {
+    const tabs = u.peranan === 'ADMIN_NEGERI' ? [['papan','Ringkasan'],['lulus','Kelulusan'],['gel','Gelanggang'],['jur','Jurulatih'],['ahli','Ahli'],['akaun','Akaun']]
+      : [['papan','Ringkasan'],['lulus','Kelulusan'],['gel','Gelanggang'],['jur','Pengguna'],['ahli','Ahli'],['akaun','Akaun']];
+    if (!tabs.some(t => t[0] === S.tab)) S.tab = tabs[0][0];
+    $('#app').innerHTML = head + `<div class="tabs">${tabs.map(t => `<button class="${S.tab === t[0] ? 'aktif' : ''}" onclick="pergi('${t[0]}')">${t[1]}</button>`).join('')}</div><div class="wrap" id="isi"></div>`;
+  }
+  memuat();
+  FN()[S.tab]();
+}
+function tabMenu() {
+  $('#isi').innerHTML = `<div class="ring" style="display:flex;gap:14px;align-items:center"><img src="logo.png" style="width:56px;height:56px;border-radius:50%;background:#fff">
+    <div><div style="font-weight:800;font-size:17px">${esc(S.u.nama_gelanggang)}</div><div class="pudar" style="font-size:14px">${esc(S.u.kod_gelanggang)} · ${esc(S.u.namaNegeri)}</div></div></div>
+    <div class="menu">${MENU_JUR.map(m => `<button onclick="pergi('${m[0]}')"><span class="i">${m[1]}</span><b>${m[2]}</b><small>${m[3]}</small></button>`).join('')}</div>`;
 }
 const nmNeg = k => (S.negeri.find(n => n[0] === k) || [k, k])[1];
-function pilihTahun(fn) {
+function pilihTahun(fn, nilai, kunci) {
   const y = new Date().getFullYear(); let o = '';
-  for (let i = y + 1; i >= y - 5; i--) o += `<option ${String(i) === S.tahun ? 'selected' : ''}>${i}</option>`;
-  return `<select onchange="S.tahun=this.value;${fn}()" style="width:auto">${o}</select>`;
+  for (let i = y + 1; i >= y - 5; i--) o += `<option ${String(i) === String(nilai) ? 'selected' : ''}>${i}</option>`;
+  return `<select onchange="S.${kunci || 'tahun'}=this.value;${fn}()">${o}</select>`;
 }
+function pilihBulan(fn, nilai, kunci) {
+  return `<select onchange="S.${kunci}=+this.value;${fn}()">${BULAN_PENUH.slice(1).map((b, i) => `<option value="${i + 1}" ${i + 1 === +nilai ? 'selected' : ''}>${b}</option>`).join('')}</select>`;
+}
+function cip(nama, pilihan, aktif, fn) {
+  return `<div class="cip">${pilihan.map(p => `<button class="${p[0] === aktif ? 'on' : ''}" onclick="S.${nama}='${p[0]}';${fn}()">${p[1]}</button>`).join('')}</div>`;
+}
+function cariBox(id, fn, ph) { return `<input id="${id}" placeholder="${ph || 'Cari nama...'}" oninput="${fn}()" style="margin-bottom:8px">`; }
 function csv(nama, baris) {
   const t = baris.map(r => r.map(v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
   const a = document.createElement('a');
@@ -223,23 +315,22 @@ async function tabPapan() {
   const r = await api('papan', { tahun: S.tahun }); if (!r.ok) return $('#isi').innerHTML = `<p>${esc(r.msg)}</p>`;
   S.papan = r;
   $('#isi').innerHTML = `
-  <div class="kad"><div class="baris" style="margin-bottom:10px"><h3 style="margin:0">Populasi Ahli Aktif</h3><div style="flex:none">Tahun yuran: ${pilihTahun('tabPapan')}</div></div>
-    <div class="grid">
-      <div class="stat"><b>${r.jumlah.semua}</b><small>Jumlah ahli aktif</small></div>
-      <div class="stat"><b>${r.jumlah.L}</b><small>Lelaki</small></div>
-      <div class="stat"><b>${r.jumlah.P}</b><small>Perempuan</small></div>
-      <div class="stat"><b>${r.gelAktif}</b><small>Gelanggang aktif (60 hari)</small></div>
-      <div class="stat"><b>${r.gelTidakAktif}</b><small>Gelanggang tidak aktif</small></div>
-      <div class="stat"><b>${r.menungguGel.length + r.menungguJur.length}</b><small>Menunggu kelulusan</small></div>
-    </div>${r.segerak ? `<p class="pudar" style="font-size:13px;margin-bottom:0">Segerak terakhir dari sistem Seri Mutiara: ${esc(r.segerak)}</p>` : ''}</div>
-  <div class="kad"><h3>Ikut Negeri</h3><div class="jad"><table><tr><th>Negeri</th><th>Lelaki</th><th>Perempuan</th><th>Jumlah</th></tr>
+  <div class="baris" style="margin-bottom:10px"><h3 style="margin:0;color:var(--emas)">Populasi Ahli Aktif</h3><div style="flex:none;width:110px">${pilihTahun('tabPapan', S.tahun)}</div></div>
+  <div class="grid" style="margin-bottom:12px">
+    <div class="stat"><b>${r.jumlah.semua}</b><small>Jumlah ahli aktif</small></div>
+    <div class="stat"><b>${r.jumlah.L}</b><small>Lelaki</small></div>
+    <div class="stat"><b>${r.jumlah.P}</b><small>Perempuan</small></div>
+    <div class="stat"><b>${r.gelAktif}</b><small>Gelanggang aktif (60 hari)</small></div>
+    <div class="stat"><b>${r.gelTidakAktif}</b><small>Gelanggang tidak aktif</small></div>
+    <div class="stat"><b>${r.menungguGel.length + r.menungguJur.length}</b><small>Menunggu kelulusan</small></div>
+  </div>${r.segerak ? `<p class="pudar" style="font-size:13px">Segerak terakhir dari sistem Seri Mutiara: ${esc(r.segerak)}</p>` : ''}
+  <div class="kad"><h3>Ikut Negeri</h3><div class="jad"><table><tr><th>Negeri</th><th>L</th><th>P</th><th>Jumlah</th></tr>
     ${r.negeri.map(n => `<tr><td>${esc(n.nama)}</td><td>${n.L}</td><td>${n.P}</td><td><b>${n.semua}</b></td></tr>`).join('') || '<tr><td colspan="4" class="pudar">Tiada data</td></tr>'}</table></div></div>
-  <div class="kad"><div class="baris" style="margin-bottom:10px"><h3 style="margin:0">Gelanggang</h3><div style="flex:none"><button class="kecil" onclick="eksportPapan()">Eksport CSV</button></div></div>
-    <div class="jad"><table><tr><th>Gelanggang</th><th>Ketua</th><th>Ahli</th><th>Bayar yuran ${esc(r.tahun)}</th><th>Status</th></tr>
-    ${r.gelanggang.map(g => `<tr class="klik" onclick="S.gelPilih='${esc(g.kod)}';S.tab='ahli';mula()"><td><b>${esc(g.nama)}</b><br><small class="pudar">${esc(g.kod)} · ${esc(nmNeg(g.negeri))}</small></td>
-      <td>${esc(g.ketua)}<br><small class="pudar">${esc(g.telKetua)}</small></td><td>${g.ahli}${g.bersama ? `<br><small class="pudar">${g.bersama} bersama</small>` : ''}</td>
-      <td>${g.bayar}${g.kutipan ? `<br><small class="pudar">RM${g.kutipan.toFixed(2)}</small>` : ''}</td>
-      <td>${tag(g.status)}<br><small class="pudar">${g.aktif60 ? 'Aktif 60 hari' : 'Tiada aktiviti 60 hari'}</small></td></tr>`).join('') || '<tr><td colspan="5" class="pudar">Tiada gelanggang</td></tr>'}</table></div></div>`;
+  <div class="baris" style="margin:16px 0 8px"><h3 style="margin:0;color:var(--emas)">Gelanggang</h3><button class="kecil" style="flex:none" onclick="eksportPapan()">Eksport CSV</button></div>
+  ${r.gelanggang.map(g => `<div class="item" onclick="S.gelPilih='${esc(g.kod)}';pergi('ahli')"><div class="k"><b>${esc(g.nama)}</b>
+      <small>${esc(g.kod)} · ${esc(nmNeg(g.negeri))} · Ketua: ${esc(g.ketua || '-')} ${esc(g.telKetua)}</small><br>
+      <small>${g.ahli} ahli${g.bersama ? ` (${g.bersama} bersama)` : ''} · ${g.bayar} bayar yuran ${esc(r.tahun)}${g.kutipan ? ' · ' + rm(g.kutipan) : ''}</small></div>
+      <div class="r" style="flex-direction:column;align-items:flex-end">${tag(g.status)}<small class="pudar" style="font-size:11px">${g.aktif60 ? 'Aktif 60h' : 'Senyap 60h'}</small></div></div>`).join('') || '<p class="pudar">Tiada gelanggang.</p>'}`;
 }
 function eksportPapan() {
   const r = S.papan;
@@ -251,22 +342,20 @@ function eksportPapan() {
 async function tabLulus() {
   const r = await api('papan', { tahun: S.tahun }); if (!r.ok) return $('#isi').innerHTML = `<p>${esc(r.msg)}</p>`;
   $('#isi').innerHTML = `
-  <div class="kad"><h3>Gelanggang Baharu Menunggu (${r.menungguGel.length})</h3>
-    ${r.menungguGel.map(g => `<div class="kad" style="background:var(--kad2)"><b>${esc(g.nama)}</b> — ${esc(nmNeg(g.negeri))}<br>
-      <small class="pudar">${esc(g.alamat)}<br>Pemohon: ${esc(g.pemohon)} (${esc(g.tel)}) · ${esc(g.tarikh)}</small>
-      <div class="baris" style="margin-top:8px"><input id="k3_${esc(g.kod)}" maxlength="3" placeholder="Kod 3 huruf, cth. SMT" style="text-transform:uppercase">
-      <button class="utama kecil" onclick="lulusGel('${esc(g.kod)}')">Luluskan</button>
-      <button class="bahaya kecil" onclick="statusGel('${esc(g.kod)}','TIDAK AKTIF','Tolak permohonan gelanggang ini?')">Tolak</button></div></div>`).join('') || '<p class="pudar">Tiada.</p>'}</div>
-  <div class="kad"><h3>Jurulatih Menunggu (${r.menungguJur.length})</h3>
-    ${r.menungguJur.map(j => `<div class="kad" style="background:var(--kad2)"><b>${esc(j.nama)}</b> ${j.ketua ? tag('KETUA') : ''}<br>
-      <small class="pudar">ID: ${esc(j.id)} · ${esc(j.telefon)}<br>${esc(j.nama_gelanggang)} (${esc(j.kod_gelanggang)}) ${esc(j.status_gelanggang)} · ${esc(nmNeg(j.negeri))} · ${esc(j.tarikh)}</small>
-      <div class="baris" style="margin-top:8px"><button class="utama kecil" onclick="statusJur('${esc(j.id)}','AKTIF')">Luluskan</button>
-      <button class="bahaya kecil" onclick="statusJur('${esc(j.id)}','DITOLAK')">Tolak</button></div></div>`).join('') || '<p class="pudar">Tiada.</p>'}
-    <p class="pudar" style="font-size:13px">Tip: luluskan gelanggang baharu dahulu, kemudian jurulatihnya.</p></div>`;
+  <h3 style="color:var(--emas)">Gelanggang Baharu Menunggu (${r.menungguGel.length})</h3>
+    ${r.menungguGel.map(g => `<div class="kad"><b>${esc(g.nama)}</b> — ${esc(nmNeg(g.negeri))}<br>
+      <small class="pudar">${esc(g.alamat)}<br>Pemohon: ${esc(g.pemohon)} (${esc(g.tel)}) · ${esc(tarikhMY(g.tarikh))}</small>
+      <label>Kod 3 huruf</label><input id="k3_${esc(g.kod)}" maxlength="3" placeholder="cth. SMT" style="text-transform:uppercase">
+      <div class="baris" style="margin-top:10px"><button class="bahaya" onclick="statusGel('${esc(g.kod)}','TIDAK AKTIF','Tolak permohonan gelanggang ini?')">Tolak</button>
+      <button class="utama" onclick="lulusGel('${esc(g.kod)}')">Luluskan</button></div></div>`).join('') || '<p class="pudar">Tiada.</p>'}
+  <h3 style="color:var(--emas);margin-top:20px">Jurulatih Menunggu (${r.menungguJur.length})</h3>
+    ${r.menungguJur.map(j => `<div class="kad"><b>${esc(j.nama)}</b> ${j.ketua ? tag('KETUA') : ''}<br>
+      <small class="pudar">ID: ${esc(j.id)} · ${esc(j.telefon)}<br>${esc(j.nama_gelanggang)} (${esc(j.kod_gelanggang)}) ${esc(j.status_gelanggang)} · ${esc(nmNeg(j.negeri))}</small>
+      <div class="baris" style="margin-top:10px"><button class="bahaya" onclick="statusJur('${esc(j.id)}','DITOLAK')">Tolak</button><button class="utama" onclick="statusJur('${esc(j.id)}','AKTIF')">Luluskan</button></div></div>`).join('') || '<p class="pudar">Tiada.</p>'}
+    <p class="pudar" style="font-size:13px">Tip: luluskan gelanggang baharu dahulu, kemudian jurulatihnya.</p>`;
 }
 async function lulusGel(kod) {
-  const k3 = $('#k3_' + CSS.escape(kod)).value;
-  const r = await api('lulus_gelanggang', { kod, kod3: k3 }); toast(r.msg, 5000); if (r.ok) mula();
+  const r = await api('lulus_gelanggang', { kod, kod3: $('#k3_' + CSS.escape(kod)).value }); toast(r.msg, 5000); if (r.ok) mula();
 }
 async function statusGel(kod, status, soal) {
   if (soal && !confirm(soal)) return;
@@ -281,40 +370,46 @@ async function statusJur(id, status) {
 async function tabGel() {
   const r = await api('senarai_gelanggang'); if (!r.ok) return $('#isi').innerHTML = `<p>${esc(r.msg)}</p>`;
   const sa = S.u.peranan === 'SUPER_ADMIN';
-  $('#isi').innerHTML = `<div class="kad"><h3>Senarai Gelanggang (${r.gelanggang.length})</h3><div class="jad"><table>
-    <tr><th>Gelanggang</th><th>Ketua</th><th>Status</th><th>Tindakan</th></tr>
-    ${r.gelanggang.map(g => `<tr><td><b>${esc(g.nama)}</b><br><small class="pudar">${esc(g.kod)} · ${esc(nmNeg(g.negeri))}<br>${esc(g.alamat)}<br>Aktiviti: ${esc(g.aktiviti || '-')}</small></td>
-      <td>${esc(g.ketua)}<br><small class="pudar">${esc(g.telKetua)}</small></td><td>${tag(g.status)}</td>
-      <td><div style="display:flex;flex-direction:column;gap:4px">
-      ${g.status === 'AKTIF' ? `<button class="kecil" onclick="statusGel('${esc(g.kod)}','TIDAK AKTIF','Gantung (tidak aktifkan) gelanggang ini?')">Tidak aktifkan</button>` : ''}
+  $('#isi').innerHTML = `<h3 style="color:var(--emas)">Senarai Gelanggang (${r.gelanggang.length})</h3>` +
+    r.gelanggang.map(g => `<div class="kad"><div class="baris"><div><b>${esc(g.nama)}</b><br><small class="pudar">${esc(g.kod)} · ${esc(nmNeg(g.negeri))}</small></div><div style="flex:none">${tag(g.status)}</div></div>
+      <small class="pudar">${esc(g.alamat)}<br>Ketua: ${esc(g.ketua || '-')} ${esc(g.telKetua)} · Aktiviti: ${esc(tarikhMY(g.aktiviti) || '-')}</small>
+      <div class="baris balut" style="margin-top:10px">
+      ${g.status === 'AKTIF' ? `<button class="kecil" onclick="statusGel('${esc(g.kod)}','TIDAK AKTIF','Tidak aktifkan gelanggang ini?')">Tidak aktifkan</button>` : ''}
       ${g.status === 'TIDAK AKTIF' || (sa && g.status === 'DISEKAT') ? `<button class="kecil" onclick="statusGel('${esc(g.kod)}','AKTIF')">Aktifkan</button>` : ''}
       ${sa && g.status !== 'DISEKAT' && g.status !== 'MENUNGGU' ? `<button class="kecil bahaya" onclick="statusGel('${esc(g.kod)}','DISEKAT','SEKAT gelanggang ini? Jurulatihnya tidak boleh log masuk.')">Sekat</button>` : ''}
-      ${g.status === 'MENUNGGU' ? '<small class="pudar">Lihat tab Kelulusan</small>' : ''}</div></td></tr>`).join('')}</table></div></div>`;
+      ${g.status === 'MENUNGGU' ? '<small class="pudar">Lihat tab Kelulusan</small>' : ''}</div></div>`).join('');
 }
 
 /* ================= JURULATIH / PENGGUNA ================= */
 async function tabJur() {
   const r = await api('senarai_pengguna'); if (!r.ok) return $('#isi').innerHTML = `<p>${esc(r.msg)}</p>`;
   const sa = S.u.peranan === 'SUPER_ADMIN';
-  $('#isi').innerHTML = (sa ? `<div class="kad"><h3>Lantik Admin Negeri</h3>
-      <div class="baris"><div><label>ID Pengguna</label><input id="aId" autocapitalize="none"></div><div><label>Negeri</label><select id="aNeg">${S.negeri.map(n => `<option value="${n[0]}">${esc(n[1])}</option>`).join('')}</select></div></div>
-      <div class="baris"><div><label>Nama</label><input id="aNama"></div><div><label>Telefon</label><input id="aTel"></div></div>
-      <label>Kata laluan sementara (min 8) — kosongkan jika ID sudah wujud</label><input id="aPw">
-      <div style="margin-top:10px"><button class="utama" onclick="lantikAdmin()">Lantik</button></div></div>` : '') +
-    `<div class="kad"><div class="baris" style="margin-bottom:8px"><h3 style="margin:0">${sa ? 'Semua Pengguna' : 'Jurulatih Negeri'} (${r.pengguna.length})</h3><input id="cariJ" placeholder="Cari..." oninput="tapisJur()" style="flex:none;width:160px"></div>
-    <div class="jad"><table id="jadJ"><tr><th>Nama</th><th>Peranan / Gelanggang</th><th>Status</th><th>Tindakan</th></tr>
-    ${r.pengguna.map(p => `<tr data-c="${esc((p.nama + ' ' + p.id + ' ' + p.nama_gelanggang + ' ' + p.negeri).toLowerCase())}"><td><b>${esc(p.nama)}</b><br><small class="pudar">${esc(p.id)} · ${esc(p.telefon)}</small></td>
-      <td>${esc(NAMA_PERANAN[p.peranan])} ${p.ketua ? tag('KETUA') : ''}<br><small class="pudar">${p.peranan === 'JURULATIH' ? esc(p.nama_gelanggang) + ' (' + esc(p.kod_gelanggang) + ')' : esc(nmNeg(p.negeri))}</small></td>
-      <td>${tag(p.status)}</td><td><div style="display:flex;flex-direction:column;gap:4px">
-      ${p.status !== 'AKTIF' ? `<button class="kecil" onclick="statusJur('${esc(p.id)}','AKTIF')">Aktifkan</button>` : `<button class="kecil bahaya" onclick="statusJur('${esc(p.id)}','DIGANTUNG')">${p.peranan === 'ADMIN_NEGERI' ? 'Buang/Gantung' : 'Gantung'}</button>`}
-      ${p.peranan === 'JURULATIH' ? `<button class="kecil" onclick="setKetua('${esc(p.id)}',${!p.ketua})">${p.ketua ? 'Buang Ketua' : 'Jadikan Ketua'}</button>` : ''}
-      </div></td></tr>`).join('')}</table></div></div>`;
+  S.pengguna = r.pengguna;
+  $('#isi').innerHTML = (sa ? `<button class="utama penuh" style="margin-bottom:12px" onclick="borangAdmin()">+ Lantik Admin Negeri</button>` : '') +
+    cariBox('cariJ', 'senaraiJur', 'Cari nama / gelanggang...') + `<div id="senJ"></div>`;
+  senaraiJur();
 }
-function tapisJur() { const q = $('#cariJ').value.toLowerCase(); document.querySelectorAll('#jadJ tr[data-c]').forEach(t => t.style.display = t.dataset.c.includes(q) ? '' : 'none'); }
+function senaraiJur() {
+  const q = ($('#cariJ').value || '').toLowerCase();
+  $('#senJ').innerHTML = S.pengguna.filter(p => (p.nama + ' ' + p.id + ' ' + p.nama_gelanggang + ' ' + p.negeri).toLowerCase().includes(q)).map(p => `
+    <div class="kad"><div class="baris"><div><b>${esc(p.nama)}</b> ${p.ketua ? tag('KETUA') : ''}<br><small class="pudar">${esc(p.id)} · ${esc(p.telefon)}</small></div><div style="flex:none">${tag(p.status)}</div></div>
+    <small class="pudar">${esc(NAMA_PERANAN[p.peranan])} · ${p.peranan === 'JURULATIH' ? esc(p.nama_gelanggang) + ' (' + esc(p.kod_gelanggang) + ')' : esc(nmNeg(p.negeri))}</small>
+    <div class="baris balut" style="margin-top:10px">
+    ${p.status !== 'AKTIF' ? `<button class="kecil" onclick="statusJur('${esc(p.id)}','AKTIF')">Aktifkan</button>` : `<button class="kecil bahaya" onclick="statusJur('${esc(p.id)}','DIGANTUNG')">${p.peranan === 'ADMIN_NEGERI' ? 'Buang / Gantung' : 'Gantung'}</button>`}
+    ${p.peranan === 'JURULATIH' ? `<button class="kecil" onclick="setKetua('${esc(p.id)}',${!p.ketua})">${p.ketua ? 'Buang Ketua' : 'Jadikan Ketua'}</button>` : ''}</div></div>`).join('') || '<p class="pudar">Tiada.</p>';
+}
+function borangAdmin() {
+  modal(`<h3 style="color:var(--emas);margin-top:0">Lantik Admin Negeri</h3>
+    <label>ID Pengguna</label><input id="aId" autocapitalize="none">
+    <label>Negeri</label><select id="aNeg">${S.negeri.map(n => `<option value="${n[0]}">${esc(n[1])}</option>`).join('')}</select>
+    <label>Nama</label><input id="aNama"><label>Telefon</label><input id="aTel" inputmode="tel">
+    <label>Kata laluan sementara (min 8) — kosongkan jika ID sudah wujud</label><input id="aPw">
+    <div class="baris" style="margin-top:14px"><button onclick="modal('')">Batal</button><button class="utama" onclick="lantikAdmin()">Lantik</button></div>`);
+}
 async function setKetua(id, ketua) { const r = await api('set_ketua', { id, ketua }); toast(r.msg); if (r.ok) mula(); }
 async function lantikAdmin() {
   const r = await api('lantik_admin', { id: $('#aId').value, negeri: $('#aNeg').value, nama: $('#aNama').value, telefon: $('#aTel').value, katalaluan: $('#aPw').value });
-  toast(r.msg, 6000); if (r.ok) mula();
+  toast(r.msg, 6000); if (r.ok) { modal(''); mula(); }
 }
 
 /* ================= AHLI ================= */
@@ -324,28 +419,30 @@ async function tabAhli() {
   if (u.peranan !== 'JURULATIH') {
     const g = await api('senarai_gelanggang');
     const l = (g.gelanggang || []).filter(x => x.status !== 'MENUNGGU');
-    if (!S.gelPilih && l.length) S.gelPilih = l[0].kod;
-    pilih = `<div class="kad"><label style="margin-top:0">Pilih gelanggang</label><select onchange="S.gelPilih=this.value;tabAhli()">${l.map(x => `<option value="${esc(x.kod)}" ${x.kod === S.gelPilih ? 'selected' : ''}>${esc(x.nama)} (${esc(x.kod)})</option>`).join('')}</select></div>`;
     if (!l.length) return $('#isi').innerHTML = '<p class="pudar">Tiada gelanggang.</p>';
+    if (!S.gelPilih) S.gelPilih = l[0].kod;
+    pilih = `<select style="margin-bottom:10px" onchange="S.gelPilih=this.value;tabAhli()">${l.map(x => `<option value="${esc(x.kod)}" ${x.kod === S.gelPilih ? 'selected' : ''}>${esc(x.nama)} (${esc(x.kod)})</option>`).join('')}</select>`;
   }
   const r = await api('senarai_ahli', { kod: S.gelPilih, tahun: S.tahun });
   if (!r.ok) return $('#isi').innerHTML = pilih + `<p>${esc(r.msg)}</p>`;
-  S.ahli = r.ahli; S.gelAhli = r.gelanggang;
-  const aktif = r.ahli.filter(a => a.status_gel === 'AKTIF').length, bayar = r.ahli.filter(a => a.yuran && a.status_gel === 'AKTIF').length;
-  $('#isi').innerHTML = pilih + `<div class="kad">
-    <div class="baris" style="margin-bottom:8px"><h3 style="margin:0">${esc(r.gelanggang.nama)}</h3><div style="flex:none">Tahun: ${pilihTahun('tabAhli')}</div></div>
-    <div class="grid" style="margin-bottom:10px"><div class="stat"><b>${aktif}</b><small>Ahli aktif</small></div><div class="stat"><b>${bayar}</b><small>Bayar yuran ${esc(r.tahun)}</small></div><div class="stat"><b>${r.ahli.length}</b><small>Jumlah rekod</small></div></div>
-    <div class="baris"><input id="cariA" placeholder="Cari nama / no. ahli..." oninput="senaraiAhli()"><select id="tapisA" onchange="senaraiAhli()" style="flex:none;width:auto"><option value="">Semua status</option><option selected>AKTIF</option><option>TIDAK AKTIF</option><option>DIGANTUNG</option><option>DIBATALKAN</option><option>BERPINDAH</option></select>
-    <button class="kecil" style="flex:none" onclick="eksportAhli()">CSV</button></div>
-    <div class="jad"><table id="jadA"></table></div></div>`;
+  S.ahli = r.ahli; S.gelAhli = r.gelanggang; S.aTapis = S.aTapis == null ? 'AKTIF' : S.aTapis;
+  const aktif = r.ahli.filter(a => a.status_gel === 'AKTIF');
+  const bayar = aktif.filter(a => a.yuran).length;
+  $('#isi').innerHTML = pilih + `<div class="ring"><div class="besar">${aktif.length} <span style="font-size:16px;font-weight:600" class="pudar">ahli aktif</span></div>
+    <div class="sub"><span>${bayar} / ${aktif.length} bayar yuran tahunan</span><span style="flex:none;width:110px">${pilihTahun('tabAhli', S.tahun)}</span></div>
+    <div class="bar"><i style="width:${aktif.length ? bayar / aktif.length * 100 : 0}%"></i></div></div>
+    ${cariBox('cariA', 'senaraiAhli', 'Cari nama / no. ahli...')}
+    <div id="cipA"></div><div id="senA"></div>
+    <button class="kecil" onclick="eksportAhli()">Eksport CSV</button>`;
   senaraiAhli();
 }
 function senaraiAhli() {
-  const q = ($('#cariA').value || '').toLowerCase(), st = $('#tapisA').value;
+  const q = ($('#cariA').value || '').toLowerCase(), st = S.aTapis;
+  const kira = s => S.ahli.filter(a => !s || a.status_gel === s).length;
+  $('#cipA').innerHTML = cip('aTapis', [['AKTIF', `Aktif (${kira('AKTIF')})`], ['', `Semua (${kira('')})`], ['TIDAK AKTIF', `Tidak Aktif (${kira('TIDAK AKTIF')})`], ['BERPINDAH', `Berpindah (${kira('BERPINDAH')})`]], st, 'senaraiAhli');
   const l = S.ahli.filter(a => (!st || a.status_gel === st) && (a.nama + ' ' + a.no_ahli).toLowerCase().includes(q));
-  $('#jadA').innerHTML = `<tr><th>Ahli</th><th>Bengkung</th><th>Status</th><th>Yuran ${esc(S.tahun)}</th></tr>` +
-    (l.map(a => `<tr class="klik" onclick="bukaAhli('${esc(a.no_ahli)}')"><td><b>${esc(a.nama)}</b><br><small class="pudar">${esc(a.no_ahli)} · ${esc(a.no_kp)}</small></td>
-      <td>${esc(a.bengkung)}</td><td>${tag(a.status_gel)} ${a.jenis === 'BERSAMA' ? tag('BERSAMA') : ''}</td><td>${a.yuran ? '✅ ' + esc(a.yuran) : '<span class="pudar">—</span>'}</td></tr>`).join('') || '<tr><td colspan="4" class="pudar">Tiada ahli.</td></tr>');
+  $('#senA').innerHTML = l.map(a => `<div class="item" onclick="bukaAhli('${esc(a.no_ahli)}')"><div class="k"><b>${esc(a.nama)}</b><small>${esc(a.no_ahli)} · ${esc(a.bengkung || '-')}</small></div>
+    <div class="r">${a.jenis === 'BERSAMA' ? tag('BERSAMA') : ''}${a.status_gel !== 'AKTIF' ? tag(a.status_gel) : ''}${a.yuran ? tag(a.yuran, 'HIJAU') : ''}</div></div>`).join('') || '<p class="pudar">Tiada ahli.</p>';
 }
 function eksportAhli() {
   csv('ahli_' + S.gelAhli.kod, [['No Ahli','No KP','Nama','Jantina','Tarikh Lahir','Bengkung','Status','Jenis','Gelanggang Utama','Tarikh Daftar','Tel Waris','Yuran ' + S.tahun,'ID Lama']]
@@ -354,30 +451,31 @@ function eksportAhli() {
 async function bukaAhli(no) {
   const a = S.ahli.find(x => x.no_ahli === no); if (!a) return;
   const bolehUbah = a.jenis === 'UTAMA' && a.status_gel !== 'BERPINDAH';
-  const warna = { AKTIF: 'var(--hijau)', MENUNGGU: 'var(--kuning)' }[a.status_gel] || 'var(--merah)';
-  modal(`<div class="ahlikad"><img src="logo.png" alt=""><div style="min-width:0"><div class="pudar" style="font-size:12px">KAD AHLI · SRI GAYONG PANGLIMA ULUNG</div>
+  const warna = { AKTIF: 'var(--hijau)' }[a.status_gel] || 'var(--merah)';
+  const dis = bolehUbah ? '' : 'disabled';
+  modal(`<div class="ahlikad"><img src="logo.png" alt=""><div style="min-width:0"><div class="pudar" style="font-size:11px">KAD AHLI · SRI GAYONG PANGLIMA ULUNG</div>
       <div class="n">${esc(a.nama)}</div><div class="no">${esc(a.no_ahli)}</div>
-      <div>Bengkung: <b>${esc(a.bengkung || '-')}</b></div>
+      <div style="font-size:14px">Bengkung: <b>${esc(a.bengkung || '-')}</b></div>
       <div style="margin-top:4px"><span class="tag" style="background:${warna};color:#111">${esc(a.status_gel)}</span> <small class="pudar">${esc(S.gelAhli.nama)}</small></div></div></div>
-    <h3 style="color:var(--emas);margin:16px 0 4px">Maklumat</h3>
-    <div class="baris"><div><label>Nama</label><input id="mNama" value="${esc(a.nama)}" ${bolehUbah ? '' : 'disabled'}></div></div>
+    <label>Nama</label><input id="mNama" value="${esc(a.nama)}" ${dis}>
     <div class="baris"><div><label>No. KP</label><input value="${esc(a.no_kp)}" disabled></div>
-      <div><label>Jantina</label><select id="mJan" ${bolehUbah ? '' : 'disabled'}><option value="L" ${a.jantina === 'L' ? 'selected' : ''}>Lelaki</option><option value="P" ${a.jantina === 'P' ? 'selected' : ''}>Perempuan</option></select></div></div>
-    <div class="baris"><div><label>Tarikh Lahir</label><input type="date" id="mLahir" value="${esc(a.tarikh_lahir)}" ${bolehUbah ? '' : 'disabled'}></div>
-      <div><label>Bengkung</label><select id="mBeng" ${bolehUbah ? '' : 'disabled'}>${BENGKUNG.concat(BENGKUNG.includes(a.bengkung) || !a.bengkung ? [] : [a.bengkung]).map(b => `<option ${b === a.bengkung ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select></div></div>
-    <label>Tel. Waris</label><input id="mWaris" value="${esc(a.tel_waris)}" ${bolehUbah ? '' : 'disabled'}>
-    <p class="pudar" style="font-size:13px">Gelanggang utama: ${esc(a.gelanggang_utama)} · Daftar: ${esc(a.tarikh_daftar)}${a.id_lama ? ' · ID lama: ' + esc(a.id_lama) : ''}${bolehUbah ? '' : '<br>Maklumat hanya boleh diubah oleh gelanggang utama.'}</p>
-    ${bolehUbah ? `<button class="utama" onclick="simpanAhli('${esc(no)}')">Simpan Maklumat</button>` : ''}
-    ${a.status_gel !== 'BERPINDAH' ? `<h3 style="color:var(--emas);margin:16px 0 4px">Status di gelanggang ini</h3>
-    <div class="baris"><select id="mStatus">${['AKTIF','TIDAK AKTIF','DIGANTUNG','DIBATALKAN'].map(s => `<option ${s === a.status_gel ? 'selected' : ''}>${s}</option>`).join('')}</select><button onclick="tukarStatusAhli('${esc(no)}')">Tukar Status</button></div>
-    <h3 style="color:var(--emas);margin:16px 0 4px">Rekod Yuran Tahunan</h3>
-    <div class="baris"><div><label>Tahun</label><input id="yTahun" value="${esc(S.tahun)}" inputmode="numeric"></div><div><label>Jumlah (RM)</label><input id="yJum" inputmode="decimal"></div><div><label>Tarikh bayar</label><input type="date" id="yTarikh" value="${new Date().toISOString().slice(0, 10)}"></div></div>
-    <div style="margin-top:8px"><button class="utama" onclick="rekodYuran('${esc(no)}')">Rekod Yuran</button></div>` : ''}
+      <div><label>Jantina</label><select id="mJan" ${dis}><option value="L" ${a.jantina === 'L' ? 'selected' : ''}>Lelaki</option><option value="P" ${a.jantina === 'P' ? 'selected' : ''}>Perempuan</option></select></div></div>
+    <label>Tarikh Lahir</label><input type="date" id="mLahir" value="${esc(a.tarikh_lahir)}" ${dis}>
+    <label>Bengkung</label><select id="mBeng" ${dis}>${BENGKUNG.concat(BENGKUNG.includes(a.bengkung) || !a.bengkung ? [] : [a.bengkung]).map(b => `<option ${b === a.bengkung ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select>
+    <label>Tel. Waris</label><input id="mWaris" value="${esc(a.tel_waris)}" inputmode="tel" ${dis}>
+    <p class="pudar" style="font-size:13px">Gelanggang utama: ${esc(a.gelanggang_utama)} · Daftar: ${esc(tarikhMY(a.tarikh_daftar))}${bolehUbah ? '' : '<br>Maklumat hanya boleh diubah oleh gelanggang utama.'}</p>
+    ${bolehUbah ? `<button class="utama penuh" onclick="simpanAhli('${esc(no)}')">Simpan Maklumat</button>` : ''}
+    ${a.status_gel !== 'BERPINDAH' ? `<label>Status di gelanggang ini</label>
+    <div class="baris"><select id="mStatus">${['AKTIF','TIDAK AKTIF','DIGANTUNG','DIBATALKAN'].map(s => `<option ${s === a.status_gel ? 'selected' : ''}>${s}</option>`).join('')}</select><button style="flex:none" onclick="tukarStatusAhli('${esc(no)}')">Tukar</button></div>
+    <h3 style="color:var(--emas);margin:18px 0 0;font-size:16px">Yuran Tahunan</h3>
+    <div class="baris"><div><label>Tahun</label><input id="yTahun" value="${esc(S.tahun)}" inputmode="numeric"></div><div><label>Jumlah (RM)</label><input id="yJum" inputmode="decimal"></div></div>
+    <label>Tarikh bayar</label><input type="date" id="yTarikh" value="${hariIniStr()}">
+    <button class="utama penuh" style="margin-top:12px" onclick="rekodYuran('${esc(no)}')">Rekod Yuran Tahunan</button>` : ''}
     <div id="sejarah" class="pudar" style="margin-top:12px;font-size:13px">Memuatkan sejarah...</div>
-    <div style="margin-top:14px;text-align:right"><button onclick="modal('')">Tutup</button></div>`);
+    <button class="penuh" style="margin-top:14px" onclick="modal('')">Tutup</button>`);
   const s = await api('sejarah_yuran', { no_ahli: no });
-  if (s.ok && $('#sejarah')) $('#sejarah').innerHTML = `<b>Sejarah yuran:</b> ${s.yuran.map(y => `${esc(y.tahun)} (RM${esc(y.jumlah)}, ${esc(y.gel)})`).join(' · ') || 'tiada'}<br>
-    <b>Keahlian:</b> ${s.keahlian.map(k => `${esc(k.kod)} ${esc(k.jenis)} ${esc(k.status)} (${esc(k.mula)}${k.tamat ? '→' + esc(k.tamat) : ''})`).join(' · ')}`;
+  if (s.ok && $('#sejarah')) $('#sejarah').innerHTML = `<b>Sejarah yuran tahunan:</b> ${s.yuran.map(y => `${esc(y.tahun)} (RM${esc(y.jumlah)}, ${esc(y.gel)})`).join(' · ') || 'tiada'}<br>
+    <b>Keahlian:</b> ${s.keahlian.map(k => `${esc(k.kod)} ${esc(k.jenis)} ${esc(k.status)}`).join(' · ')}`;
 }
 async function simpanAhli(no) {
   const r = await api('kemaskini_ahli', { no_ahli: no, data: { nama: $('#mNama').value, jantina: $('#mJan').value, tarikh_lahir: $('#mLahir').value, bengkung: $('#mBeng').value, tel_waris: $('#mWaris').value } });
@@ -388,8 +486,7 @@ async function tukarStatusAhli(no) {
   toast(r.msg); if (r.ok) { modal(''); tabAhli(); }
 }
 async function rekodYuran(no, paksa) {
-  const d = { no_ahli: no, kod: S.gelAhli.kod, tahun: $('#yTahun').value, jumlah: $('#yJum').value, tarikh: $('#yTarikh').value, paksa: !!paksa };
-  const r = await api('rekod_yuran', d);
+  const r = await api('rekod_yuran', { no_ahli: no, kod: S.gelAhli.kod, tahun: $('#yTahun').value, jumlah: $('#yJum').value, tarikh: $('#yTarikh').value, paksa: !!paksa });
   if (r.amaran) { if (confirm(r.msg)) return rekodYuran(no, true); return; }
   toast(r.msg); if (r.ok) { modal(''); tabAhli(); }
 }
@@ -397,7 +494,8 @@ async function rekodYuran(no, paksa) {
 /* ================= DAFTAR AHLI ================= */
 function tabDaftar() {
   $('#isi').innerHTML = `<div class="kad" id="kotakAhli"><h3>Daftar Ahli Baharu</h3>
-    <label>No. Kad Pengenalan / MyKid</label><div class="baris"><input id="aKP" placeholder="cth. 150512-08-1234" inputmode="numeric"><button style="flex:none" onclick="semakKP()">Semak</button></div>
+    <label>No. Kad Pengenalan / MyKid</label><input id="aKP" placeholder="cth. 150512-08-1234" inputmode="numeric">
+    <button class="utama penuh" style="margin-top:10px" onclick="semakKP()">Semak No. KP</button>
     <div id="hasilKP"></div></div>`;
 }
 async function semakKP() {
@@ -409,19 +507,20 @@ async function semakKP() {
       <label>Nama Penuh</label><input id="aNama">
       <div class="baris"><div><label>Jantina</label><select id="aJan"><option value="L">Lelaki</option><option value="P">Perempuan</option></select></div>
       <div><label>Tarikh Lahir</label><input type="date" id="aLahir" value="${tarikhDariKP(r.no_kp)}"></div></div>
-      <div class="baris"><div><label>Bengkung Semasa</label><select id="aBeng">${BENGKUNG.map(b => `<option>${b}</option>`).join('')}</select></div>
-      <div><label>No. Tel. Waris</label><input id="aWaris" inputmode="tel"></div></div>
-      ${pdpaAhli()}<div style="margin-top:12px"><button class="utama" onclick="hantarAhli('')">Daftar Ahli</button></div>`;
+      <label>Bengkung Semasa</label><select id="aBeng">${BENGKUNG.map(b => `<option>${b}</option>`).join('')}</select>
+      <label>No. Tel. Waris</label><input id="aWaris" inputmode="tel">
+      ${pdpaAhli()}<button class="utama penuh" style="margin-top:14px" onclick="hantarAhli('')">Daftar Ahli</button>`;
     const j = Number(String(r.no_kp).slice(-1)); if (!isNaN(j)) $('#aJan').value = j % 2 ? 'L' : 'P';
   } else if (r.sudahDiSini) {
     h.innerHTML = `<p style="color:var(--kuning)">Ahli ini (<b>${esc(r.ahli.nama)}</b>, ${esc(r.ahli.no_ahli)}) sudah berdaftar di gelanggang anda.</p>`;
   } else {
-    h.innerHTML = `<div class="kad" style="background:var(--kad2);margin-top:10px"><p style="color:var(--kuning);margin-top:0">⚠ No. KP ini sudah berdaftar.</p>
+    h.innerHTML = `<div class="kotakHasil" style="padding:14px"><p style="color:var(--kuning);margin-top:0">⚠ No. KP ini sudah berdaftar.</p>
       <b>${esc(r.ahli.nama)}</b> — ${esc(r.ahli.no_ahli)} ${tag(r.ahli.status)}<br><small class="pudar">Gelanggang utama: ${esc(r.ahli.utama)}<br>
       ${r.keahlian.map(k => `${esc(k.nama)} · ${esc(k.jenis)} · ${esc(k.status)}`).join('<br>')}</small></div>
       ${pdpaAhli()}
-      <div class="baris" style="margin-top:12px"><button class="utama" onclick="hantarAhli('pindah')">Pindah ke gelanggang ini</button><button onclick="hantarAhli('bersama')">Tambah sebagai Ahli Bersama</button></div>
-      <p class="pudar" style="font-size:13px"><b>Pindah</b>: gelanggang ini jadi gelanggang utama; rekod lama jadi BERPINDAH. <b>Ahli Bersama</b>: kekal di gelanggang asal, juga berlatih di sini. No. ahli kekal sama.</p>`;
+      <button class="utama penuh" style="margin-top:14px" onclick="hantarAhli('pindah')">Pindah ke gelanggang ini</button>
+      <button class="penuh" style="margin-top:8px" onclick="hantarAhli('bersama')">Tambah sebagai Ahli Bersama</button>
+      <p class="pudar" style="font-size:13px"><b>Pindah</b>: gelanggang ini jadi gelanggang utama. <b>Ahli Bersama</b>: kekal di gelanggang asal, juga berlatih di sini. No. ahli kekal sama.</p>`;
   }
 }
 function pdpaAhli() {
@@ -442,181 +541,222 @@ async function hantarAhli(mod) {
   if (r.ok) tabDaftar();
 }
 
-
 /* ================= MODUL GELANGGANG (jurulatih sahaja) ================= */
-const BULAN = ['','Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
-const hariIniStr = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
-const rm = n => 'RM' + Number(n || 0).toFixed(2);
 async function muatAhliJur() {
   const r = await api('senarai_ahli', { tahun: S.tahun });
   if (!r.ok) { $('#isi').innerHTML = `<p>${esc(r.msg)}</p>`; return null; }
   S.ahli = r.ahli; S.gelAhli = r.gelanggang;
   return r.ahli.filter(a => a.status_gel === 'AKTIF');
 }
-const nota = '<p class="pudar" style="font-size:12px">🔒 Data ini hanya untuk gelanggang anda — tidak dihantar kepada Admin Negeri / Super Admin.</p>';
+const nota = '<p class="pudar" style="font-size:12px;text-align:center">🔒 Data ini hanya untuk gelanggang anda — tidak dihantar kepada Admin Negeri / Super Admin.</p>';
+function ringkasan(besar, kiri, kanan, peratus) {
+  return `<div class="ring"><div class="besar">${besar}</div><div class="sub"><span>${kiri}</span><span style="color:var(--merah);font-weight:700">${kanan}</span></div>
+    <div class="bar"><i style="width:${Math.max(0, Math.min(100, peratus))}%"></i></div></div>`;
+}
 
 /* ---- Kehadiran ---- */
 async function tabHadir() {
   const ahli = await muatAhliJur(); if (!ahli) return;
   S.hTarikh = S.hTarikh || hariIniStr();
-  const d = new Date(); S.hBulan = S.hBulan || d.getMonth() + 1; S.hTahun = S.hTahun || d.getFullYear();
-  const [h, lap] = await Promise.all([api('hadir_get', { tarikh: S.hTarikh }), api('hadir_laporan', { bulan: S.hBulan, tahun: S.hTahun })]);
-  const set = new Set(h.hadir || []);
-  const bilSesi = (lap.sesi || []).length;
-  $('#isi').innerHTML = `<div class="kad"><h3>Rekod Kehadiran</h3>
-    <div class="baris"><div><label>Tarikh latihan</label><input type="date" value="${esc(S.hTarikh)}" onchange="S.hTarikh=this.value;tabHadir()"></div></div>
-    <p class="pudar">${h.ada ? '✔ Kehadiran tarikh ini sudah direkod — boleh dikemas kini.' : 'Belum direkod untuk tarikh ini.'}</p>
-    <div class="baris" style="margin-bottom:8px"><button class="kecil" onclick="document.querySelectorAll('.cH').forEach(c=>c.checked=true);kiraH()">Tanda semua</button><button class="kecil" onclick="document.querySelectorAll('.cH').forEach(c=>c.checked=false);kiraH()">Kosongkan</button><b id="bilH" style="text-align:right"></b></div>
-    <div class="jad"><table>${ahli.map(a => `<tr><td style="width:36px"><input type="checkbox" class="cH" value="${esc(a.no_kp)}" ${set.has(a.no_kp) ? 'checked' : ''} onchange="kiraH()" style="width:22px;height:22px"></td><td><b>${esc(a.nama)}</b><br><small class="pudar">${esc(a.no_ahli)} · ${esc(a.bengkung)}</small></td></tr>`).join('') || '<tr><td class="pudar">Tiada ahli aktif.</td></tr>'}</table></div>
-    <label>Catatan latihan</label><input id="hCat" value="${esc(h.catatan || '')}">
-    <div style="margin-top:10px"><button class="utama" onclick="simpanHadir()">Simpan Kehadiran</button></div></div>
-  <div class="kad"><div class="baris" style="margin-bottom:8px"><h3 style="margin:0">Laporan Bulanan</h3>
-    <select style="flex:none;width:auto" onchange="S.hBulan=+this.value;tabHadir()">${BULAN.slice(1).map((b, i) => `<option value="${i + 1}" ${i + 1 === S.hBulan ? 'selected' : ''}>${b}</option>`).join('')}</select>
-    <input style="flex:none;width:90px" value="${S.hTahun}" onchange="S.hTahun=+this.value;tabHadir()"></div>
-    <p class="pudar">${bilSesi} sesi latihan: ${(lap.sesi || []).map(x => `${x.tarikh.slice(8)}hb (${x.bil})`).join(', ') || '-'}</p>
-    <div class="jad"><table><tr><th>Ahli</th><th>Hadir</th><th>%</th></tr>${ahli.map(a => { const n = (lap.bil || {})[a.no_kp] || 0, pc = bilSesi ? Math.round(n / bilSesi * 100) : 0;
-      return `<tr><td>${esc(a.nama)}</td><td>${n}/${bilSesi}</td><td style="color:${pc >= 75 ? 'var(--hijau)' : pc >= 50 ? 'var(--kuning)' : 'var(--merah)'}">${pc}%</td></tr>`; }).join('')}</table></div>${nota}</div>`;
-  kiraH();
+  const h = await api('hadir_get', { tarikh: S.hTarikh });
+  S.hSet = new Set(h.hadir || []); S.hAhli = ahli; S.hTapis = S.hTapis || 'semua'; S.hAda = h.ada;
+  $('#isi').innerHTML = `<input type="date" value="${esc(S.hTarikh)}" onchange="S.hTarikh=this.value;tabHadir()" style="margin-bottom:12px">
+    <div id="ringH"></div>
+    <div class="baris" style="margin-bottom:6px"><button class="kecil" onclick="S.hAhli.forEach(a=>S.hSet.add(a.no_kp));lukisHadir()">✓ Tanda semua</button><button class="kecil" onclick="S.hSet.clear();lukisHadir()">Kosongkan</button></div>
+    ${cariBox('cariH', 'lukisHadir')}<div id="cipH"></div><div id="senH"></div>
+    <input id="hCat" placeholder="Catatan latihan (pilihan)" value="${esc(h.catatan || '')}" style="margin-top:6px">
+    <button class="kecil" style="margin-top:14px" onclick="laporanHadir()">📊 Laporan bulanan</button>${nota}
+    <div class="terapung"><div><button class="utama penuh" onclick="simpanHadir()">Simpan Kehadiran</button></div></div>`;
+  lukisHadir();
 }
-function kiraH() { const n = document.querySelectorAll('.cH:checked').length; if ($('#bilH')) $('#bilH').textContent = n + ' hadir'; }
+function lukisHadir() {
+  const n = S.hAhli.filter(a => S.hSet.has(a.no_kp)).length, t = S.hAhli.length;
+  $('#ringH').innerHTML = ringkasan(`${n} <span style="font-size:16px" class="pudar">/ ${t} hadir</span>`, `${tarikhMY(S.hTarikh)} · ${S.hAda ? 'sudah direkod' : 'belum direkod'}`, `${t - n} tidak hadir`, t ? n / t * 100 : 0);
+  $('#cipH').innerHTML = cip('hTapis', [['semua', `Semua (${t})`], ['hadir', `Hadir (${n})`], ['tidak', `Tidak (${t - n})`]], S.hTapis, 'lukisHadir');
+  const q = ($('#cariH').value || '').toLowerCase();
+  const l = S.hAhli.filter(a => a.nama.toLowerCase().includes(q) && (S.hTapis === 'semua' || (S.hTapis === 'hadir') === S.hSet.has(a.no_kp)));
+  $('#senH').innerHTML = l.map(a => `<div class="item ${S.hSet.has(a.no_kp) ? 'on' : ''}" onclick="togolH('${esc(a.no_kp)}')"><div class="k"><b>${esc(a.nama)}</b><small>${esc(a.bengkung || a.no_ahli)}</small></div><div class="semak">✓</div></div>`).join('') || '<p class="pudar">Tiada.</p>';
+}
+function togolH(kp) { S.hSet.has(kp) ? S.hSet.delete(kp) : S.hSet.add(kp); lukisHadir(); }
 async function simpanHadir() {
-  const hadir = [...document.querySelectorAll('.cH:checked')].map(c => c.value);
-  const r = await api('hadir_simpan', { tarikh: S.hTarikh, hadir, catatan: $('#hCat').value }); toast(r.msg); if (r.ok) tabHadir();
+  const r = await api('hadir_simpan', { tarikh: S.hTarikh, hadir: [...S.hSet], catatan: $('#hCat').value }); toast(r.msg); if (r.ok) tabHadir();
+}
+async function laporanHadir() {
+  const d = new Date(); S.lBulan = S.lBulan || d.getMonth() + 1; S.lTahun = S.lTahun || d.getFullYear();
+  modal('<p class="pudar">Memuatkan...</p>');
+  const lap = await api('hadir_laporan', { bulan: S.lBulan, tahun: S.lTahun });
+  const bs = (lap.sesi || []).length;
+  modal(`<h3 style="color:var(--emas);margin-top:0">Laporan Kehadiran</h3>
+    <div class="baris"><div>${pilihBulan('laporanHadir', S.lBulan, 'lBulan')}</div><div style="flex:none;width:110px">${pilihTahun('laporanHadir', S.lTahun, 'lTahun')}</div></div>
+    <p class="pudar" style="font-size:14px">${bs} sesi latihan${bs ? ': ' + lap.sesi.map(x => `${x.tarikh.slice(8)}hb (${x.bil})`).join(', ') : ''}</p>
+    ${S.hAhli.map(a => { const n = (lap.bil || {})[a.no_kp] || 0, pc = bs ? Math.round(n / bs * 100) : 0, w = pc >= 75 ? 'HIJAU' : pc >= 50 ? 'KUNING' : 'MERAH';
+      return `<div class="item" style="cursor:default"><div class="k"><b>${esc(a.nama)}</b><small>${n} / ${bs} sesi</small></div>${tag(pc + '%', w)}</div>`; }).join('')}
+    <button class="penuh" onclick="modal('')">Tutup</button>`);
 }
 
 /* ---- Yuran bulanan ---- */
 async function tabYB() {
   const ahli = await muatAhliJur(); if (!ahli) return;
-  S.ybTahun = S.ybTahun || new Date().getFullYear();
+  const d = new Date(); S.ybBulan = S.ybBulan || d.getMonth() + 1; S.ybTahun = S.ybTahun || d.getFullYear();
   const r = await api('yb_get', { tahun: S.ybTahun }); if (!r.ok) return toast(r.msg);
   S.yb = {}; r.bayaran.forEach(b => S.yb[b.no_kp + '|' + b.bulan] = b);
-  const jumBulan = Array(13).fill(0); r.bayaran.forEach(b => jumBulan[b.bulan] += Number(b.jumlah || 0));
-  S.ybAhli = ahli;
-  $('#isi').innerHTML = `<div class="kad"><div class="baris" style="margin-bottom:8px"><h3 style="margin:0">Yuran Bulanan ${S.ybTahun}</h3>
-    <input style="flex:none;width:90px" value="${S.ybTahun}" onchange="S.ybTahun=+this.value;tabYB()"></div>
-    <p class="pudar" style="font-size:13px">Klik petak untuk rekod / padam bayaran. ✓ = sudah bayar.</p>
-    <div class="jad"><table style="font-size:13px"><tr><th>Ahli</th>${BULAN.slice(1).map(b => `<th style="text-align:center">${b}</th>`).join('')}</tr>
-    ${ahli.map((a, i) => `<tr><td style="white-space:nowrap">${esc(a.nama.length > 22 ? a.nama.slice(0, 22) + '…' : a.nama)}</td>${BULAN.slice(1).map((_, m) => { const b = S.yb[a.no_kp + '|' + (m + 1)];
-      return `<td style="text-align:center;cursor:pointer;${b ? 'color:var(--hijau);font-weight:700' : 'color:var(--garis)'}" onclick="bukaYB(${i},${m + 1})">${b ? '✓' : '·'}</td>`; }).join('')}</tr>`).join('')}
-    <tr><th>Jumlah</th>${jumBulan.slice(1).map(j => `<th style="text-align:center;font-size:11px">${j ? j.toFixed(0) : ''}</th>`).join('')}</tr></table></div>
-    <p>Jumlah kutipan ${S.ybTahun}: <b style="color:var(--emas)">${rm(jumBulan.reduce((a, b) => a + b, 0))}</b></p>${nota}</div>`;
+  S.ybAhli = ahli; S.ybTapis = S.ybTapis || 'semua';
+  $('#isi').innerHTML = `<div class="baris" style="margin-bottom:12px"><div>${pilihBulan('tabYB', S.ybBulan, 'ybBulan')}</div><div style="flex:none;width:120px">${pilihTahun('tabYB', S.ybTahun, 'ybTahun')}</div></div>
+    <div id="ringYB"></div>${cariBox('cariYB', 'lukisYB')}<div id="cipYB"></div><div id="senYB"></div>${nota}`;
+  lukisYB();
 }
-function bukaYB(i, bulan) {
-  const a = S.ybAhli[i], b = S.yb[a.no_kp + '|' + bulan];
+function lukisYB() {
+  const sudah = a => S.yb[a.no_kp + '|' + S.ybBulan];
+  const n = S.ybAhli.filter(sudah).length, t = S.ybAhli.length;
+  const jum = S.ybAhli.reduce((x, a) => x + (sudah(a) ? Number(sudah(a).jumlah || 0) : 0), 0);
+  $('#ringYB').innerHTML = ringkasan(rm(jum), `${n} / ${t} orang bayar`, `${t - n} belum bayar`, t ? n / t * 100 : 0);
+  $('#cipYB').innerHTML = cip('ybTapis', [['semua', `Semua (${t})`], ['belum', `Belum (${t - n})`], ['sudah', `Sudah (${n})`]], S.ybTapis, 'lukisYB');
+  const q = ($('#cariYB').value || '').toLowerCase();
+  const l = S.ybAhli.map((a, i) => [a, i]).filter(([a]) => a.nama.toLowerCase().includes(q) && (S.ybTapis === 'semua' || (S.ybTapis === 'sudah') === !!sudah(a)));
+  $('#senYB').innerHTML = l.map(([a, i]) => { const b = sudah(a);
+    return `<div class="item" onclick="bukaYB(${i})"><div class="k"><b>${esc(a.nama)}</b><small>${esc(a.bengkung || a.no_ahli)}${b ? ' · ' + tarikhMY(b.tarikh) : ''}</small></div>
+      <div class="r">${b ? `${tag('RM' + Number(b.jumlah || 0).toFixed(0), 'HIJAU')}<span class="pudar">✎</span>` : `<button class="utama kecil" style="min-height:42px;padding:8px 16px">+ Rekod</button>`}</div></div>`; }).join('') || '<p class="pudar">Tiada.</p>';
+}
+function bukaYB(i) {
+  const a = S.ybAhli[i], bulan = S.ybBulan, b = S.yb[a.no_kp + '|' + bulan];
   S.ybPilih = { a, bulan };
-  modal(`<h3 style="color:var(--emas);margin-top:0">Yuran ${BULAN[bulan]} ${S.ybTahun}</h3><p><b>${esc(a.nama)}</b><br><small class="pudar">${esc(a.no_ahli)}</small></p>
-    <div class="baris"><div><label>Jumlah (RM)</label><input id="ybJum" inputmode="decimal" value="${esc(b ? b.jumlah : (localStorage.getItem('sp_yb') || ''))}"></div>
-    <div><label>Tarikh bayar</label><input type="date" id="ybTarikh" value="${esc(b ? b.tarikh : hariIniStr())}"></div></div>
-    <label>Kaedah</label><select id="ybKaedah">${['TUNAI','ONLINE','QR'].map(k => `<option ${b && b.kaedah === k ? 'selected' : ''}>${k}</option>`).join('')}</select>
-    <div class="baris" style="margin-top:12px"><button onclick="modal('')">Tutup</button>${b ? `<button class="bahaya" onclick="padamYB()">Padam</button>` : ''}<button class="utama" onclick="simpanYB()">Simpan</button></div>`);
+  let lalai = ''; try { lalai = localStorage.getItem('sp_yb') || ''; } catch (e) {}
+  modal(`<h3 style="color:var(--emas);margin:0">Yuran ${BULAN_PENUH[bulan]} ${S.ybTahun}</h3><p style="margin:6px 0 0"><b>${esc(a.nama)}</b><br><small class="pudar">${esc(a.no_ahli)}</small></p>
+    <label>Jumlah (RM)</label><input id="ybJum" class="besarInput" inputmode="decimal" value="${esc(b ? b.jumlah : lalai)}">
+    <label>Tarikh bayar</label><input type="date" id="ybTarikh" value="${esc(b ? b.tarikh : hariIniStr())}">
+    <label>Kaedah</label><div class="cip" id="ybK">${['TUNAI','ONLINE','QR'].map(k => `<button class="${(b ? b.kaedah : 'TUNAI') === k ? 'on' : ''}" onclick="document.querySelectorAll('#ybK button').forEach(x=>x.classList.remove('on'));this.classList.add('on')">${k}</button>`).join('')}</div>
+    <button class="utama penuh" onclick="simpanYB()">Simpan</button>
+    <div class="baris" style="margin-top:8px">${b ? `<button class="bahaya" onclick="padamYB()">Padam</button>` : ''}<button onclick="modal('')">Batal</button></div>`);
 }
 async function simpanYB() {
   const { a, bulan } = S.ybPilih; try { localStorage.setItem('sp_yb', $('#ybJum').value); } catch (e) {}
-  const r = await api('yb_simpan', { no_kp: a.no_kp, bulan, tahun: S.ybTahun, jumlah: $('#ybJum').value, tarikh: $('#ybTarikh').value, kaedah: $('#ybKaedah').value });
-  toast(r.msg); if (r.ok) { modal(''); tabYB(); }
+  const kaedah = ($('#ybK .on') || {}).textContent || 'TUNAI';
+  const r = await api('yb_simpan', { no_kp: a.no_kp, bulan, tahun: S.ybTahun, jumlah: $('#ybJum').value, tarikh: $('#ybTarikh').value, kaedah });
+  toast(r.msg); if (r.ok) { S.yb[a.no_kp + '|' + bulan] = { jumlah: $('#ybJum').value, tarikh: $('#ybTarikh').value, kaedah }; modal(''); lukisYB(); }
 }
 async function padamYB() {
   if (!confirm('Padam rekod bayaran ini?')) return;
   const { a, bulan } = S.ybPilih; const r = await api('yb_padam', { no_kp: a.no_kp, bulan, tahun: S.ybTahun });
-  toast(r.msg); if (r.ok) { modal(''); tabYB(); }
+  toast(r.msg); if (r.ok) { modal(''); delete S.yb[a.no_kp + '|' + bulan]; lukisYB(); }
 }
 
 /* ---- Kewangan ---- */
 async function tabKew() {
-  S.kTahun = S.kTahun || new Date().getFullYear();
+  S.kTahun = S.kTahun || new Date().getFullYear(); S.kTapis = S.kTapis || 'semua';
   const r = await api('kew_get', { tahun: S.kTahun }); if (!r.ok) return $('#isi').innerHTML = `<p>${esc(r.msg)}</p>`;
   S.kew = r;
   const masukLain = r.rekod.filter(x => x.jenis === 'MASUK').reduce((a, x) => a + x.jumlah, 0);
   const keluar = r.rekod.filter(x => x.jenis === 'KELUAR').reduce((a, x) => a + x.jumlah, 0);
   const yb = r.yuranBulanan.reduce((a, b) => a + b, 0);
   const masuk = masukLain + yb + r.yuranTahunan, baki = r.bakiLalu + masuk - keluar;
-  $('#isi').innerHTML = `<div class="kad"><div class="baris" style="margin-bottom:8px"><h3 style="margin:0">Kewangan Gelanggang ${S.kTahun}</h3>
-    <input style="flex:none;width:90px" value="${S.kTahun}" onchange="S.kTahun=+this.value;tabKew()"></div>
-    <div class="grid"><div class="stat"><b>${rm(r.bakiLalu)}</b><small>Baki bawa ke hadapan</small></div>
-      <div class="stat"><b style="color:var(--hijau)">${rm(masuk)}</b><small>Masuk (yuran bulanan ${rm(yb)}, tahunan ${rm(r.yuranTahunan)}, lain ${rm(masukLain)})</small></div>
-      <div class="stat"><b style="color:var(--merah)">${rm(keluar)}</b><small>Keluar</small></div>
-      <div class="stat"><b>${rm(baki)}</b><small>Baki semasa</small></div></div></div>
-  <div class="kad"><h3>Tambah Rekod</h3>
-    <div class="baris"><div><label>Tarikh</label><input type="date" id="kTarikh" value="${hariIniStr()}"></div>
-      <div><label>Jenis</label><select id="kJenis"><option value="MASUK">Masuk (terimaan)</option><option value="KELUAR">Keluar (perbelanjaan)</option></select></div></div>
-    <div class="baris"><div><label>Kategori</label><input id="kKat" list="kKatL" placeholder="cth. Derma, Peralatan"><datalist id="kKatL">${['Derma','Tajaan','Jualan','Peralatan','Pakaian','Pengangkutan','Makanan','Pertandingan','Sewa','Lain-lain'].map(x => `<option>${x}</option>`).join('')}</datalist></div>
-      <div><label>Jumlah (RM)</label><input id="kJum" inputmode="decimal"></div></div>
+  $('#isi').innerHTML = `<div style="margin-bottom:12px">${pilihTahun('tabKew', S.kTahun, 'kTahun')}</div>
+    <div class="ring"><div class="pudar" style="font-size:14px">Baki semasa</div><div class="besar" style="color:${baki < 0 ? 'var(--merah)' : 'var(--teks)'}">${rm(baki)}</div>
+      <div class="sub" style="margin-bottom:0"><span>Baki dibawa: ${rm(r.bakiLalu)}</span></div></div>
+    <div class="grid" style="margin-bottom:12px"><div class="stat"><b style="color:var(--hijau);font-size:18px">${rm(masuk)}</b><small>Masuk ${S.kTahun}</small></div>
+      <div class="stat"><b style="color:var(--merah);font-size:18px">${rm(keluar)}</b><small>Keluar ${S.kTahun}</small></div></div>
+    <div class="kotakHasil" style="margin:0 0 12px"><div class="bar2"><span class="pudar">Yuran bulanan</span><b>${rm(yb)}</b></div><div class="bar2"><span class="pudar">Yuran tahunan</span><b>${rm(r.yuranTahunan)}</b></div><div class="bar2"><span class="pudar">Terimaan lain</span><b>${rm(masukLain)}</b></div></div>
+    ${cip('kTapis', [['semua', 'Semua'], ['MASUK', 'Masuk'], ['KELUAR', 'Keluar']], S.kTapis, 'tabKew')}
+    ${r.rekod.filter(x => S.kTapis === 'semua' || x.jenis === S.kTapis).map(x => `<div class="item" onclick="padamKew('${esc(x.id)}')"><div class="k"><b style="text-transform:none">${esc(x.kategori || x.jenis)}</b><small>${esc(tarikhMY(x.tarikh))}${x.keterangan ? ' · ' + esc(x.keterangan) : ''}</small></div>
+      <div class="r"><b style="color:${x.jenis === 'MASUK' ? 'var(--hijau)' : 'var(--merah)'}">${x.jenis === 'MASUK' ? '+' : '−'}${rm(x.jumlah)}</b></div></div>`).join('') || '<p class="pudar">Tiada rekod. (Yuran dikira automatik.)</p>'}
+    <button class="kecil" onclick="eksportKew()">Eksport CSV</button>${nota}
+    <div class="terapung"><div><button class="utama penuh" onclick="borangKew()">+ Tambah Rekod</button></div></div>`;
+}
+function borangKew() {
+  modal(`<h3 style="color:var(--emas);margin-top:0">Tambah Rekod Kewangan</h3>
+    <div class="cip" id="kJ"><button class="on" data-v="MASUK" onclick="document.querySelectorAll('#kJ button').forEach(x=>x.classList.remove('on'));this.classList.add('on')">⬇ Masuk</button><button data-v="KELUAR" onclick="document.querySelectorAll('#kJ button').forEach(x=>x.classList.remove('on'));this.classList.add('on')">⬆ Keluar</button></div>
+    <label>Jumlah (RM)</label><input id="kJum" class="besarInput" inputmode="decimal">
+    <label>Kategori</label><input id="kKat" list="kKatL" placeholder="cth. Derma, Peralatan"><datalist id="kKatL">${['Derma','Tajaan','Jualan','Peralatan','Pakaian','Pengangkutan','Makanan','Pertandingan','Sewa','Lain-lain'].map(x => `<option>${x}</option>`).join('')}</datalist>
     <label>Keterangan</label><input id="kKet">
-    <div style="margin-top:10px"><button class="utama" onclick="simpanKew()">Simpan</button></div></div>
-  <div class="kad"><div class="baris" style="margin-bottom:8px"><h3 style="margin:0">Rekod ${S.kTahun}</h3><button class="kecil" style="flex:none" onclick="eksportKew()">CSV</button></div>
-    <div class="jad"><table><tr><th>Tarikh</th><th>Butiran</th><th>Jumlah</th><th></th></tr>
-    ${r.rekod.map(x => `<tr><td>${esc(x.tarikh)}</td><td>${esc(x.kategori)}<br><small class="pudar">${esc(x.keterangan)}</small></td><td style="color:${x.jenis === 'MASUK' ? 'var(--hijau)' : 'var(--merah)'}">${x.jenis === 'MASUK' ? '+' : '−'}${rm(x.jumlah)}</td><td><button class="kecil bahaya" onclick="padamKew('${esc(x.id)}')">✕</button></td></tr>`).join('') || '<tr><td colspan="4" class="pudar">Tiada rekod lain. (Yuran dikira automatik.)</td></tr>'}</table></div>${nota}</div>`;
+    <label>Tarikh</label><input type="date" id="kTarikh" value="${hariIniStr()}">
+    <button class="utama penuh" style="margin-top:14px" onclick="simpanKew()">Simpan</button><button class="penuh" style="margin-top:8px" onclick="modal('')">Batal</button>`);
 }
 async function simpanKew() {
-  const r = await api('kew_simpan', { tarikh: $('#kTarikh').value, jenis: $('#kJenis').value, kategori: $('#kKat').value, keterangan: $('#kKet').value, jumlah: $('#kJum').value });
-  toast(r.msg); if (r.ok) tabKew();
+  const r = await api('kew_simpan', { tarikh: $('#kTarikh').value, jenis: $('#kJ .on').dataset.v, kategori: $('#kKat').value, keterangan: $('#kKet').value, jumlah: $('#kJum').value });
+  toast(r.msg); if (r.ok) { modal(''); tabKew(); }
 }
 async function padamKew(id) { if (!confirm('Padam rekod ini?')) return; const r = await api('kew_padam', { id }); toast(r.msg); if (r.ok) tabKew(); }
 function eksportKew() {
   const r = S.kew, rows = [['Tarikh','Jenis','Kategori','Keterangan','Jumlah (RM)']].concat(r.rekod.map(x => [x.tarikh, x.jenis, x.kategori, x.keterangan, x.jumlah]));
-  r.yuranBulanan.forEach((j, m) => { if (j) rows.push([S.kTahun + '-' + String(m).padStart(2, '0'), 'MASUK', 'Yuran Bulanan', BULAN[m], j]); });
+  r.yuranBulanan.forEach((j, m) => { if (j) rows.push([S.kTahun + '-' + String(m).padStart(2, '0'), 'MASUK', 'Yuran Bulanan', BULAN_PENUH[m], j]); });
   if (r.yuranTahunan) rows.push([String(S.kTahun), 'MASUK', 'Yuran Tahunan', '', r.yuranTahunan]);
   csv('kewangan_' + S.kTahun, rows);
 }
 
-/* ---- Fizikal & BMI ---- */
-function kategoriBMI(b) {
-  b = Number(b); if (!b) return ['', ''];
-  if (b < 18.5) return ['Kurang berat', 'var(--biru)']; if (b < 25) return ['Normal', 'var(--hijau)'];
-  if (b < 30) return ['Berat berlebihan', 'var(--kuning)']; return ['Obes', 'var(--merah)'];
+/* ---- Fizikal & BMI: kategori usia, kelas berat, BMI & berat ideal ---- */
+function umurTahunIni(a) { const y = Number(String(a.tarikh_lahir || '').slice(0, 4)) || Number(tarikhDariKP(a.no_kp).slice(0, 4)); return y ? new Date().getFullYear() - y : null; }
+function kategoriUsia(umur) { return umur == null ? null : KATEGORI_USIA.find(k => umur >= k.min && umur <= k.max) || null; }
+function kelasBerat(kat, berat) {
+  if (!kat || !kat.kelas.length || !(berat > 0)) return '';
+  const k = kat.kelas.find(c => berat > c[1] - 0.0001 && berat <= c[2]);
+  if (k) return `${k[0]} (${k[1]}–${k[2]} kg)`;
+  if (berat > kat.kelas[kat.kelas.length - 1][2]) return 'Kelas Bebas';
+  return `Bawah ${kat.kelas[0][1]} kg`;
+}
+function infoBMI(berat, tinggi) {
+  if (!(berat > 0 && tinggi > 0)) return null;
+  const m = tinggi / 100, bmi = berat / (m * m), min = 18.5 * m * m, max = 24.9 * m * m;
+  const [k, w] = bmi < 18.5 ? ['Kurang berat', 'BIRU'] : bmi < 25 ? ['Normal', 'HIJAU'] : bmi < 30 ? ['Berlebihan', 'KUNING'] : ['Obes', 'MERAH'];
+  const beza = berat < min ? `Naik ${(min - berat).toFixed(1)} kg` : berat > max ? `Turun ${(berat - max).toFixed(1)} kg` : 'Dalam julat ideal ✓';
+  return { bmi: bmi.toFixed(1), k, w, ideal: `${min.toFixed(1)} – ${max.toFixed(1)} kg`, beza };
 }
 async function tabFiz() {
   const ahli = await muatAhliJur(); if (!ahli) return;
   const r = await api('fiz_get'); if (!r.ok) return toast(r.msg);
-  S.fiz = r.rekod; const terkini = {}; r.rekod.forEach(f => { if (!terkini[f.no_kp]) terkini[f.no_kp] = f; });
-  const nama = {}; S.ahli.forEach(a => nama[a.no_kp] = a.nama);
-  $('#isi').innerHTML = `<div class="kad"><h3>Rekod Ujian Fizikal & BMI</h3>
-    <label>Ahli</label><select id="fKp">${ahli.map(a => `<option value="${esc(a.no_kp)}">${esc(a.nama)}</option>`).join('')}</select>
-    <div class="baris"><div><label>Tarikh</label><input type="date" id="fTarikh" value="${hariIniStr()}"></div>
-      <div><label>Berat (kg)</label><input id="fBerat" inputmode="decimal" oninput="kiraBMI()"></div>
-      <div><label>Tinggi (cm)</label><input id="fTinggi" inputmode="decimal" oninput="kiraBMI()"></div></div>
-    <p id="fBMI" class="pudar">BMI: -</p>
-    <div class="baris"><div><label>Tekan tubi (bil.)</label><input id="fTekan" inputmode="numeric"></div>
-      <div><label>Bangkit tubi (bil.)</label><input id="fBangkit" inputmode="numeric"></div>
-      <div><label>Larian (masa, cth. 12:30)</label><input id="fLari"></div></div>
-    <label>Catatan</label><input id="fCat">
-    <div style="margin-top:10px"><button class="utama" onclick="simpanFiz()">Simpan</button></div></div>
-  <div class="kad"><h3>Status Terkini Ahli</h3><div class="jad"><table><tr><th>Ahli</th><th>BMI</th><th>Tekan / Bangkit / Lari</th><th>Tarikh</th></tr>
-    ${ahli.map(a => { const f = terkini[a.no_kp]; if (!f) return `<tr><td>${esc(a.nama)}</td><td colspan="3" class="pudar">Belum diuji</td></tr>`;
-      const [k, w] = kategoriBMI(f.bmi);
-      return `<tr class="klik" onclick="sejarahFiz('${esc(a.no_kp)}')"><td>${esc(a.nama)}</td><td><b style="color:${w}">${esc(f.bmi || '-')}</b><br><small class="pudar">${k}</small></td><td>${esc(f.tekan || '-')} / ${esc(f.bangkit || '-')} / ${esc(f.lari || '-')}</td><td>${esc(f.tarikh)}</td></tr>`; }).join('')}</table></div>
-    <p class="pudar" style="font-size:13px">Klik nama untuk lihat sejarah ujian.</p>${nota}</div>`;
+  S.fizTerkini = {}; r.rekod.forEach(f => { if (!S.fizTerkini[f.no_kp]) S.fizTerkini[f.no_kp] = f; });
+  S.fizAhli = ahli.map(a => { const u = umurTahunIni(a); return Object.assign({}, a, { umur: u, kat: kategoriUsia(u) }); });
+  S.fTapis = S.fTapis || 'semua';
+  $('#isi').innerHTML = `<div class="ring"><div class="pudar" style="font-size:14px">Kategori usia tahun ${new Date().getFullYear()}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${KATEGORI_USIA.map(k => { const n = S.fizAhli.filter(a => a.kat === k).length; return n ? tag(`${k.nama}: ${n}`, 'BIRU') : ''; }).join('')}</div></div>
+    ${cariBox('cariF', 'lukisFiz')}<div id="cipF"></div><div id="senF"></div>${nota}`;
+  lukisFiz();
 }
-function kiraBMI() {
-  const b = parseFloat($('#fBerat').value), t = parseFloat($('#fTinggi').value);
-  if (b > 0 && t > 0) { const v = (b / Math.pow(t / 100, 2)).toFixed(1), [k, w] = kategoriBMI(v); $('#fBMI').innerHTML = `BMI: <b style="color:${w}">${v}</b> (${k})`; }
-  else $('#fBMI').textContent = 'BMI: -';
+function lukisFiz() {
+  const kats = KATEGORI_USIA.filter(k => S.fizAhli.some(a => a.kat === k));
+  $('#cipF').innerHTML = cip('fTapis', [['semua', 'Semua']].concat(kats.map(k => [k.nama, k.nama])), S.fTapis, 'lukisFiz');
+  const q = ($('#cariF').value || '').toLowerCase();
+  $('#senF').innerHTML = S.fizAhli.map((a, i) => [a, i]).filter(([a]) => a.nama.toLowerCase().includes(q) && (S.fTapis === 'semua' || (a.kat && a.kat.nama === S.fTapis))).map(([a, i]) => {
+    const f = S.fizTerkini[a.no_kp], b = f ? infoBMI(+f.berat, +f.tinggi) : null, kl = f && f.berat ? kelasBerat(a.kat, +f.berat) : '';
+    return `<div class="item" onclick="bukaFiz(${i})"><div class="k"><b>${esc(a.nama)}</b>
+      <small>${a.umur != null ? a.umur + ' thn · ' + (a.kat ? a.kat.nama : '-') : 'Tarikh lahir tiada'}${f && f.berat ? ' · ' + esc(f.berat) + ' kg' + (kl ? ' · ' + esc(kl) : '') : ''}</small></div>
+      <div class="r">${b ? tag('BMI ' + b.bmi, b.w) : `<button class="utama kecil" style="min-height:42px">+ Rekod</button>`}</div></div>`; }).join('') || '<p class="pudar">Tiada.</p>';
+}
+function bukaFiz(i) {
+  const a = S.fizAhli[i], f = S.fizTerkini[a.no_kp]; S.fPilih = a;
+  modal(`<h3 style="color:var(--emas);margin:0">${esc(a.nama)}</h3>
+    <p class="pudar" style="margin:4px 0 0">${a.umur != null ? `Umur ${a.umur} tahun (${new Date().getFullYear()}) · <b style="color:var(--teks)">${a.kat ? a.kat.nama : '-'}</b>` : 'Tarikh lahir tiada — kemas kini di menu Ahli'}</p>
+    <div class="baris"><div><label>Berat (kg)</label><input id="fBerat" class="besarInput" inputmode="decimal" value="${esc(f ? f.berat : '')}" oninput="kiraFiz()"></div>
+      <div><label>Tinggi (cm)</label><input id="fTinggi" class="besarInput" inputmode="decimal" value="${esc(f ? f.tinggi : '')}" oninput="kiraFiz()"></div></div>
+    <div class="kotakHasil" id="fHasil"></div>
+    <button class="utama penuh" style="margin-top:14px" onclick="simpanFiz()">Simpan</button>
+    <button class="penuh" style="margin-top:8px" onclick="modal('')">Tutup</button>
+    ${f ? `<p class="pudar" style="font-size:13px;text-align:center">Rekod terakhir: ${esc(tarikhMY(f.tarikh))}</p>` : ''}`);
+  kiraFiz();
+}
+function kiraFiz() {
+  const a = S.fPilih, b = parseFloat($('#fBerat').value), t = parseFloat($('#fTinggi').value), info = infoBMI(b, t);
+  $('#fHasil').innerHTML = `<div class="bar2"><span class="pudar">Kategori usia</span><b>${a.kat ? a.kat.nama : '-'}</b></div>
+    <div class="bar2"><span class="pudar">Kelas berat</span><b style="color:var(--emas)">${b > 0 ? (a.kat && a.kat.kelas.length ? kelasBerat(a.kat, b) : 'Tiada kelas') : '-'}</b></div>
+    <div class="bar2"><span class="pudar">BMI</span><b>${info ? `${info.bmi} ${tag(info.k, info.w)}` : '<span class="pudar">isi berat & tinggi</span>'}</b></div>
+    <div class="bar2"><span class="pudar">Berat ideal</span><b>${info ? info.ideal : '-'}</b></div>
+    <div class="bar2"><span class="pudar">Sasaran</span><b>${info ? info.beza : '-'}</b></div>`;
 }
 async function simpanFiz() {
-  const r = await api('fiz_simpan', { no_kp: $('#fKp').value, tarikh: $('#fTarikh').value, berat: $('#fBerat').value, tinggi: $('#fTinggi').value,
-    tekan: $('#fTekan').value, bangkit: $('#fBangkit').value, lari: $('#fLari').value, catatan: $('#fCat').value });
-  toast(r.msg); if (r.ok) tabFiz();
+  const a = S.fPilih, b = $('#fBerat').value, t = $('#fTinggi').value;
+  const r = await api('fiz_simpan', { no_kp: a.no_kp, tarikh: hariIniStr(), berat: b, tinggi: t, catatan: kelasBerat(a.kat, parseFloat(b)) });
+  toast(r.msg); if (r.ok) { S.fizTerkini[a.no_kp] = { berat: b, tinggi: t, tarikh: hariIniStr() }; modal(''); lukisFiz(); }
 }
-function sejarahFiz(kp) {
-  const a = S.ahli.find(x => x.no_kp === kp), l = S.fiz.filter(f => f.no_kp === kp);
-  modal(`<h3 style="color:var(--emas);margin-top:0">${esc(a ? a.nama : '')}</h3><div class="jad"><table><tr><th>Tarikh</th><th>Berat/Tinggi</th><th>BMI</th><th>T/B/L</th><th></th></tr>
-    ${l.map(f => `<tr><td>${esc(f.tarikh)}</td><td>${esc(f.berat || '-')}kg / ${esc(f.tinggi || '-')}cm</td><td style="color:${kategoriBMI(f.bmi)[1]}">${esc(f.bmi || '-')}</td><td>${esc(f.tekan || '-')}/${esc(f.bangkit || '-')}/${esc(f.lari || '-')}${f.catatan ? `<br><small class="pudar">${esc(f.catatan)}</small>` : ''}</td><td><button class="kecil bahaya" onclick="padamFiz('${esc(f.id)}')">✕</button></td></tr>`).join('')}</table></div>
-    <div style="margin-top:12px;text-align:right"><button onclick="modal('')">Tutup</button></div>`);
-}
-async function padamFiz(id) { if (!confirm('Padam rekod ini?')) return; const r = await api('fiz_padam', { id }); toast(r.msg); if (r.ok) { modal(''); tabFiz(); } }
 
 /* ================= AKAUN ================= */
 function tabAkaun() {
   const u = S.u;
-  $('#isi').innerHTML = `<div class="kad"><h3>Akaun Saya</h3><p>${esc(u.nama)}<br><span class="pudar">ID: ${esc(u.id)} · ${esc(NAMA_PERANAN[u.peranan])} · ${esc(u.telefon)}</span></p></div>
+  $('#isi').innerHTML = `<div class="kad"><h3>Akaun Saya</h3><p style="margin:0">${esc(u.nama)}<br><span class="pudar">ID: ${esc(u.id)} · ${esc(NAMA_PERANAN[u.peranan])} · ${esc(u.telefon)}</span></p></div>
     <div class="kad"><h3>Tukar Kata Laluan</h3><label>Kata laluan lama</label><input type="password" id="pLama"><label>Kata laluan baharu (min 8)</label><input type="password" id="pBaru">
-    <div style="margin-top:10px"><button class="utama" onclick="tukarPw()">Tukar</button></div></div>`;
+    <button class="utama penuh" style="margin-top:14px" onclick="tukarPw()">Tukar</button></div>
+    <button class="bahaya penuh" onclick="keluar()">Log Keluar</button>`;
 }
 async function tukarPw() { const r = await api('tukar_katalaluan', { lama: $('#pLama').value, baru: $('#pBaru').value }); toast(r.msg); }
 
-if (API_URL.indexOf('http') !== 0) {
-  document.getElementById('app').innerHTML = '<div class="wrap"><div class="kad"><h3>Belum disambung</h3><p>Sila tampal URL Web App Apps Script ke dalam <b>API_URL</b> dalam fail index.html.</p></div></div>';
-} else mula();
+mula();
 </script>
 </body>
 </html>
