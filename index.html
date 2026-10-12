@@ -170,7 +170,31 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp
 const tag = (s, w) => s ? `<span class="tag t-${esc(w || String(s).split(' ')[0])}">${esc(s)}</span>` : '';
 let S = { token: localStorage.getItem('sp_token') || '', u: null, negeri: [], tab: '', tahun: String(new Date().getFullYear()), gelPilih: '' };
 const NAMA_PERANAN = { SUPER_ADMIN: 'Super Admin', ADMIN_NEGERI: 'Admin Negeri', JURULATIH: 'Jurulatih' };
-const BENGKUNG = ['Putih','Hijau','Merah','Kuning','Kuning Cula 1','Kuning Cula 2','Kuning Cula 3','Kuning Cula 4','Kuning Cula 5','Kuning Cula 6','Hitam','Lain-lain'];
+/* Turutan bengkung rasmi. [nama, warna utama, warna cula] */
+const BENGKUNG_DEF = [
+  ['Hitam Kosong (Ahli Baharu)', '#111', ''],
+  ['Hitam Cula Putih 1', '#111', '#fff'], ['Hitam Cula Putih 2', '#111', '#fff'], ['Hitam Cula Putih 3', '#111', '#fff'],
+  ['Putih', '#f2f2f2', ''], ['Putih Cula Biru 1', '#f2f2f2', '#2f6fd6'], ['Putih Cula Biru 2', '#f2f2f2', '#2f6fd6'],
+  ['Biru', '#2f6fd6', ''], ['Biru Cula Hijau 1', '#2f6fd6', '#2fa65a'], ['Biru Cula Hijau 2', '#2f6fd6', '#2fa65a'],
+  ['Hijau', '#2fa65a', ''], ['Hijau Cula Merah 1', '#2fa65a', '#d63c3c'], ['Hijau Cula Merah 2', '#2fa65a', '#d63c3c'],
+  ['Merah (Jurulatih Muda)', '#d63c3c', ''], ['Merah Cula Kuning 1 (Jurulatih)', '#d63c3c', '#f1c232'], ['Merah Cula Kuning 2 (Jurulatih Kanan)', '#d63c3c', '#f1c232'],
+  ['Kuning (Gurulatih Muda)', '#f1c232', ''], ['Kuning Cula Hitam 1 (Gurulatih)', '#f1c232', '#111'], ['Kuning Cula Hitam 2 (Gurulatih Kanan)', '#f1c232', '#111'],
+  ['Hitam Cula Kuning 1 (Guru Muda)', '#111', '#f1c232'], ['Hitam Cula Kuning 2 (Guru Wilayah)', '#111', '#f1c232'], ['Hitam Cula Kuning 3 (Guru Wilayah Kanan)', '#111', '#f1c232']
+];
+const BENGKUNG = BENGKUNG_DEF.map(b => b[0]);
+/* Padankan teks bengkung (termasuk dari sistem lama, cth. "BENGKUNG HITAM KOSONG (AHLI BAHARU)") kepada senarai rasmi */
+const kunciB = v => String(v || '').toUpperCase().replace(/\(.*?\)/g, '').replace(/^\s*BENGKUNG\s+/, '').replace(/[^A-Z0-9]+/g, ' ').trim();
+function indeksBengkung(v) {
+  const k = kunciB(v); if (!k) return -1;
+  let i = BENGKUNG.findIndex(b => kunciB(b) === k);
+  if (i < 0) i = BENGKUNG.findIndex(b => kunciB(b) === k + ' 1');
+  return i;
+}
+const namaBengkung = v => { const i = indeksBengkung(v); return i >= 0 ? BENGKUNG[i] : (v || ''); };
+const pilihBengkung = (id, v, dis) => { const i = indeksBengkung(v);
+  return `<select id="${id}" ${dis || ''}>${i < 0 && v ? `<option selected>${esc(v)}</option>` : ''}${BENGKUNG.map((b, j) => `<option ${j === i ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select>`; };
+const jalur = i => { const d = BENGKUNG_DEF[i] || ['', '#555', ''];
+  return `<span style="display:inline-block;width:28px;height:12px;border-radius:3px;background:${d[1]};border:1px solid #555;position:relative;flex:none;overflow:hidden">${d[2] ? `<span style="position:absolute;right:4px;top:0;bottom:0;width:6px;background:${d[2]}"></span>` : ''}</span>`; };
 const BULAN_PENUH = ['','JANUARI','FEBRUARI','MAC','APRIL','MEI','JUN','JULAI','OGOS','SEPTEMBER','OKTOBER','NOVEMBER','DISEMBER'];
 const hariIniStr = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
 const rm = n => 'RM' + Number(n || 0).toFixed(2);
@@ -322,7 +346,42 @@ async function mula() {
 function tabMenu() {
   $('#isi').innerHTML = `<div class="ring" style="display:flex;gap:14px;align-items:center"><img src="logo.png" style="width:56px;height:56px;border-radius:50%;background:#fff">
     <div><div style="font-weight:800;font-size:17px">${esc(S.u.nama_gelanggang)}</div><div class="pudar" style="font-size:14px">${esc(S.u.kod_gelanggang)} · ${esc(S.u.namaNegeri)}</div></div></div>
+    <div id="info"><p class="pudar" style="text-align:center">Memuatkan ringkasan...</p></div>
     <div class="menu">${MENU_JUR.map(m => `<button onclick="pergi('${m[0]}')"><span class="i">${m[1]}</span><b>${m[2]}</b><small>${m[3]}</small></button>`).join('')}</div>`;
+  infografik();
+}
+async function infografik() {
+  const th = new Date().getFullYear();
+  const [ra, rk] = await Promise.all([api('senarai_ahli', { tahun: th }), api('kew_get', { tahun: th })]);
+  const el = $('#info'); if (!el || !ra.ok) { if (el) el.innerHTML = ''; return; }
+  const ahli = ra.ahli.filter(a => a.status_gel === 'AKTIF'), n = ahli.length;
+  const L = ahli.filter(a => !/^P/i.test(a.jantina)).length, P = n - L;
+  const kump = [['Pra Sekolah', '≤ 6 thn', 0, 6], ['Sekolah Rendah', '7–12 thn', 7, 12], ['Sekolah Menengah', '13–17 thn', 13, 17], ['Dewasa', '18+ thn', 18, 999]];
+  const umur = ahli.map(umurTahunIni), tiada = umur.filter(u => u == null).length;
+  const bilK = kump.map(k => umur.filter(u => u != null && u >= k[2] && u <= k[3]).length);
+  let baki = null;
+  if (rk.ok) { const masukLain = rk.rekod.filter(x => x.jenis === 'MASUK').reduce((s, x) => s + x.jumlah, 0), keluar = rk.rekod.filter(x => x.jenis === 'KELUAR').reduce((s, x) => s + x.jumlah, 0);
+    baki = rk.bakiLalu + masukLain + rk.yuranBulanan.reduce((s, x) => s + x, 0) + rk.yuranTahunan - keluar; }
+  const bilB = BENGKUNG.map(() => 0); let lain = 0;
+  ahli.forEach(a => { const i = indeksBengkung(a.bengkung); if (i >= 0) bilB[i]++; else lain++; });
+  const maxB = Math.max(1, ...bilB, lain);
+  const pc = x => n ? Math.round(x / n * 100) : 0;
+  el.innerHTML = `
+  <div class="grid" style="grid-template-columns:1fr 1fr;margin-bottom:12px">
+    <div class="ring" style="margin:0"><div class="pudar" style="font-size:13px">Ahli aktif</div><div class="besar" style="font-size:36px">${n}</div><div class="pudar" style="font-size:12px">orang pesilat</div></div>
+    <div class="ring" style="margin:0;cursor:pointer" onclick="pergi('kew')"><div class="pudar" style="font-size:13px">Baki akaun</div><div class="besar" style="font-size:${baki != null && Math.abs(baki) >= 10000 ? 21 : 25}px;color:${baki < 0 ? 'var(--merah)' : 'var(--hijau)'}">${baki == null ? '-' : rm(baki)}</div><div class="pudar" style="font-size:12px">terkini ${th}</div></div>
+  </div>
+  <div class="ring"><div class="baris" style="font-size:14px;margin-bottom:8px"><span>♂ Lelaki <b>${L}</b> <span class="pudar">(${pc(L)}%)</span></span><span style="text-align:right">♀ Perempuan <b>${P}</b> <span class="pudar">(${pc(P)}%)</span></span></div>
+    <div style="display:flex;height:12px;border-radius:8px;overflow:hidden;background:var(--kad2)"><i style="width:${pc(L)}%;background:var(--biru)"></i><i style="width:${n ? 100 - pc(L) : 0}%;background:#E07BB0"></i></div></div>
+  <div class="ring"><div class="pudar" style="font-size:13px;margin-bottom:10px">Kumpulan umur (${th})</div>
+    <div class="grid" style="grid-template-columns:1fr 1fr">${kump.map((k, i) => `<div class="stat"><b>${bilK[i]}</b><small>${k[0]}<br><span style="font-size:11px">${k[1]}</span></small>
+      <div class="bar" style="height:5px;margin-top:8px"><i style="width:${pc(bilK[i])}%;background:var(--emas)"></i></div></div>`).join('')}</div>
+    ${tiada ? `<div class="pudar" style="font-size:12px;margin-top:8px">${tiada} ahli tiada tarikh lahir</div>` : ''}</div>
+  <div class="ring"><div class="pudar" style="font-size:13px;margin-bottom:10px">Bengkung semasa</div>
+    ${bilB.map((c, i) => c ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">${jalur(i)}<span style="flex:1;min-width:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(BENGKUNG[i])}</span>
+      <span style="width:70px;flex:none;height:6px;background:var(--kad2);border-radius:6px;overflow:hidden"><i style="display:block;height:100%;width:${c / maxB * 100}%;background:var(--emas)"></i></span><b style="width:24px;text-align:right;flex:none">${c}</b></div>` : '').join('')}
+    ${lain ? `<div class="pudar" style="font-size:12px">Lain / tidak dikenal pasti: ${lain}</div>` : ''}
+    ${!n ? '<p class="pudar">Tiada ahli aktif.</p>' : ''}</div>`;
 }
 const nmNeg = k => (S.negeri.find(n => n[0] === k) || [k, k])[1];
 function pilihTahun(fn, nilai, kunci) {
@@ -474,7 +533,7 @@ function senaraiAhli() {
   const kira = s => S.ahli.filter(a => !s || a.status_gel === s).length;
   $('#cipA').innerHTML = cip('aTapis', [['AKTIF', `Aktif (${kira('AKTIF')})`], ['', `Semua (${kira('')})`], ['TIDAK AKTIF', `Tidak Aktif (${kira('TIDAK AKTIF')})`], ['BERPINDAH', `Berpindah (${kira('BERPINDAH')})`]], st, 'senaraiAhli');
   const l = S.ahli.filter(a => (!st || a.status_gel === st) && (a.nama + ' ' + a.no_ahli).toLowerCase().includes(q));
-  $('#senA').innerHTML = l.map(a => `<div class="item" onclick="bukaAhli('${esc(a.no_ahli)}')"><div class="k"><b>${esc(a.nama)}</b><small>${esc(a.no_ahli)} · ${esc(a.bengkung || '-')}</small></div>
+  $('#senA').innerHTML = l.map(a => `<div class="item" onclick="bukaAhli('${esc(a.no_ahli)}')"><div class="k"><b>${esc(a.nama)}</b><small>${esc(a.no_ahli)} · ${esc(namaBengkung(a.bengkung) || '-')}</small></div>
     <div class="r">${a.jenis === 'BERSAMA' ? tag('BERSAMA') : ''}${a.status_gel !== 'AKTIF' ? tag(a.status_gel) : ''}${a.yuran ? tag(a.yuran, 'HIJAU') : ''}</div></div>`).join('') || '<p class="pudar">Tiada ahli.</p>';
 }
 function eksportAhli() {
@@ -488,13 +547,13 @@ async function bukaAhli(no) {
   const dis = bolehUbah ? '' : 'disabled';
   modal(`<div class="ahlikad"><img src="logo.png" alt=""><div style="min-width:0"><div class="pudar" style="font-size:11px">KAD AHLI · SRI GAYONG PANGLIMA ULUNG</div>
       <div class="n">${esc(a.nama)}</div><div class="no">${esc(a.no_ahli)}</div>
-      <div style="font-size:14px">Bengkung: <b>${esc(a.bengkung || '-')}</b></div>
+      <div style="font-size:14px">Bengkung: <b>${esc(namaBengkung(a.bengkung) || '-')}</b></div>
       <div style="margin-top:4px"><span class="tag" style="background:${warna};color:#111">${esc(a.status_gel)}</span> <small class="pudar">${esc(S.gelAhli.nama)}</small></div></div></div>
     <label>Nama</label><input id="mNama" value="${esc(a.nama)}" ${dis}>
     <div class="baris"><div><label>No. KP</label><input value="${esc(a.no_kp)}" disabled></div>
       <div><label>Jantina</label><select id="mJan" ${dis}><option value="L" ${a.jantina === 'L' ? 'selected' : ''}>Lelaki</option><option value="P" ${a.jantina === 'P' ? 'selected' : ''}>Perempuan</option></select></div></div>
     <label>Tarikh Lahir</label><input type="date" id="mLahir" value="${esc(a.tarikh_lahir)}" ${dis}>
-    <label>Bengkung</label><select id="mBeng" ${dis}>${BENGKUNG.concat(BENGKUNG.includes(a.bengkung) || !a.bengkung ? [] : [a.bengkung]).map(b => `<option ${b === a.bengkung ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select>
+    <label>Bengkung</label>${pilihBengkung('mBeng', a.bengkung, dis)}
     <label>Tel. Waris</label><input id="mWaris" value="${esc(a.tel_waris)}" inputmode="tel" ${dis}>
     <p class="pudar" style="font-size:13px">Gelanggang utama: ${esc(a.gelanggang_utama)} · Daftar: ${esc(tarikhMY(a.tarikh_daftar))}${bolehUbah ? '' : '<br>Maklumat hanya boleh diubah oleh gelanggang utama.'}</p>
     ${bolehUbah ? `<button class="utama penuh" onclick="simpanAhli('${esc(no)}')">Simpan Maklumat</button>` : ''}
@@ -540,7 +599,7 @@ async function semakKP() {
       <label>Nama Penuh</label><input id="aNama">
       <div class="baris"><div><label>Jantina</label><select id="aJan"><option value="L">Lelaki</option><option value="P">Perempuan</option></select></div>
       <div><label>Tarikh Lahir</label><input type="date" id="aLahir" value="${tarikhDariKP(r.no_kp)}"></div></div>
-      <label>Bengkung Semasa</label><select id="aBeng">${BENGKUNG.map(b => `<option>${b}</option>`).join('')}</select>
+      <label>Bengkung Semasa</label>${pilihBengkung('aBeng', BENGKUNG[0])}
       <label>No. Tel. Waris</label><input id="aWaris" inputmode="tel">
       ${pdpaAhli()}<button class="utama penuh" style="margin-top:14px" onclick="hantarAhli('')">Daftar Ahli</button>`;
     const j = Number(String(r.no_kp).slice(-1)); if (!isNaN(j)) $('#aJan').value = j % 2 ? 'L' : 'P';
@@ -608,7 +667,7 @@ function lukisHadir() {
   $('#cipH').innerHTML = cip('hTapis', [['semua', `Semua (${t})`], ['hadir', `Hadir (${n})`], ['tidak', `Tidak (${t - n})`]], S.hTapis, 'lukisHadir');
   const q = ($('#cariH').value || '').toLowerCase();
   const l = S.hAhli.filter(a => a.nama.toLowerCase().includes(q) && (S.hTapis === 'semua' || (S.hTapis === 'hadir') === S.hSet.has(a.no_kp)));
-  $('#senH').innerHTML = l.map(a => `<div class="item ${S.hSet.has(a.no_kp) ? 'on' : ''}" onclick="togolH('${esc(a.no_kp)}')"><div class="k"><b>${esc(a.nama)}</b><small>${esc(a.bengkung || a.no_ahli)}</small></div><div class="semak">✓</div></div>`).join('') || '<p class="pudar">Tiada.</p>';
+  $('#senH').innerHTML = l.map(a => `<div class="item ${S.hSet.has(a.no_kp) ? 'on' : ''}" onclick="togolH('${esc(a.no_kp)}')"><div class="k"><b>${esc(a.nama)}</b><small>${esc(namaBengkung(a.bengkung) || a.no_ahli)}</small></div><div class="semak">✓</div></div>`).join('') || '<p class="pudar">Tiada.</p>';
 }
 function togolH(kp) { S.hSet.has(kp) ? S.hSet.delete(kp) : S.hSet.add(kp); lukisHadir(); }
 async function simpanHadir() {
@@ -667,7 +726,7 @@ function lukisYB() {
       : ke ? `<span class="tag" style="background:#2a2140;color:#B9A4FF">DIKECUALIKAN</span>`
       : bk ? `<span class="tag t-TIDAK">CUTI</span>`
       : `<button class="utama kecil" style="min-height:42px;padding:8px 16px">+ Rekod</button>`;
-    return `<div class="item" onclick="bukaYB(${i})"><div class="k"><b>${esc(a.nama)}</b><small>${esc(a.bengkung || a.no_ahli)}${b ? ' · ' + tarikhMY(b.tarikh) : ke && ke.sebab ? ' · ' + esc(ke.sebab) : ''}</small></div><div class="r">${kanan}</div></div>`; }).join('') || '<p class="pudar">Tiada.</p>';
+    return `<div class="item" onclick="bukaYB(${i})"><div class="k"><b>${esc(a.nama)}</b><small>${esc(namaBengkung(a.bengkung) || a.no_ahli)}${b ? ' · ' + tarikhMY(b.tarikh) : ke && ke.sebab ? ' · ' + esc(ke.sebab) : ''}</small></div><div class="r">${kanan}</div></div>`; }).join('') || '<p class="pudar">Tiada.</p>';
 }
 async function togolBulanKec(el) {
   const bk = bulanKec();
