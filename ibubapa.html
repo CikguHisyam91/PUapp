@@ -159,6 +159,7 @@ function lukis(r) {
     <div class="baris"><span class="pudar">Negeri</span><b>${esc(g.negeri)}</b></div>
     ${g.ketua ? `<div class="baris"><span class="pudar">Ketua jurulatih</span><b>${esc(g.ketua)}</b></div>` : ''}
     ${g.telKetua ? `<a href="https://wa.me/6${esc(String(g.telKetua).replace(/\D/g, '').replace(/^6/, ''))}" style="text-decoration:none"><button class="penuh" style="margin-top:10px;border-color:#2d5a43;color:var(--hijau)">💬 WhatsApp Jurulatih</button></a>` : ''}</div>
+  <div class="kad"><h3>📅 Jadual Latihan</h3>${htmlJadual(r.jadual || [])}</div>
   <div class="kad"><h3>Kehadiran <span class="pudar" style="font-size:13px;font-weight:400">${BLN[+h0.bulan.slice(5)]} ${h0.bulan.slice(0, 4)}</span></h3>
     <div class="besar">${h0.hadir}<span class="pudar" style="font-size:18px"> / ${h0.sesi} sesi</span></div>
     <div class="pudar" style="font-size:14px;margin:4px 0 10px">${h0.sesi ? pc + '% kehadiran bulan ini' : 'Belum ada latihan direkod bulan ini'}</div>

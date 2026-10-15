@@ -41,6 +41,7 @@ var JADUAL = {
   // Data dalaman gelanggang (HANYA jurulatih gelanggang itu nampak)
   KEHADIRAN: ['TARIKH','KOD_GELANGGANG','HADIR','BIL_HADIR','CATATAN','DIREKOD_OLEH','CAWANGAN'],
   CAWANGAN: ['ID','KOD_GELANGGANG','NAMA','ALAMAT','STATUS','TARIKH_DAFTAR'],
+  JADUAL_LATIHAN: ['ID','KOD_GELANGGANG','CAWANGAN','HARI','MULA','TAMAT','LOKASI','CATATAN'],
   YURAN_BULANAN: ['NO_KP','KOD_GELANGGANG','TAHUN','BULAN','JUMLAH','TARIKH_BAYAR','KAEDAH','DIREKOD_OLEH'],
   KEWANGAN: ['ID','KOD_GELANGGANG','TARIKH','JENIS','KATEGORI','KETERANGAN','JUMLAH','DIREKOD_OLEH'],
   PENGECUALIAN: ['ID','KOD_GELANGGANG','JENIS','NO_KP','MULA','TAMAT','SEBAB','DIREKOD_OLEH'],
@@ -122,7 +123,7 @@ function jawab_(o) {
 }
 
 var AWAM = { ibubapa: 1, ping: 1, negeri: 1, daftar: 1, login: 1, status_awal: 1, cipta_super: 1 };
-var TULIS = { reset_katalaluan: 1, caw_simpan: 1, caw_padam: 1, caw_tag: 1, logo_simpan: 1, kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, lulus_gelanggang: 1, status_gelanggang: 1,
+var TULIS = { tukar_kod: 1, jad_simpan: 1, jad_padam: 1, reset_katalaluan: 1, caw_simpan: 1, caw_padam: 1, caw_tag: 1, logo_simpan: 1, kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, lulus_gelanggang: 1, status_gelanggang: 1,
   status_pengguna: 1, set_ketua: 1, lantik_admin: 1, daftar_ahli: 1, kemaskini_ahli: 1, status_ahli: 1,
   rekod_yuran: 1, padam_yuran: 1, mohon_gelanggang: 1 };
 
@@ -130,7 +131,7 @@ function urus_(p) {
   var lock = null;
   try {
     var a = p.action;
-    var VERSI_SKEMA = '4';
+    var VERSI_SKEMA = '5';
     if (PropertiesService.getScriptProperties().getProperty('SKEMA') !== VERSI_SKEMA || !sh_('PENGGUNA')) {
       binaSheet_(); PropertiesService.getScriptProperties().setProperty('SKEMA', VERSI_SKEMA);
     }
@@ -392,7 +393,7 @@ API.lulus_gelanggang = function (u, p) {
   var k3 = String(p.kod3 || '').trim().toUpperCase();
   if (!/^[A-Z]{3}$/.test(k3)) return { ok: false, msg: 'Kod gelanggang mesti 3 huruf (cth. SMT).' };
   var baru = g.NEGERI + '-' + k3;
-  if (cariSatu_('GELANGGANG', 'KOD', baru)) return { ok: false, msg: 'Kod ' + baru + ' sudah digunakan dalam negeri ini.' };
+  if (kodDipakai_(baru)) return { ok: false, msg: 'Kod ' + baru + ' sudah digunakan dalam negeri ini.' };
   kemaskini_('GELANGGANG', g._r, { KOD: baru, STATUS: 'AKTIF', AKTIVITI_TERAKHIR: hariIni_() });
   baca_('PENGGUNA').forEach(function (x) {
     if (x.KOD_GELANGGANG === g.KOD) kemaskini_('PENGGUNA', x._r, { KOD_GELANGGANG: baru });
@@ -758,7 +759,7 @@ function statusLama_(v) {
 
 function importDariSheetLama(idSheetLama, kodGelanggang) {
   if (!idSheetLama || !kodGelanggang) throw new Error('Isi IMPORT_ID_SHEET_LAMA dan IMPORT_KOD_GELANGGANG dahulu.');
-  var g = cariSatu_('GELANGGANG', 'KOD', String(kodGelanggang).trim().toUpperCase());
+  var g = cariSatu_('GELANGGANG', 'KOD', kodSemasa_(String(kodGelanggang).trim().toUpperCase()));
   if (!g) throw new Error('Gelanggang ' + kodGelanggang + ' tiada dalam Pusat. Daftar & luluskan dahulu.');
   var lama = SpreadsheetApp.openById(idSheetLama); // BACA SAHAJA — tiada tulisan ke sheet lama
   var lock = LockService.getScriptLock(); lock.waitLock(30000);
@@ -1026,6 +1027,7 @@ AWAM_FN.ibubapa = function (p) {
   return { ok: true, anak: { nama: a.NAMA, no_ahli: a.NO_AHLI, no_kp: topengKP_(a.NO_KP), jantina: a.JANTINA, tarikh_lahir: a.TARIKH_LAHIR,
       bengkung: a.BENGKUNG, status: a.STATUS, tarikh_daftar: a.TARIKH_DAFTAR },
     gelanggang: { nama: g.NAMA || '', kod: g.KOD || '', logo: g.LOGO || '', cawangan: cwRec ? cwRec.NAMA : '', negeri: namaNegeri_(g.NEGERI), ketua: ketua ? ketua.NAMA : '', telKetua: ketua ? ketua.TELEFON : '' },
+    jadual: g.KOD ? jadualGel_(g.KOD).filter(function (j) { return !j.cawangan || j.cawangan === cwAnak; }) : [],
     tahun: th, hadir: hadir, yuranBulanan: yb, pengecualian: kec, yuranTahunan: yt, fizikal: fiz };
 };
 
@@ -1097,4 +1099,71 @@ API.reset_katalaluan = function (u, p) {
   delete _tbl.SESI;
   log_(u.ID, 'RESET_KATALALUAN', x.ID);
   return { ok: true, sementara: sem, nama: x.NAMA, id: x.ID, telefon: x.TELEFON };
+};
+
+/* ======================= TUKAR KOD GELANGGANG (ketua jurulatih) =======================
+ * Kod baharu 3 huruf, unik dalam negeri. Semua rujukan dalam setiap sheet dikemas kini serentak.
+ * No. ahli sedia ada KEKAL (seumur hidup); ahli baharu menerima nombor dengan kod baharu.
+ * Kod lama disimpan sebagai alias supaya segerak sistem lama & pautan lama masih berfungsi. */
+var LAJUR_KOD = [['GELANGGANG', 'KOD'], ['PENGGUNA', 'KOD_GELANGGANG'], ['AHLI', 'GELANGGANG_UTAMA'], ['KEAHLIAN_GELANGGANG', 'KOD_GELANGGANG'],
+  ['YURAN_TAHUNAN', 'KOD_GELANGGANG'], ['YURAN_BULANAN', 'KOD_GELANGGANG'], ['KEHADIRAN', 'KOD_GELANGGANG'], ['KEWANGAN', 'KOD_GELANGGANG'],
+  ['FIZIKAL', 'KOD_GELANGGANG'], ['PENGECUALIAN', 'KOD_GELANGGANG'], ['CAWANGAN', 'KOD_GELANGGANG'], ['JADUAL_LATIHAN', 'KOD_GELANGGANG']];
+function kodSemasa_(kod) {
+  var pr = PropertiesService.getScriptProperties(), k = kod, n = 0;
+  while (n++ < 10) { var a = pr.getProperty('ALIAS_' + k); if (!a) break; k = a; }
+  return k;
+}
+function kodDipakai_(kod) {
+  if (cariSatu_('GELANGGANG', 'KOD', kod)) return true;
+  if (PropertiesService.getScriptProperties().getProperty('ALIAS_' + kod)) return true;
+  return baca_('AHLI').some(function (a) { return a.NO_AHLI.indexOf(kod + '-') === 0; });
+}
+API.tukar_kod = function (u, p) {
+  var g = gelJur_(u);
+  if (u.KETUA !== 'YA') return { ok: false, msg: 'Hanya ketua jurulatih gelanggang boleh menukar kod.' };
+  var k3 = String(p.kod3 || '').trim().toUpperCase();
+  if (!/^[A-Z]{3}$/.test(k3)) return { ok: false, msg: 'Kod mesti tepat 3 huruf (A–Z), cth. TPG.' };
+  var lama = g.KOD, baru = g.NEGERI + '-' + k3;
+  if (baru === lama) return { ok: false, msg: 'Kod sama dengan kod semasa.' };
+  if (kodDipakai_(baru)) return { ok: false, msg: 'Kod ' + baru + ' sudah atau pernah digunakan. Pilih kod lain.' };
+  var jumlah = 0;
+  LAJUR_KOD.forEach(function (lk) {
+    var sh = sh_(lk[0]); if (!sh || sh.getLastRow() < 2) return;
+    var c = JADUAL[lk[0]].indexOf(lk[1]) + 1, r = sh.getRange(2, c, sh.getLastRow() - 1, 1), v = r.getDisplayValues(), ubah = false;
+    for (var i = 0; i < v.length; i++) if (String(v[i][0]).trim() === lama) { v[i][0] = baru; ubah = true; jumlah++; }
+    if (ubah) r.setNumberFormat('@').setValues(v);
+    delete _tbl[lk[0]];
+  });
+  PropertiesService.getScriptProperties().setProperty('ALIAS_' + lama, baru);
+  log_(u.ID, 'TUKAR_KOD', lama + ' → ' + baru + ' (' + jumlah + ' rujukan)');
+  return { ok: true, kod: baru, msg: 'Kod gelanggang ditukar: ' + lama + ' → ' + baru + '. No. ahli sedia ada kekal.' };
+};
+
+/* ======================= JADUAL LATIHAN ======================= */
+var HARI_ = ['ISNIN', 'SELASA', 'RABU', 'KHAMIS', 'JUMAAT', 'SABTU', 'AHAD'];
+function jadualGel_(kod) {
+  var caw = {}; baca_('CAWANGAN').forEach(function (c) { caw[c.ID] = c.NAMA; });
+  return baca_('JADUAL_LATIHAN').filter(function (j) { return j.KOD_GELANGGANG === kod; }).map(function (j) {
+    return { id: j.ID, cawangan: j.CAWANGAN, nama_cawangan: caw[j.CAWANGAN] || '', hari: j.HARI, mula: j.MULA, tamat: j.TAMAT, lokasi: j.LOKASI, catatan: j.CATATAN };
+  }).sort(function (a, b) { return (HARI_.indexOf(a.hari) - HARI_.indexOf(b.hari)) || a.mula.localeCompare(b.mula); });
+}
+API.jad_get = function (u) { var g = gelJur_(u); return { ok: true, jadual: jadualGel_(g.KOD) }; };
+API.jad_simpan = function (u, p) {
+  var g = gelJur_(u), hari = String(p.hari || '').toUpperCase(), jm = /^\d{2}:\d{2}$/;
+  if (HARI_.indexOf(hari) < 0) return { ok: false, msg: 'Pilih hari.' };
+  if (!jm.test(p.mula || '') || !jm.test(p.tamat || '')) return { ok: false, msg: 'Isi masa mula & tamat.' };
+  if (p.tamat <= p.mula) return { ok: false, msg: 'Masa tamat mesti selepas masa mula.' };
+  var o = { KOD_GELANGGANG: g.KOD, CAWANGAN: p.cawangan || '', HARI: hari, MULA: p.mula, TAMAT: p.tamat, LOKASI: p.lokasi || '', CATATAN: p.catatan || '' };
+  if (p.id) {
+    var j = cariSatu_('JADUAL_LATIHAN', 'ID', p.id);
+    if (!j || j.KOD_GELANGGANG !== g.KOD) return { ok: false, msg: 'Jadual tiada.' };
+    kemaskini_('JADUAL_LATIHAN', j._r, o);
+  } else { o.ID = 'J' + Date.now(); tambah_('JADUAL_LATIHAN', o); }
+  return { ok: true, msg: 'Jadual latihan disimpan.' };
+};
+API.jad_padam = function (u, p) {
+  var g = gelJur_(u), j = cariSatu_('JADUAL_LATIHAN', 'ID', p.id);
+  if (!j || j.KOD_GELANGGANG !== g.KOD) return { ok: false, msg: 'Jadual tiada.' };
+  padamBaris_('JADUAL_LATIHAN', j._r);
+  return { ok: true, msg: 'Slot latihan dipadam.' };
 };

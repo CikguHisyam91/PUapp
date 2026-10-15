@@ -111,3 +111,32 @@ window.addEventListener('error', e => {
   d.innerHTML = 'Ralat: ' + String(e.message || e).replace(/</g, '&lt;') + '<br><button onclick="location.reload()" style="margin-top:8px">Muat semula</button>';
   document.body.appendChild(d);
 });
+
+/* ====== Jadual latihan (dikongsi: aplikasi jurulatih & Portal Ibu Bapa) ====== */
+const HARI_JADUAL = ['ISNIN', 'SELASA', 'RABU', 'KHAMIS', 'JUMAAT', 'SABTU', 'AHAD'];
+const hariIni = () => HARI_JADUAL[(new Date().getDay() + 6) % 7];
+const jam12 = t => { if (!t) return ''; let [h, m] = t.split(':').map(Number); const p = h >= 12 ? 'ptg' : 'pg'; if (h >= 19) return `${h - 12}:${String(m).padStart(2, '0')} mlm`; if (h > 12) h -= 12; if (h === 0) h = 12; return `${h}:${String(m).padStart(2, '0')} ${p}`; };
+function slotSeterusnya(list) {
+  if (!list.length) return null;
+  const k = new Date(), hi = (k.getDay() + 6) % 7, kini = `${String(k.getHours()).padStart(2, '0')}:${String(k.getMinutes()).padStart(2, '0')}`;
+  for (let d = 0; d < 8; d++) {
+    const h = HARI_JADUAL[(hi + d) % 7];
+    const s = list.filter(j => j.hari === h && (d > 0 || j.tamat > kini)).sort((a, b) => a.mula.localeCompare(b.mula))[0];
+    if (s) return { slot: s, hariLagi: d, sedang: d === 0 && s.mula <= kini };
+  }
+  return null;
+}
+function htmlJadual(list, edit) {
+  if (!list.length) return '<p style="color:#9097A3;margin:0">Belum ada jadual latihan.</p>';
+  const hi = hariIni(), nx = slotSeterusnya(list);
+  const tajukNx = nx ? (nx.sedang ? '🟢 Sedang berlangsung' : nx.hariLagi === 0 ? 'Latihan hari ini' : nx.hariLagi === 1 ? 'Latihan esok' : `Latihan seterusnya · ${nx.slot.hari}`) : '';
+  return (nx ? `<div style="background:#2a2513;border:1px solid #E2B55A;border-radius:12px;padding:12px;margin-bottom:12px">
+      <div style="font-size:12px;color:#E2B55A;font-weight:700">${tajukNx}</div>
+      <div style="font-size:20px;font-weight:800">${jam12(nx.slot.mula)} – ${jam12(nx.slot.tamat)}</div>
+      <div style="font-size:13px;color:#9097A3">${esc(nx.slot.hari)}${nx.slot.nama_cawangan ? ' · 📍 ' + esc(nx.slot.nama_cawangan) : ''}${nx.slot.lokasi ? ' · ' + esc(nx.slot.lokasi) : ''}</div></div>` : '') +
+    HARI_JADUAL.filter(h => list.some(j => j.hari === h)).map(h => `<div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #2C313C">
+      <b style="width:74px;flex:none;font-size:13px;${h === hi ? 'color:#E2B55A' : ''}">${h}${h === hi ? ' •' : ''}</b>
+      <div style="flex:1;min-width:0">${list.filter(j => j.hari === h).map(j => `<div style="display:flex;gap:8px;align-items:center;margin-bottom:4px${edit ? ';cursor:pointer' : ''}" ${edit ? `onclick="borangJadual('${esc(j.id)}')"` : ''}>
+        <span style="font-weight:700;font-size:14px;white-space:nowrap">${jam12(j.mula)} – ${jam12(j.tamat)}</span>
+        <span style="font-size:12px;color:#9097A3;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${[j.nama_cawangan ? '📍 ' + esc(j.nama_cawangan) : '', esc(j.lokasi || ''), esc(j.catatan || '')].filter(Boolean).join(' · ')}</span>${edit ? '<span style="margin-left:auto;color:#9097A3">✎</span>' : ''}</div>`).join('')}</div></div>`).join('');
+}

@@ -275,7 +275,7 @@ const MENU_JUR = [
   ['yb', '💳', 'Yuran', 'Yuran bulanan'],
   ['kew', '💰', 'Kewangan', 'Masuk & keluar'],
   ['fiz', '⚖️', 'Fizikal & BMI', 'Kelas berat & BMI'],
-  ['gelang', '🏟️', 'Gelanggang', 'Cawangan & logo'],
+  ['gelang', '🏟️', 'Gelanggang', 'Jadual, cawangan & logo'],
   ['akaun', '⚙️', 'Akaun', 'Kata laluan']
 ];
 const FN = () => ({ papan: tabPapan, lulus: tabLulus, gel: tabGel, jur: tabJur, ahli: tabAhli, daftar: tabDaftar, akaun: tabAkaun, hadir: tabHadir, gelang: tabGelang, yb: tabYB, kew: tabKew, fiz: tabFiz, menu: tabMenu });
@@ -317,7 +317,7 @@ function tabMenu() {
 }
 async function infografik() {
   const th = new Date().getFullYear();
-  const [ra, rk] = await Promise.all([api('senarai_ahli', { tahun: th }), api('kew_get', { tahun: th })]);
+  const [ra, rk, rj] = await Promise.all([api('senarai_ahli', { tahun: th }), api('kew_get', { tahun: th }), api('jad_get')]);
   const el = $('#info'); if (!el || !ra.ok) { if (el) el.innerHTML = ''; return; }
   const ahli = ra.ahli.filter(a => a.status_gel === 'AKTIF'), n = ahli.length;
   const L = ahli.filter(a => !/^P/i.test(a.jantina)).length, P = n - L;
@@ -332,6 +332,7 @@ async function infografik() {
   const maxB = Math.max(1, ...bilB, lain);
   const pc = x => n ? Math.round(x / n * 100) : 0;
   el.innerHTML = `
+  <div class="ring" style="cursor:pointer" onclick="pergi('gelang')"><div class="pudar" style="font-size:13px;margin-bottom:10px">📅 Jadual latihan</div>${htmlJadual(rj.ok ? rj.jadual : [])}</div>
   <div class="grid" style="grid-template-columns:1fr 1fr;margin-bottom:12px">
     <div class="ring" style="margin:0"><div class="pudar" style="font-size:13px">Ahli aktif</div><div class="besar" style="font-size:36px">${n}</div><div class="pudar" style="font-size:12px">orang pesilat</div></div>
     <div class="ring" style="margin:0;cursor:pointer" onclick="pergi('kew')"><div class="pudar" style="font-size:13px">Baki akaun</div><div class="besar" style="font-size:${baki != null && Math.abs(baki) >= 10000 ? 21 : 25}px;color:${baki < 0 ? 'var(--merah)' : 'var(--hijau)'}">${baki == null ? '-' : rm(baki)}</div><div class="pudar" style="font-size:12px">terkini ${th}</div></div>
@@ -988,10 +989,17 @@ function cetakKelas() {
 
 /* ---- Gelanggang: logo & cawangan ---- */
 async function tabGelang() {
-  const c = await api('caw_get'); S.cawList = c.ok ? c.cawangan : [];
-  const ahli = await api('senarai_ahli', { tahun: S.tahun }); S.ahli = ahli.ok ? ahli.ahli : [];
+  const [c, ahli, jd] = await Promise.all([api('caw_get'), api('senarai_ahli', { tahun: S.tahun }), api('jad_get')]);
+  S.cawList = c.ok ? c.cawangan : []; S.ahli = ahli.ok ? ahli.ahli : []; S.jadual = jd.ok ? jd.jadual : [];
   const aktif = S.ahli.filter(a => a.status_gel === 'AKTIF'), tiada = aktif.filter(a => !a.cawangan).length;
-  $('#isi').innerHTML = `<div class="kad"><h3>Logo Gelanggang</h3>
+  const kod3 = String(S.u.kod_gelanggang || '').split('-')[1] || '';
+  $('#isi').innerHTML = `<div class="kad"><h3>Kod Gelanggang</h3>
+      <div style="display:flex;align-items:center;gap:12px"><div style="font-size:28px;font-weight:800;letter-spacing:2px;color:var(--emas)">${esc(S.u.kod_gelanggang)}</div>
+      ${S.u.ketua ? `<button class="kecil" style="margin-left:auto" onclick="borangKod()">✎ Tukar kod</button>` : ''}</div>
+      <p class="pudar" style="font-size:12px;margin-bottom:0">${S.u.ketua ? 'Format: KODNEGERI-3 HURUF. Hanya 3 huruf terakhir boleh ditukar.' : 'Hanya ketua jurulatih boleh menukar kod.'}</p></div>
+    <div class="kad"><h3>📅 Jadual Latihan</h3>${htmlJadual(S.jadual, true)}
+      <button class="utama penuh" style="margin-top:12px" onclick="borangJadual()">+ Tambah Slot Latihan</button></div>
+    <div class="kad"><h3>Logo Gelanggang</h3>
       <div style="display:flex;gap:16px;align-items:center"><img id="pratonton" src="${esc(logoGel())}" style="width:96px;height:96px;border-radius:50%;background:#fff;object-fit:cover;flex:none;border:2px solid var(--emas)">
       <div class="pudar" style="font-size:13px">Jenis fail: <b style="color:var(--teks)">JPG, PNG atau WEBP</b><br>Saiz maksimum: <b style="color:var(--teks)">5 MB</b><br>Cadangan: gambar <b style="color:var(--teks)">segi empat sama</b> (cth. 512 × 512 piksel). Sistem akan kecilkan secara automatik.</div></div>
       <input type="file" id="fLogo" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="pilihLogo(this)">
@@ -1075,6 +1083,41 @@ async function simpanWajib() {
   const r = await api('tukar_katalaluan', { lama: $('#wLama').value, baru: $('#wBaru').value }); toast(r.msg);
   if (r.ok) { S.u.wajib_tukar = false; mula(); }
 }
+
+function borangKod() {
+  const neg = String(S.u.kod_gelanggang).split('-')[0];
+  modal(`<h3 style="color:var(--emas);margin-top:0">Tukar Kod Gelanggang</h3>
+    <p class="pudar" style="font-size:13px;margin-top:0">Kod semasa: <b style="color:var(--teks)">${esc(S.u.kod_gelanggang)}</b></p>
+    <label>Kod baharu (3 huruf)</label>
+    <div style="display:flex;align-items:center;gap:8px"><b style="font-size:24px">${esc(neg)}-</b><input id="kBaru" maxlength="3" class="besarInput" style="text-transform:uppercase;letter-spacing:4px" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'')"></div>
+    <div class="pdpa">⚠️ <b>Perlu tahu:</b><br>• No. ahli sedia ada <b>kekal</b> (cth. ${esc(S.u.kod_gelanggang)}-0001).<br>• Ahli baharu akan menerima nombor dengan kod baharu.<br>• Semua rekod (yuran, kehadiran, kewangan dll.) dipindahkan automatik.<br>• Kod lama tidak boleh digunakan oleh gelanggang lain.</div>
+    <button class="utama penuh" style="margin-top:14px" onclick="simpanKod()">Tukar Kod</button><button class="penuh" style="margin-top:8px" onclick="modal('')">Batal</button>`);
+}
+async function simpanKod() {
+  const k = $('#kBaru').value;
+  if (!/^[A-Z]{3}$/.test(k)) return toast('Kod mesti tepat 3 huruf.');
+  if (!confirm(`Tukar kod kepada ${S.u.kod_gelanggang.split('-')[0]}-${k}?`)) return;
+  const r = await api('tukar_kod', { kod3: k }); toast(r.msg, 6000);
+  if (r.ok) { modal(''); S.u.kod_gelanggang = r.kod; mula(); }
+}
+function borangJadual(id) {
+  const j = (S.jadual || []).find(x => x.id === id) || {};
+  modal(`<h3 style="color:var(--emas);margin-top:0">${id ? 'Kemas Kini' : 'Tambah'} Slot Latihan</h3>
+    <label>Hari</label><div class="cip" id="jHari" style="flex-wrap:wrap">${HARI_JADUAL.map(h => `<button class="${h === (j.hari || '') ? 'on' : ''}" onclick="document.querySelectorAll('#jHari button').forEach(x=>x.classList.remove('on'));this.classList.add('on')">${h.slice(0, 1) + h.slice(1).toLowerCase()}</button>`).join('')}</div>
+    <div class="baris"><div><label>Mula</label><input type="time" id="jMula" value="${esc(j.mula || '20:30')}"></div><div><label>Tamat</label><input type="time" id="jTamat" value="${esc(j.tamat || '22:30')}"></div></div>
+    ${(S.cawList || []).length ? `<label>Cawangan</label><select id="jCaw"><option value="">Semua / gelanggang induk</option>${S.cawList.map(c => `<option value="${esc(c.id)}" ${c.id === j.cawangan ? 'selected' : ''}>${esc(c.nama)}</option>`).join('')}</select>` : ''}
+    <label>Lokasi (pilihan)</label><input id="jLok" value="${esc(j.lokasi || '')}" placeholder="cth. Dewan SK Taman Panglima">
+    <label>Catatan (pilihan)</label><input id="jCat" value="${esc(j.catatan || '')}" placeholder="cth. Latihan tanding / Bengkung hitam sahaja">
+    <button class="utama penuh" style="margin-top:14px" onclick="simpanJadual('${esc(id || '')}')">Simpan</button>
+    ${id ? `<button class="bahaya penuh" style="margin-top:8px" onclick="padamJadual('${esc(id)}')">Padam slot</button>` : ''}
+    <button class="penuh" style="margin-top:8px" onclick="modal('')">Batal</button>`);
+}
+async function simpanJadual(id) {
+  const on = $('#jHari .on'); if (!on) return toast('Pilih hari.');
+  const r = await api('jad_simpan', { id, hari: on.textContent.toUpperCase(), mula: $('#jMula').value, tamat: $('#jTamat').value, cawangan: $('#jCaw') ? $('#jCaw').value : '', lokasi: $('#jLok').value, catatan: $('#jCat').value });
+  toast(r.msg); if (r.ok) { modal(''); tabGelang(); }
+}
+async function padamJadual(id) { if (!confirm('Padam slot latihan ini?')) return; const r = await api('jad_padam', { id }); toast(r.msg); if (r.ok) { modal(''); tabGelang(); } }
 
 /* ================= AKAUN ================= */
 function tabAkaun() {
