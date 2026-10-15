@@ -1,0 +1,2222 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Kehadiran Guru & Staf - SK King Edward VII (1) Taiping</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts: Inter & Cinzel for Official Header -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serifTitle: ['Cinzel', 'Georgia', 'serif']
+                    },
+                    colors: {
+                        skkeRed: {
+                            50: '#fef2f2',
+                            100: '#fee2e2',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            700: '#b91c1c',
+                            800: '#991b1b',
+                            900: '#7f1d1d',
+                        },
+                        skkeBlack: {
+                            800: '#1f2937',
+                            900: '#111827',
+                            950: '#090d16'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #b91c1c;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #7f1d1d;
+        }
+
+        /* Print Styles - Official School Attendance Sheet Format */
+        @media print {
+            body {
+                background-color: #ffffff !important;
+                color: #000000 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            @page {
+                size: A4 portrait;
+                margin: 10mm 12mm;
+            }
+            table.print-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 9.5pt;
+                font-family: Arial, Helvetica, sans-serif;
+            }
+            table.print-table th, table.print-table td {
+                border: 1px solid #000000 !important;
+                padding: 3px 6px;
+                vertical-align: middle;
+            }
+            table.print-table th {
+                background-color: #e5e7eb !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                font-weight: bold;
+                text-transform: uppercase;
+            }
+        }
+
+        .print-only {
+            display: none;
+        }
+
+        /* Subtle animations */
+        @keyframes pulseBorder {
+            0%, 100% { border-color: rgba(220, 38, 38, 0.7); }
+            50% { border-color: rgba(220, 38, 38, 0.2); }
+        }
+        .active-program-card {
+            animation: pulseBorder 3s infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-gray-800">
+
+    <!-- ======================== TOAST NOTIFICATION CONTAINER ======================== -->
+    <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-3 max-w-md w-full px-4 pointer-events-none no-print"></div>
+
+    <!-- ======================== TOP OFFICIAL HEADER (NO-PRINT) ======================== -->
+    <header class="bg-gradient-to-r from-skkeBlack-950 via-neutral-900 to-skkeRed-900 text-white shadow-xl border-b-4 border-skkeRed-600 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                
+                <!-- Brand & Unedited School Logo -->
+                <div class="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+                    <div class="relative group shrink-0">
+                        <!-- Exact School Logo Container without filters or distortion -->
+                        <div class="w-24 h-28 flex items-center justify-center bg-transparent">
+                            <img id="headerSchoolLogo" 
+                                 src="LOGO 3D SKKE1 (2).png" 
+                                 alt="Logo Rasmi SK King Edward VII (1)" 
+                                 class="max-w-full max-h-full object-contain"
+                                 onerror="handleLogoError(this)">
+                        </div>
+                        <button onclick="openLogoModal()" 
+                                title="Tetapan Fail Logo Rasmi (Tanpa Suntingan)"
+                                class="mt-1 w-full bg-black/70 hover:bg-skkeRed-600 text-[10px] text-gray-200 py-1 px-2 rounded border border-gray-600 transition flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-image"></i> Pilih Fail Logo
+                        </button>
+                    </div>
+
+                    <div>
+                        <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-skkeRed-600 text-white mb-1 uppercase tracking-wider">
+                            <i class="fa-solid fa-shield-halved"></i> Kod Sekolah: ABB6062 • Magni Nominis Umbra
+                        </div>
+                        <h1 class="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-white uppercase">
+                            SK KING EDWARD VII (1)
+                        </h1>
+                        <p class="text-xs sm:text-sm text-gray-300 font-medium">
+                            JALAN STESEN, 34000 TAIPING, PERAK DARUL RIDZUAN
+                        </p>
+                        <p class="text-xs text-red-300 mt-0.5 font-semibold">
+                            Sistem Pendaftaran Kehadiran Guru & Staf Sokongan (e-Hadir SKKE1)
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Live Digital Clock & Navigation Tabs -->
+                <div class="flex flex-col items-center md:items-end gap-3 w-full md:w-auto">
+                    <div class="bg-black/50 border border-gray-700 rounded-xl px-4 py-2 text-center md:text-right w-full sm:w-auto">
+                        <div id="liveDateDisplay" class="text-xs text-gray-300 font-medium">Khamis, 15 Oktober 2026</div>
+                        <div id="liveClockDisplay" class="text-xl sm:text-2xl font-mono font-bold text-red-400 tracking-wider">07:30:00 AM</div>
+                    </div>
+
+                    <!-- Main Navigation Switcher -->
+                    <nav class="flex flex-wrap justify-center gap-1.5 bg-black/40 p-1.5 rounded-xl border border-gray-700/80 w-full sm:w-auto">
+                        <button onclick="switchMainTab('kiosk')" id="tabBtn-kiosk" class="flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 bg-skkeRed-600 text-white shadow">
+                            <i class="fa-solid fa-id-card-clip"></i> Daftar Kehadiran
+                        </button>
+                        <button onclick="switchMainTab('admin')" id="tabBtn-admin" class="flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 text-gray-300 hover:text-white hover:bg-white/10">
+                            <i class="fa-solid fa-sliders"></i> Panel Admin & Rekod
+                        </button>
+                        <button onclick="switchMainTab('database')" id="tabBtn-database" class="flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 text-gray-300 hover:text-white hover:bg-white/10">
+                            <i class="fa-solid fa-users-gear"></i> Pangkalan Data IC (50)
+                        </button>
+                    </nav>
+                </div>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- ======================== MAIN CONTENT WORKSPACE (NO-PRINT) ======================== -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 no-print">
+
+        <!-- ACTIVE PROGRAM BANNER -->
+        <div class="bg-white rounded-2xl shadow-md border-2 border-skkeRed-600 p-4 sm:p-6 mb-6 active-program-card">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="space-y-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-skkeRed-700 uppercase">
+                            <span class="w-2 h-2 rounded-full bg-skkeRed-600 animate-ping"></span> Program Aktif Semasa
+                        </span>
+                        <span id="bannerProgramDate" class="text-sm font-semibold text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                            <i class="fa-regular fa-calendar-check mr-1 text-skkeRed-600"></i> -
+                        </span>
+                    </div>
+                    <h2 id="bannerProgramTitle" class="text-xl sm:text-2xl font-extrabold text-gray-900 pt-1">
+                        Memuatkan Program...
+                    </h2>
+                    <p id="bannerProgramNote" class="text-sm text-gray-600">
+                        Arahan / Catatan: -
+                    </p>
+                </div>
+
+                <!-- Mini Live Stats on Banner -->
+                <div class="grid grid-cols-3 gap-2 sm:gap-3 shrink-0 bg-gray-50 p-3 rounded-xl border border-gray-200">
+                    <div class="text-center px-2 sm:px-3">
+                        <div class="text-xs text-gray-500 font-medium">Jumlah Staf</div>
+                        <div id="bannerStatTotal" class="text-lg sm:text-2xl font-extrabold text-gray-800">50</div>
+                    </div>
+                    <div class="text-center px-2 sm:px-3 border-x border-gray-200">
+                        <div class="text-xs text-emerald-700 font-semibold">Hadir</div>
+                        <div id="bannerStatPresent" class="text-lg sm:text-2xl font-extrabold text-emerald-600">0</div>
+                    </div>
+                    <div class="text-center px-2 sm:px-3">
+                        <div class="text-xs text-amber-700 font-semibold">Belum Hadir</div>
+                        <div id="bannerStatAbsent" class="text-lg sm:text-2xl font-extrabold text-amber-600">50</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- TAB 1: MOD PENDAFTARAN KEHADIRAN GURU & STAF (KIOSK UTAMA)                -->
+        <!-- ========================================================================= -->
+        <section id="view-kiosk" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                <!-- Left Column: IC Check-in Box & First-Time Registration -->
+                <div class="lg:col-span-7 space-y-6">
+                    
+                    <!-- Main IC Input Card -->
+                    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+                        <div class="bg-gradient-to-r from-skkeBlack-900 to-skkeRed-800 px-6 py-4 text-white flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-bold flex items-center gap-2">
+                                    <i class="fa-solid fa-fingerprint text-red-400"></i> Pendaftaran Kehadiran Pantas
+                                </h3>
+                                <p class="text-xs text-gray-300 mt-0.5">
+                                    Masukkan Nombor Kad Pengenalan (12 digit tanpa sengkang "-")
+                                </p>
+                            </div>
+                            <span class="bg-white/10 text-white text-xs font-semibold px-3 py-1 rounded-lg border border-white/20">
+                                Auto-Rekod Masa
+                            </span>
+                        </div>
+
+                        <div class="p-6 space-y-5">
+                            <!-- Info Guide -->
+                            <div class="bg-blue-50 border-l-4 border-blue-600 p-3.5 rounded-r-xl text-xs sm:text-sm text-blue-900 flex items-start gap-3">
+                                <i class="fa-solid fa-circle-info text-blue-600 text-lg mt-0.5"></i>
+                                <div>
+                                    <p class="font-bold">Cara Penggunaan:</p>
+                                    <ul class="list-disc list-inside mt-1 space-y-0.5 text-blue-800">
+                                        <li><strong>Kali Pertama:</strong> Masukkan No. IC dan pilih/sahkan Nama Penuh anda sekali sahaja.</li>
+                                        <li><strong>Kali Kedua & Seterusnya:</strong> Hanya masukkan No. IC sahaja untuk terus merekod kehadiran!</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- IC Form -->
+                            <form id="icCheckinForm" onsubmit="handleICSubmission(event)" class="space-y-4">
+                                <div>
+                                    <label for="icNumberInput" class="block text-sm font-bold text-gray-700 mb-2">
+                                        NOMBOR KAD PENGENALAN (12 DIGIT) <span class="text-red-600">*</span>
+                                    </label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                                            <i class="fa-solid fa-id-card text-xl"></i>
+                                        </div>
+                                        <input type="text" 
+                                               id="icNumberInput" 
+                                               inputmode="numeric"
+                                               maxlength="14"
+                                               autocomplete="off"
+                                               placeholder="Contoh: 850412085431" 
+                                               oninput="cleanICInput(this)"
+                                               class="w-full pl-12 pr-12 py-4 text-xl sm:text-2xl font-mono font-bold tracking-widest text-gray-900 bg-gray-50 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-red-100 focus:border-skkeRed-600 focus:bg-white transition outline-none"
+                                               required>
+                                        <button type="button" 
+                                                onclick="clearICInput()" 
+                                                title="Kosongkan"
+                                                class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600">
+                                            <i class="fa-solid fa-circle-xmark text-xl"></i>
+                                        </button>
+                                    </div>
+                                    <div class="flex justify-between items-center mt-1.5 text-xs text-gray-500">
+                                        <span id="icDigitCount">0 / 12 digit dimasukkan</span>
+                                        <span>Tanpa tanda '-' atau ruang kosong</span>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="w-full py-4 px-6 bg-skkeRed-600 hover:bg-skkeRed-700 active:bg-skkeRed-800 text-white font-extrabold text-base sm:text-lg rounded-xl shadow-lg hover:shadow-xl transition flex items-center justify-center gap-3">
+                                    <i class="fa-solid fa-circle-check text-xl"></i>
+                                    SEMAK & REKOD KEHADIRAN
+                                </button>
+                            </form>
+
+                            <!-- FIRST TIME REGISTRATION PANEL (Hidden by default, pops up when IC is not yet bound) -->
+                            <div id="firstTimeRegBox" class="hidden mt-6 pt-6 border-t-2 border-dashed border-amber-400 bg-amber-50/70 p-5 rounded-2xl space-y-4">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 font-bold text-lg">
+                                        <i class="fa-solid fa-user-plus"></i>
+                                    </div>
+                                    <div>
+                                        <span class="px-2.5 py-0.5 bg-amber-200 text-amber-900 rounded-full text-xs font-bold uppercase">
+                                            Pendaftaran Kali Pertama
+                                        </span>
+                                        <h4 class="text-base sm:text-lg font-extrabold text-gray-900 mt-1">
+                                            No. IC <span id="ftDisplayIC" class="font-mono text-skkeRed-700 underline"></span> Belum Dipautkan
+                                        </h4>
+                                        <p class="text-xs sm:text-sm text-gray-600">
+                                            Sila pilih nama penuh anda daripada senarai rasmi SK King Edward VII (1) di bawah atau taip nama penuh baharu. Selepas ini, anda hanya perlu masukkan No. IC sahaja.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Toggle Option: Select from Official List vs New Staff Name -->
+                                <div class="flex gap-2 bg-white p-1 rounded-xl border border-amber-300">
+                                    <button type="button" onclick="setFirstTimeMode('existing')" id="ftModeBtn-existing" class="flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-bold bg-skkeRed-600 text-white transition">
+                                        Pilih Nama Dalam Senarai (50 Staf)
+                                    </button>
+                                    <button type="button" onclick="setFirstTimeMode('new')" id="ftModeBtn-new" class="flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-bold text-gray-600 hover:bg-gray-100 transition">
+                                        Guru / Staf Baharu (Tiada Dalam Senarai)
+                                    </button>
+                                </div>
+
+                                <!-- Option A: Select from Unlinked Staff in the 50 list -->
+                                <div id="ftSection-existing" class="space-y-3">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">
+                                            Cari Nama Anda:
+                                        </label>
+                                        <div class="relative mb-2">
+                                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-gray-400"></i>
+                                            <input type="text" 
+                                                   id="ftSearchStaffInput" 
+                                                   oninput="filterUnlinkedStaffDropdown()"
+                                                   placeholder="Taip sebahagian nama untuk menapis senarai..." 
+                                                   class="w-full pl-10 pr-4 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:border-skkeRed-600 outline-none">
+                                        </div>
+                                        <select id="ftSelectStaffId" size="6" class="w-full p-2.5 text-sm bg-white border-2 border-gray-300 rounded-xl focus:border-skkeRed-600 outline-none font-medium text-gray-800">
+                                            <!-- Populated dynamically with unlinked staff -->
+                                        </select>
+                                        <p class="text-[11px] text-gray-500 mt-1">
+                                            * Klik pada nama penuh anda di dalam kotak di atas.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Option B: Type Custom Full Name (if new teacher transferred in) -->
+                                <div id="ftSection-new" class="hidden space-y-3">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">
+                                            Nama Penuh (Huruf Besar Mengikut IC) <span class="text-red-600">*</span>
+                                        </label>
+                                        <input type="text" 
+                                               id="ftCustomNameInput" 
+                                               placeholder="CONTOH: AHMAD FAIZ BIN KAMARUDIN" 
+                                               class="w-full px-4 py-3 text-sm font-bold uppercase bg-white border-2 border-gray-300 rounded-xl focus:border-skkeRed-600 outline-none">
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Kategori</label>
+                                            <select id="ftCustomCategoryInput" class="w-full px-3 py-2.5 text-sm bg-white border border-gray-300 rounded-xl">
+                                                <option value="GURU">GURU</option>
+                                                <option value="STAF SOKONGAN">STAF SOKONGAN</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Jawatan</label>
+                                            <input type="text" 
+                                                   id="ftCustomRoleInput" 
+                                                   value="GURU"
+                                                   placeholder="Contoh: GURU / PPM" 
+                                                   class="w-full px-3 py-2.5 text-sm uppercase bg-white border border-gray-300 rounded-xl">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-col sm:flex-row gap-2 pt-2">
+                                    <button type="button" onclick="confirmFirstTimeRegistration()" class="flex-1 py-3 px-5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow transition flex items-center justify-center gap-2">
+                                        <i class="fa-solid fa-floppy-disk"></i> Simpan IC & Sahkan Kehadiran
+                                    </button>
+                                    <button type="button" onclick="cancelFirstTimeRegistration()" class="py-3 px-4 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold text-sm rounded-xl transition">
+                                        Batal
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- LAST SUCCESSFUL CHECK-INCONFIRMATION BANNER -->
+                            <div id="lastCheckinCard" class="hidden bg-emerald-50 border-2 border-emerald-500 rounded-2xl p-4 sm:p-5 transition-all">
+                                <div class="flex items-start gap-4">
+                                    <div class="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 text-2xl shadow">
+                                        <i class="fa-solid fa-check-double"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex flex-wrap items-center justify-between gap-2">
+                                            <span class="text-xs font-extrabold uppercase tracking-wider px-2.5 py-0.5 bg-emerald-200 text-emerald-900 rounded-full">
+                                                Kehadiran Berjaya Direkodkan
+                                            </span>
+                                            <span id="lcTime" class="text-xs font-mono font-bold text-emerald-800 bg-white px-2.5 py-1 rounded-lg border border-emerald-300">
+                                                07:25:14 AM
+                                            </span>
+                                        </div>
+                                        <h4 id="lcName" class="text-base sm:text-lg font-extrabold text-gray-900 mt-1.5">
+                                            -
+                                        </h4>
+                                        <p id="lcRole" class="text-xs font-semibold text-emerald-800">
+                                            -
+                                        </p>
+                                        <p id="lcMessage" class="text-xs text-gray-600 mt-1">
+                                            Terima kasih! Rekod kehadiran anda telah disimpan ke dalam sistem bagi program semasa.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right Column: Live Recent Check-ins for Current Program -->
+                <div class="lg:col-span-5">
+                    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+                        <div class="bg-gray-900 px-5 py-4 text-white flex items-center justify-between">
+                            <div>
+                                <h3 class="text-base font-bold flex items-center gap-2">
+                                    <i class="fa-solid fa-clock-rotate-left text-red-400"></i> Log Kehadiran Semasa
+                                </h3>
+                                <p class="text-xs text-gray-400">Senarai guru & staf yang telah mendaftar hari ini</p>
+                            </div>
+                            <span id="liveFeedCountBadge" class="bg-skkeRed-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                                0 Hadir
+                            </span>
+                        </div>
+
+                        <div class="p-4">
+                            <!-- Search inside live list -->
+                            <div class="relative mb-3">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+                                <input type="text" 
+                                       id="liveFeedSearch" 
+                                       oninput="renderKioskLiveFeed()"
+                                       placeholder="Semak nama dalam senarai hadir..." 
+                                       class="w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl focus:border-skkeRed-600 outline-none">
+                            </div>
+
+                            <div id="kioskLiveFeedList" class="space-y-2 max-h-[430px] overflow-y-auto pr-1">
+                                <!-- Populated via JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- TAB 2: PANEL ADMIN, PENGURUSAN PROGRAM & REKOD TERDAHULU                  -->
+        <!-- ========================================================================= -->
+        <section id="view-admin" class="hidden space-y-6">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Create / Edit Program Form (Left 5 Cols) -->
+                <div class="lg:col-span-5 bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+                    <div class="bg-skkeBlack-900 px-5 py-4 text-white flex items-center justify-between">
+                        <h3 class="font-bold text-base flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-plus text-red-400"></i> Tetapan Program / Sesi Kehadiran
+                        </h3>
+                    </div>
+                    <form id="createProgramForm" onsubmit="handleCreateOrUpdateProgram(event)" class="p-5 space-y-4">
+                        <input type="hidden" id="editProgramId" value="">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">
+                                Tajuk / Perkara / Nama Program <span class="text-red-600">*</span>
+                            </label>
+                            <input type="text" 
+                                   id="progTitleInput" 
+                                   placeholder="Contoh: MESYUARAT GURU BIL. 1/2026" 
+                                   required
+                                   class="w-full px-3.5 py-2.5 text-sm font-semibold bg-gray-50 border border-gray-300 rounded-xl focus:border-skkeRed-600 focus:bg-white outline-none">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">
+                                    Tarikh Program <span class="text-red-600">*</span>
+                                </label>
+                                <input type="date" 
+                                       id="progDateInput" 
+                                       required
+                                       class="w-full px-3.5 py-2.5 text-sm font-semibold bg-gray-50 border border-gray-300 rounded-xl focus:border-skkeRed-600 focus:bg-white outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">
+                                    Jenis Borang Cetakan
+                                </label>
+                                <select id="progTypeInput" class="w-full px-3.5 py-2.5 text-sm font-semibold bg-gray-50 border border-gray-300 rounded-xl focus:border-skkeRed-600 focus:bg-white outline-none">
+                                    <option value="PROGRAM">Borang Program / Mesyuarat / LADAP</option>
+                                    <option value="HARIAN">Borang Kehadiran Harian (Tiba & Balik)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">
+                                Arahan / Tempat / Catatan
+                            </label>
+                            <input type="text" 
+                                   id="progNoteInput" 
+                                   placeholder="Contoh: Semua Guru & Staf Wajib Hadir (Bilik Gerakan SKKE1)" 
+                                   class="w-full px-3.5 py-2.5 text-sm bg-gray-50 border border-gray-300 rounded-xl focus:border-skkeRed-600 focus:bg-white outline-none">
+                        </div>
+
+                        <div class="flex flex-wrap gap-2 pt-2">
+                            <button type="submit" id="saveProgBtn" class="flex-1 py-2.5 px-4 bg-skkeRed-600 hover:bg-skkeRed-700 text-white font-bold text-sm rounded-xl shadow transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-plus-circle"></i> Cipta & Jadikan Program Aktif
+                            </button>
+                            <button type="button" id="cancelEditProgBtn" onclick="resetProgramForm()" class="hidden py-2.5 px-4 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-sm rounded-xl transition">
+                                Batal Edit
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Past & Active Programs History List (Right 7 Cols) -->
+                <div class="lg:col-span-7 bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden flex flex-col">
+                    <div class="bg-skkeBlack-900 px-5 py-4 text-white flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <h3 class="font-bold text-base flex items-center gap-2">
+                                <i class="fa-solid fa-folder-tree text-red-400"></i> Senarai Rekod Program Terdahulu & Semasa
+                            </h3>
+                            <p class="text-xs text-gray-400">Pilih mana-mana program untuk menyemak rekod, mencetak, atau mengaktifkan semula</p>
+                        </div>
+                        <span id="totalProgramsBadge" class="bg-white/10 text-white text-xs font-bold px-3 py-1 rounded-full">
+                            1 Program
+                        </span>
+                    </div>
+
+                    <div class="p-4 flex-1 overflow-y-auto max-h-[340px]">
+                        <div id="programHistoryList" class="space-y-2.5">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- FULL ATTENDANCE SHEET & REAL-TIME ANALYTICS FOR SELECTED PROGRAM -->
+            <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-gray-900 to-skkeRed-900 px-6 py-4 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <span class="text-xs uppercase tracking-wider text-red-300 font-bold">Rekod Kehadiran & Analisis Lengkap</span>
+                        <h3 id="adminTableProgramTitle" class="text-lg sm:text-xl font-extrabold">-</h3>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="window.print()" class="px-4 py-2 bg-white text-gray-900 hover:bg-gray-100 font-bold text-xs sm:text-sm rounded-xl shadow flex items-center gap-2 transition">
+                            <i class="fa-solid fa-print text-skkeRed-600"></i> Cetak Borang Rasmi (A4)
+                        </button>
+                        <button onclick="exportCurrentProgramCSV()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow flex items-center gap-2 transition">
+                            <i class="fa-solid fa-file-csv"></i> Muat Turun Excel (CSV)
+                        </button>
+                        <button onclick="markAllPresentConfirm()" class="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs sm:text-sm rounded-xl border border-white/20 flex items-center gap-1.5 transition">
+                            <i class="fa-solid fa-check-double"></i> Tandakan Semua Hadir
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filter & Search Toolbar -->
+                <div class="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                    <!-- Filter Pills -->
+                    <div class="flex flex-wrap gap-1.5">
+                        <button onclick="setAdminAttendanceFilter('ALL')" id="filterBtn-ALL" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-skkeRed-600 text-white">
+                            Semua (50)
+                        </button>
+                        <button onclick="setAdminAttendanceFilter('PRESENT')" id="filterBtn-PRESENT" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-gray-700 border border-gray-300 hover:bg-gray-100">
+                            Hadir Sahaja
+                        </button>
+                        <button onclick="setAdminAttendanceFilter('ABSENT')" id="filterBtn-ABSENT" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-gray-700 border border-gray-300 hover:bg-gray-100">
+                            Belum Hadir
+                        </button>
+                        <button onclick="setAdminAttendanceFilter('GURU')" id="filterBtn-GURU" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-gray-700 border border-gray-300 hover:bg-gray-100">
+                            Guru (44)
+                        </button>
+                        <button onclick="setAdminAttendanceFilter('STAF')" id="filterBtn-STAF" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-gray-700 border border-gray-300 hover:bg-gray-100">
+                            Staf Sokongan (6)
+                        </button>
+                    </div>
+
+                    <!-- Search Box -->
+                    <div class="relative w-full md:w-72">
+                        <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+                        <input type="text" 
+                               id="adminAttendanceSearch" 
+                               oninput="renderAdminAttendanceTable()"
+                               placeholder="Cari nama guru / staf / IC..." 
+                               class="w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-white border border-gray-300 rounded-xl focus:border-skkeRed-600 outline-none">
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-700 text-xs uppercase border-b border-gray-200">
+                                <th class="py-3 px-4 font-bold w-14 text-center">Bil</th>
+                                <th class="py-3 px-4 font-bold">Nama Penuh Guru / Staf</th>
+                                <th class="py-3 px-4 font-bold">Jawatan & Kategori</th>
+                                <th class="py-3 px-4 font-bold text-center">No. Kad Pengenalan</th>
+                                <th class="py-3 px-4 font-bold text-center">Status & Masa Hadir</th>
+                                <th class="py-3 px-4 font-bold">Catatan (CRK / MC / Urusan Rasmi)</th>
+                                <th class="py-3 px-4 font-bold text-center">Tindakan Manual</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminAttendanceTbody" class="divide-y divide-gray-200 text-sm">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- TAB 3: PANGKALAN DATA IC GURU & STAF (50 ORANG) + BACKUP                  -->
+        <!-- ========================================================================= -->
+        <section id="view-database" class="hidden space-y-6">
+            
+            <!-- Top Summary & Add New Staff Bar -->
+            <div class="bg-white rounded-2xl shadow-md border border-gray-200 p-5">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 pb-4">
+                    <div>
+                        <h3 class="text-lg font-extrabold text-gray-900 flex items-center gap-2">
+                            <i class="fa-solid fa-database text-skkeRed-600"></i> Pangkalan Data Induk Guru & Staf Sokongan
+                        </h3>
+                        <p class="text-xs sm:text-sm text-gray-600">
+                            Senarai rujukan awal 44 Guru dan 6 Staf Sokongan SK King Edward VII (1). Guru yang telah mendaftar kali pertama akan mempunyai No. IC terpaut secara automatik.
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 shrink-0">
+                        <button onclick="openAddStaffModal()" class="px-4 py-2.5 bg-skkeRed-600 hover:bg-skkeRed-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow flex items-center gap-2 transition">
+                            <i class="fa-solid fa-user-plus"></i> Tambah Guru / Staf Baharu
+                        </button>
+                        <button onclick="exportBackupJSON()" class="px-3.5 py-2.5 bg-gray-800 hover:bg-gray-900 text-white font-semibold text-xs sm:text-sm rounded-xl flex items-center gap-2 transition">
+                            <i class="fa-solid fa-download"></i> Sandaran Data (JSON)
+                        </button>
+                        <label class="px-3.5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-xs sm:text-sm rounded-xl border border-gray-300 cursor-pointer flex items-center gap-2 transition">
+                            <i class="fa-solid fa-upload"></i> Pulihkan Data
+                            <input type="file" accept=".json" onchange="importBackupJSON(event)" class="hidden">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Registration Progress Stats -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+                    <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-200 flex items-center justify-between">
+                        <div>
+                            <div class="text-xs text-gray-500 font-semibold uppercase">Jumlah Keseluruhan Staf</div>
+                            <div id="dbStatTotal" class="text-2xl font-extrabold text-gray-900">50</div>
+                        </div>
+                        <i class="fa-solid fa-users text-2xl text-gray-400"></i>
+                    </div>
+                    <div class="bg-emerald-50 p-3.5 rounded-xl border border-emerald-200 flex items-center justify-between">
+                        <div>
+                            <div class="text-xs text-emerald-700 font-semibold uppercase">IC Telah Didaftarkan</div>
+                            <div id="dbStatLinked" class="text-2xl font-extrabold text-emerald-700">0</div>
+                        </div>
+                        <i class="fa-solid fa-id-card-clip text-2xl text-emerald-500"></i>
+                    </div>
+                    <div class="bg-amber-50 p-3.5 rounded-xl border border-amber-200 flex items-center justify-between">
+                        <div>
+                            <div class="text-xs text-amber-700 font-semibold uppercase">Belum Daftar IC (Kali Pertama)</div>
+                            <div id="dbStatUnlinked" class="text-2xl font-extrabold text-amber-700">50</div>
+                        </div>
+                        <i class="fa-solid fa-user-clock text-2xl text-amber-500"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Staff Master Table -->
+            <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+                <div class="p-4 bg-gray-50 border-b border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div class="relative w-full sm:w-80">
+                        <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+                        <input type="text" 
+                               id="dbSearchInput" 
+                               oninput="renderDatabaseTable()"
+                               placeholder="Cari nama atau No. IC..." 
+                               class="w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-white border border-gray-300 rounded-xl focus:border-skkeRed-600 outline-none">
+                    </div>
+                    <div class="text-xs text-gray-500 font-medium">
+                        Klik pada ruangan <strong>No. Kad Pengenalan</strong> untuk menetapkan atau menyunting IC secara manual.
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-700 text-xs uppercase border-b border-gray-200">
+                                <th class="py-3 px-4 font-bold w-14 text-center">Bil</th>
+                                <th class="py-3 px-4 font-bold">Nama Penuh (Rujukan Rasmi)</th>
+                                <th class="py-3 px-4 font-bold">Kategori</th>
+                                <th class="py-3 px-4 font-bold">Jawatan</th>
+                                <th class="py-3 px-4 font-bold">No. Kad Pengenalan (12 Digit)</th>
+                                <th class="py-3 px-4 font-bold text-center">Tindakan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="databaseTbody" class="divide-y divide-gray-200 text-sm">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ======================== FOOTER (NO-PRINT) ======================== -->
+    <footer class="bg-white border-t border-gray-200 py-4 mt-auto no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-2">
+            <div>
+                <strong>SK KING EDWARD VII (1) TAIPING</strong> • Kod Sekolah: ABB6062 • Tel: 05-8073749 • E-mel: abb6062@moe.edu.my
+            </div>
+            <div>
+                Data disimpan secara selamat di dalam pelayar peranti ini (<span class="font-semibold text-gray-700">LocalStorage</span>).
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========================================================================= -->
+    <!-- MODAL: TETAPAN LOGO RASMI SEKOLAH (TIADA SUNTINGAN / 100% ASAL)           -->
+    <!-- ========================================================================= -->
+    <div id="logoModal" class="fixed inset-0 z-50 bg-black/70 hidden items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-gray-200 overflow-hidden">
+            <div class="bg-skkeBlack-900 px-5 py-4 text-white flex items-center justify-between">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-shield-cat text-red-400"></i> Pautan Fail Logo Rasmi SK King Edward VII (1)
+                </h3>
+                <button onclick="closeLogoModal()" class="text-gray-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4 text-sm">
+                <div class="bg-amber-50 border-l-4 border-amber-500 p-3.5 rounded-r-xl text-xs text-amber-900 space-y-1">
+                    <p class="font-bold">Jaminan Kualiti Reka Bentuk 100% Asal:</p>
+                    <p>Sistem ini memaparkan fail imej <code>LOGO 3D SKKE1 (2).png</code> secara terus tanpa sebarang pemotongan (crop), penapis warna, atau ubah suai. Anda boleh memilih fail logo rasmi daripada peranti anda supaya ia disimpan kekal dalam sistem ini.</p>
+                </div>
+
+                <div class="flex flex-col items-center justify-center p-4 bg-gray-100 rounded-xl border border-gray-300">
+                    <img id="modalLogoPreview" src="LOGO 3D SKKE1 (2).png" alt="Pratonton Logo" class="h-32 object-contain" onerror="handleLogoError(this)">
+                    <span class="text-xs text-gray-500 mt-2">Pratonton Logo Semasa</span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1.5">
+                        Muat Naik Fail `LOGO 3D SKKE1 (2).png` Dari Komputer / Telefon:
+                    </label>
+                    <input type="file" 
+                           accept="image/png,image/jpeg,image/webp" 
+                           onchange="handleLogoUpload(event)"
+                           class="w-full text-xs text-gray-600 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-skkeRed-600 file:text-white hover:file:bg-skkeRed-700 cursor-pointer border border-gray-300 rounded-xl p-1">
+                </div>
+
+                <div class="flex justify-between items-center pt-3 border-t border-gray-200">
+                    <button type="button" onclick="resetDefaultLogoPath()" class="text-xs text-red-600 hover:underline font-semibold">
+                        Tetapkan Semula ke Laluan Fail Asal
+                    </button>
+                    <button type="button" onclick="closeLogoModal()" class="px-5 py-2 bg-gray-800 hover:bg-gray-900 text-white font-bold text-xs rounded-xl">
+                        Selesai & Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODAL: TAMBAH GURU / STAF BAHARU                                          -->
+    <!-- ========================================================================= -->
+    <div id="addStaffModal" class="fixed inset-0 z-50 bg-black/70 hidden items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-gray-200 overflow-hidden">
+            <div class="bg-skkeBlack-900 px-5 py-4 text-white flex items-center justify-between">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus text-red-400"></i> Tambah Guru / Staf Baharu
+                </h3>
+                <button onclick="closeAddStaffModal()" class="text-gray-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form onsubmit="handleAddNewStaffSubmit(event)" class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Nama Penuh <span class="text-red-600">*</span></label>
+                    <input type="text" id="newStaffName" required placeholder="Huruf Besar" class="w-full px-3.5 py-2.5 text-sm uppercase font-semibold border border-gray-300 rounded-xl outline-none focus:border-skkeRed-600">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Kategori</label>
+                        <select id="newStaffCategory" class="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-xl">
+                            <option value="GURU">GURU</option>
+                            <option value="STAF SOKONGAN">STAF SOKONGAN</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Jawatan</label>
+                        <input type="text" id="newStaffRole" value="GURU" class="w-full px-3 py-2.5 text-sm uppercase border border-gray-300 rounded-xl">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">No. Kad Pengenalan (Pilihan - 12 Digit)</label>
+                    <input type="text" id="newStaffIC" maxlength="12" oninput="this.value=this.value.replace(/[^0-9]/g,'')" placeholder="Contoh: 880101085521" class="w-full px-3.5 py-2.5 text-sm font-mono border border-gray-300 rounded-xl">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeAddStaffModal()" class="px-4 py-2 bg-gray-200 text-gray-700 font-bold text-xs rounded-xl">Batal</button>
+                    <button type="submit" class="px-5 py-2 bg-skkeRed-600 text-white font-bold text-xs rounded-xl shadow">Simpan Nama</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================================================================================= -->
+    <!-- BAHAGIAN CETAKAN RASMI (PRINT-ONLY: MENGIKUT FORMAT BORANG KEHADIRAN SKKE1)        -->
+    <!-- ================================================================================= -->
+    <div class="print-only">
+        <!-- Official School Letterhead -->
+        <div class="border-b-2 border-black pb-3 mb-3">
+            <div class="flex items-center justify-between gap-4">
+                <!-- Left: Jata Negara / KPM Text Representation -->
+                <div class="w-36 text-center shrink-0">
+                    <div class="text-[10pt] font-extrabold tracking-tight leading-tight uppercase">
+                        KEMENTERIAN PENDIDIKAN
+                    </div>
+                </div>
+
+                <!-- Center: School Name & Address matching Word doc header -->
+                <div class="text-center flex-1">
+                    <h1 class="font-serifTitle text-[15pt] font-extrabold tracking-wide leading-tight">
+                        SEKOLAH KEBANGSAAN KING EDWARD VII(1)
+                    </h1>
+                    <p class="font-serifTitle text-[12pt] tracking-widest leading-snug">
+                        JALAN STESEN, 34000 TAIPING
+                    </p>
+                    <p class="font-serifTitle text-[12pt] tracking-widest leading-snug">
+                        PERAK DARUL RIDZUAN
+                    </p>
+                    <div class="flex justify-center gap-8 text-[9.5pt] font-sans mt-1">
+                        <div>
+                            <span class="block">Kod Sekolah: ABB6062</span>
+                            <span class="block">No. Telefon: 05-8073749</span>
+                        </div>
+                        <div>
+                            <span class="block">E-mel: abb6062@moe.edu.my</span>
+                            <span class="block">No. Faks: 05-8072453</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Unedited School Crest -->
+                <div class="w-24 h-24 flex items-center justify-center shrink-0">
+                    <img id="printSchoolLogo" 
+                         src="LOGO 3D SKKE1 (2).png" 
+                         alt="Logo SKKE1" 
+                         class="max-w-full max-h-full object-contain"
+                         onerror="handleLogoError(this)">
+                </div>
+            </div>
+        </div>
+
+        <!-- Program Details Table -->
+        <table class="print-table mb-3">
+            <tbody>
+                <tr>
+                    <td class="w-36 font-bold">TAJUK / PERKARA</td>
+                    <td class="w-4 text-center font-bold">:</td>
+                    <td id="printProgTitle" class="font-bold uppercase"></td>
+                </tr>
+                <tr>
+                    <td class="font-bold">TARIKH / HARI</td>
+                    <td class="text-center font-bold">:</td>
+                    <td id="printProgDate" class="uppercase"></td>
+                </tr>
+                <tr>
+                    <td class="font-bold">ARAHAN / CATATAN</td>
+                    <td class="text-center font-bold">:</td>
+                    <td id="printProgNote"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Teachers Two-Column Table (1-22 Left, 23-44 Right) -->
+        <div class="text-[9.5pt] font-bold uppercase mb-1">SENARAI KEHADIRAN GURU</div>
+        <table class="print-table mb-3">
+            <thead>
+                <tr>
+                    <th class="w-7 text-center">BIL</th>
+                    <th>NAMA GURU</th>
+                    <th class="w-16 text-center">MASA HADIR</th>
+                    <th class="w-20 text-center">CATATAN</th>
+                    <th class="w-7 text-center">BIL</th>
+                    <th>NAMA GURU</th>
+                    <th class="w-16 text-center">MASA HADIR</th>
+                    <th class="w-20 text-center">CATATAN</th>
+                </tr>
+            </thead>
+            <tbody id="printGuruTbody">
+                <!-- Populated dynamically in 2-column layout -->
+            </tbody>
+        </table>
+
+        <!-- Support Staff Two-Column Table -->
+        <div class="text-[9.5pt] font-bold uppercase mb-1">SENARAI KEHADIRAN STAF SOKONGAN</div>
+        <table class="print-table mb-4">
+            <thead>
+                <tr>
+                    <th class="w-7 text-center">BIL</th>
+                    <th>NAMA STAF SOKONGAN</th>
+                    <th class="w-16 text-center">MASA HADIR</th>
+                    <th class="w-20 text-center">CATATAN</th>
+                    <th class="w-7 text-center">BIL</th>
+                    <th>NAMA STAF SOKONGAN</th>
+                    <th class="w-16 text-center">MASA HADIR</th>
+                    <th class="w-20 text-center">CATATAN</th>
+                </tr>
+            </thead>
+            <tbody id="printStafTbody">
+                <!-- Populated dynamically in 2-column layout -->
+            </tbody>
+        </table>
+
+        <!-- Bottom Verification & Attendance Analysis Box (Matching Official Form) -->
+        <div class="grid grid-cols-12 gap-4 items-end mt-4 text-[9.5pt]">
+            <div class="col-span-6">
+                <p class="font-bold uppercase mb-10">DISEMAK DAN DISAHKAN KEHADIRAN OLEH:</p>
+                <p class="font-bold">...........................................................................</p>
+                <p class="font-bold uppercase">Guru Besar / Guru Penolong Kanan</p>
+                <p class="text-[8.5pt]">SK King Edward VII (1), Taiping</p>
+            </div>
+            <div class="col-span-6">
+                <table class="print-table">
+                    <thead>
+                        <tr>
+                            <th colspan="4" class="text-center">ANALISIS KEHADIRAN</th>
+                        </tr>
+                        <tr>
+                            <th class="w-8 text-center">BIL</th>
+                            <th>PERKARA / KEHADIRAN</th>
+                            <th class="w-16 text-center">BILANGAN</th>
+                            <th class="w-16 text-center">%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="text-center">1</td>
+                            <td>Bil. Guru & Staf Hadir</td>
+                            <td id="printStatPresent" class="text-center font-bold">0</td>
+                            <td id="printStatPresentPct" class="text-center font-bold">0%</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center">2</td>
+                            <td>Bil. Guru & Staf Tidak Hadir</td>
+                            <td id="printStatAbsent" class="text-center font-bold">0</td>
+                            <td id="printStatAbsentPct" class="text-center font-bold">0%</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" class="font-bold text-right">JUMLAH KESELURUHAN</td>
+                            <td id="printStatTotal" class="text-center font-bold">50</td>
+                            <td class="text-center font-bold">100%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================== APPLICATION JAVASCRIPT ======================== -->
+    <script>
+        /*************************************************************************
+         * 1. SENARAI RUJUKAN AWAL 50 GURU & STAF SK KING EDWARD VII (1)
+         *************************************************************************/
+        const INITIAL_STAFF_LIST = [
+            // 44 ORANG GURU
+            { id: "S01", bil: 1, name: "EN. MALIM PERMAN BIN RAMLI", role: "GURU BESAR", category: "GURU", ic: "" },
+            { id: "S02", bil: 2, name: "PN. RAMLAH BINTI OSMAN", role: "PK PENTADBIRAN", category: "GURU", ic: "" },
+            { id: "S03", bil: 3, name: "EN. AZIZAN BIN MAT JUSOH", role: "PK HAL EHWAL MURID", category: "GURU", ic: "" },
+            { id: "S04", bil: 4, name: "EN. MUHAMMAD NORHISYAM BIN SHAMSUDIN", role: "PK KOKURIKULUM", category: "GURU", ic: "" },
+            { id: "S05", bil: 5, name: "AHMAD TARMIZI BIN MD HIJAZI", role: "GURU", category: "GURU", ic: "" },
+            { id: "S06", bil: 6, name: "AKMATUL IRA BINTI MOHD NOOR", role: "GURU", category: "GURU", ic: "" },
+            { id: "S07", bil: 7, name: "ARIES DEEN LIM BIN JEFRI LIM", role: "GURU", category: "GURU", ic: "" },
+            { id: "S08", bil: 8, name: "AZLINA BINTI MD YUSOFF", role: "GURU", category: "GURU", ic: "" },
+            { id: "S09", bil: 9, name: "FAIZAYUSNI BIN AHMAD", role: "GURU", category: "GURU", ic: "" },
+            { id: "S10", bil: 10, name: "HAZYZYIZUAN BIN ABU HASSAN", role: "GURU", category: "GURU", ic: "" },
+            { id: "S11", bil: 11, name: "IMRAN BIN SUPIN", role: "GURU", category: "GURU", ic: "" },
+            { id: "S12", bil: 12, name: "JASRIZAL BIN SAAD", role: "GURU", category: "GURU", ic: "" },
+            { id: "S13", bil: 13, name: "JUNAIDAH BINTI BUDIN", role: "GURU", category: "GURU", ic: "" },
+            { id: "S14", bil: 14, name: "KALA DEVI A/P ROGORNARTHUM", role: "GURU", category: "GURU", ic: "" },
+            { id: "S15", bil: 15, name: "KALAIVANI A/P MURUGIAH", role: "GURU", category: "GURU", ic: "" },
+            { id: "S16", bil: 16, name: "MAT NAZRI BIN MAT KHALIL", role: "GURU", category: "GURU", ic: "" },
+            { id: "S17", bil: 17, name: "MOHD NAZAR BIN HAMID", role: "GURU", category: "GURU", ic: "" },
+            { id: "S18", bil: 18, name: "MOHD YAZID NAJMI BIN MUHAMAD ALI", role: "GURU", category: "GURU", ic: "" },
+            { id: "S19", bil: 19, name: "MUHAMMAD FATTAH BIN OTHMAN", role: "GURU", category: "GURU", ic: "" },
+            { id: "S20", bil: 20, name: "MUHAMMAD RAZID BIN RAZALI", role: "GURU", category: "GURU", ic: "" },
+            { id: "S21", bil: 21, name: "MUHAMMAD ALI FIKRI BIN MOHD JUAINI", role: "GURU", category: "GURU", ic: "" },
+            { id: "S22", bil: 22, name: "MUHAMMAD HAYAZI BIN AYOB", role: "GURU", category: "GURU", ic: "" },
+            { id: "S23", bil: 23, name: "NIK AINA NAJIHAH BINTI NIK MOHD NASIR", role: "GURU", category: "GURU", ic: "" },
+            { id: "S24", bil: 24, name: "NOR AISYAH BINTI MOHD NOOR", role: "GURU", category: "GURU", ic: "" },
+            { id: "S25", bil: 25, name: "NORMALA BINTI SALLEH", role: "GURU", category: "GURU", ic: "" },
+            { id: "S26", bil: 26, name: "NORHAYATI BINTI MAT ISA", role: "GURU", category: "GURU", ic: "" },
+            { id: "S27", bil: 27, name: "NUREZWANA BINTI MOKHTAR", role: "GURU", category: "GURU", ic: "" },
+            { id: "S28", bil: 28, name: "NUR AIN NAJIHAH BINTI ZAINAL", role: "GURU", category: "GURU", ic: "" },
+            { id: "S29", bil: 29, name: "NUR AQILAH SYAMIMI BINTI MOHAMMAD ROZALI", role: "GURU", category: "GURU", ic: "" },
+            { id: "S30", bil: 30, name: "NURUL HUSNA BINTI ABDUL MANAF", role: "GURU", category: "GURU", ic: "" },
+            { id: "S31", bil: 31, name: "SANGEETA A/P CHINATAMBI", role: "GURU", category: "GURU", ic: "" },
+            { id: "S32", bil: 32, name: "SARINA BINTI HASHIM", role: "GURU", category: "GURU", ic: "" },
+            { id: "S33", bil: 33, name: "SITI AISYAH BINTI MOHD YUSOFF", role: "GURU", category: "GURU", ic: "" },
+            { id: "S34", bil: 34, name: "SUGANTHI A/P LETCHAMANAN", role: "GURU", category: "GURU", ic: "" },
+            { id: "S35", bil: 35, name: "WAZNAH BINTI MAMAT", role: "GURU", category: "GURU", ic: "" },
+            { id: "S36", bil: 36, name: "YAZHINI A/P GUNASAIGARAN", role: "GURU", category: "GURU", ic: "" },
+            { id: "S37", bil: 37, name: "ZULFAA WAHIIDA BINTI MOHD FADZIL", role: "GURU", category: "GURU", ic: "" },
+            { id: "S38", bil: 38, name: "ABDUL MUTTAQIN BIN SAHAROM", role: "GURU PENYELARAS BESTARI / GURU DATA", category: "GURU", ic: "" },
+            { id: "S39", bil: 39, name: "NORIZAN BINTI AWANG", role: "GURU PERPUSTAKAAN", category: "GURU", ic: "" },
+            { id: "S40", bil: 40, name: "NOOR AZIZAH BINTI ARIFFIN", role: "GURU PRA", category: "GURU", ic: "" },
+            { id: "S41", bil: 41, name: "MAHATHIR BIN OMAR", role: "GURU PRA", category: "GURU", ic: "" },
+            { id: "S42", bil: 42, name: "HELMI BIN HASIM", role: "GURU PRA", category: "GURU", ic: "" },
+            { id: "S43", bil: 43, name: "TAN FONG LIN", role: "GURU BAHASA CINA", category: "GURU", ic: "" },
+            { id: "S44", bil: 44, name: "ALMASIAH BINTI ABDUL KHANIP", role: "GURU KAUNSELING", category: "GURU", ic: "" },
+
+            // 6 ORANG STAF SOKONGAN
+            { id: "S45", bil: 45, name: "LAILI MAZAINA BINTI AHMAD SALJI", role: "PEMBANTU TADBIR", category: "STAF SOKONGAN", ic: "" },
+            { id: "S46", bil: 46, name: "NOORHASLINDA BINTI MOHAMAD ALI", role: "PPM PRA SEKOLAH EXCELLENT", category: "STAF SOKONGAN", ic: "" },
+            { id: "S47", bil: 47, name: "NUR ADILAH BINTI ABDUL MALIK", role: "PPM PRA SEKOLAH DILIGENT", category: "STAF SOKONGAN", ic: "" },
+            { id: "S48", bil: 48, name: "FAZILLAH BINTI ABU HASSAN", role: "PPM PRA SEKOLAH BRILLIANT", category: "STAF SOKONGAN", ic: "" },
+            { id: "S49", bil: 49, name: "NOR ASHIKIN BINTI AMIR HASSAN", role: "PPM PRA SEKOLAH INTELLIGENT", category: "STAF SOKONGAN", ic: "" },
+            { id: "S50", bil: 50, name: "NURUL JANNAH BINTI SAAEFI", role: "PEMBANTU KHIDMAT AM", category: "STAF SOKONGAN", ic: "" }
+        ];
+
+        const STORAGE_KEYS = {
+            STAFF: 'skke1_kehadiran_staff_v1',
+            PROGRAMS: 'skke1_kehadiran_programs_v1',
+            ACTIVE_PROG_ID: 'skke1_kehadiran_active_prog_v1',
+            CUSTOM_LOGO: 'skke1_kehadiran_exact_logo_v1'
+        };
+
+        // Application State
+        let staffList = [];
+        let programsList = [];
+        let activeProgramId = null;
+        let currentAdminFilter = 'ALL';
+        let pendingFirstTimeIC = '';
+        let firstTimeMode = 'existing'; // 'existing' or 'new'
+
+        /*************************************************************************
+         * 2. INITIALIZATION & STORAGE MANAGEMENT
+         *************************************************************************/
+        window.addEventListener('DOMContentLoaded', () => {
+            loadCustomLogoIfSaved();
+            loadAllData();
+            startLiveClock();
+            renderAllViews();
+        });
+
+        function getTodayISO() {
+            const now = new Date();
+            const offset = now.getTimezoneOffset() * 60000;
+            return new Date(now - offset).toISOString().split('T')[0];
+        }
+
+        function loadAllData() {
+            // Load Staff
+            const savedStaff = localStorage.getItem(STORAGE_KEYS.STAFF);
+            if (savedStaff) {
+                try {
+                    staffList = JSON.parse(savedStaff);
+                } catch (e) {
+                    staffList = JSON.parse(JSON.stringify(INITIAL_STAFF_LIST));
+                }
+            } else {
+                staffList = JSON.parse(JSON.stringify(INITIAL_STAFF_LIST));
+                saveStaffData();
+            }
+
+            // Load Programs
+            const savedProgs = localStorage.getItem(STORAGE_KEYS.PROGRAMS);
+            if (savedProgs) {
+                try {
+                    programsList = JSON.parse(savedProgs);
+                } catch (e) {
+                    programsList = [];
+                }
+            }
+
+            // Ensure at least one default program exists
+            if (!programsList || programsList.length === 0) {
+                const defaultProg = {
+                    id: 'PROG-' + Date.now(),
+                    title: 'MESYUARAT PENGURUSAN & KURIKULUM BIL. 1/2026',
+                    date: getTodayISO(),
+                    type: 'PROGRAM',
+                    note: 'Semua Guru dan Staf Sokongan SK King Edward VII (1)',
+                    createdAt: new Date().toISOString(),
+                    records: {} // { staffId: { status: 'HADIR', timeIn: '07:35:12 AM', note: '' } }
+                };
+                programsList = [defaultProg];
+                activeProgramId = defaultProg.id;
+                saveProgramsData();
+            } else {
+                const savedActiveId = localStorage.getItem(STORAGE_KEYS.ACTIVE_PROG_ID);
+                if (savedActiveId && programsList.some(p => p.id === savedActiveId)) {
+                    activeProgramId = savedActiveId;
+                } else {
+                    activeProgramId = programsList[0].id;
+                }
+            }
+
+            // Pre-fill date input on Admin form
+            const progDateInput = document.getElementById('progDateInput');
+            if (progDateInput) progDateInput.value = getTodayISO();
+        }
+
+        function saveStaffData() {
+            localStorage.setItem(STORAGE_KEYS.STAFF, JSON.stringify(staffList));
+        }
+
+        function saveProgramsData() {
+            localStorage.setItem(STORAGE_KEYS.PROGRAMS, JSON.stringify(programsList));
+            if (activeProgramId) {
+                localStorage.setItem(STORAGE_KEYS.ACTIVE_PROG_ID, activeProgramId);
+            }
+        }
+
+        function getActiveProgram() {
+            return programsList.find(p => p.id === activeProgramId) || programsList[0];
+        }
+
+        /*************************************************************************
+         * 3. EXACT LOGO HANDLING (NO EDITING / LOCAL FILE UPLOAD SUPPORT)
+         *************************************************************************/
+        function loadCustomLogoIfSaved() {
+            const savedBase64Logo = localStorage.getItem(STORAGE_KEYS.CUSTOM_LOGO);
+            if (savedBase64Logo) {
+                applyLogoSourceToAll(savedBase64Logo);
+            }
+        }
+
+        function applyLogoSourceToAll(srcUrl) {
+            const ids = ['headerSchoolLogo', 'printSchoolLogo', 'modalLogoPreview'];
+            ids.forEach(id => {
+                const img = document.getElementById(id);
+                if (img) img.src = srcUrl;
+            });
+        }
+
+        function handleLogoError(imgElement) {
+            // If local file "LOGO 3D SKKE1 (2).png" is not in the same directory yet,
+            // check if user uploaded it to localStorage
+            const savedBase64Logo = localStorage.getItem(STORAGE_KEYS.CUSTOM_LOGO);
+            if (savedBase64Logo && imgElement.src !== savedBase64Logo) {
+                imgElement.src = savedBase64Logo;
+                return;
+            }
+            // Informative placeholder prompting user to select their original PNG file if not in same folder
+            imgElement.onerror = null;
+            imgElement.src = "https://placehold.co/220x260/111827/dc2626?text=SK+KING+EDWARD+VII+(1)%0A[Klik+Pilih+Fail+Logo]";
+        }
+
+        function openLogoModal() {
+            const modal = document.getElementById('logoModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeLogoModal() {
+            const modal = document.getElementById('logoModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const exactDataUrl = e.target.result;
+                try {
+                    localStorage.setItem(STORAGE_KEYS.CUSTOM_LOGO, exactDataUrl);
+                    applyLogoSourceToAll(exactDataUrl);
+                    showToast('Logo rasmi sekolah berjaya dimuat naik dan disimpan 100% asal tanpa suntingan!', 'success');
+                } catch (err) {
+                    applyLogoSourceToAll(exactDataUrl);
+                    showToast('Logo dipaparkan untuk sesi ini.', 'info');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetDefaultLogoPath() {
+            localStorage.removeItem(STORAGE_KEYS.CUSTOM_LOGO);
+            applyLogoSourceToAll('LOGO 3D SKKE1 (2).png');
+            showToast('Laluan logo ditetapkan semula ke fail tempatan "LOGO 3D SKKE1 (2).png"', 'info');
+        }
+
+        /*************************************************************************
+         * 4. LIVE DIGITAL CLOCK & DATE FORMATTING
+         *************************************************************************/
+        function startLiveClock() {
+            const updateClock = () => {
+                const now = new Date();
+                const days = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+                const months = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
+                
+                const dayName = days[now.getDay()];
+                const dateStr = `${dayName}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+                
+                const timeStr = now.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true
+                });
+
+                const dateEl = document.getElementById('liveDateDisplay');
+                const clockEl = document.getElementById('liveClockDisplay');
+                if (dateEl) dateEl.textContent = dateStr;
+                if (clockEl) clockEl.textContent = timeStr;
+            };
+            updateClock();
+            setInterval(updateClock, 1000);
+        }
+
+        function formatDateMalay(isoDateStr) {
+            if (!isoDateStr) return '-';
+            const parts = isoDateStr.split('-');
+            if (parts.length !== 3) return isoDateStr;
+            const d = new Date(parts[0], parts[1] - 1, parts[2]);
+            const days = ['AHAD', 'ISNIN', 'SELASA', 'RABU', 'KHAMIS', 'JUMAAT', 'SABTU'];
+            const months = ['JANUARI', 'FEBRUARI', 'MAC', 'APRIL', 'MEI', 'JUN', 'JULAI', 'OGOS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DISEMBER'];
+            return `${parts[2]} ${months[d.getMonth()]} ${parts[0]} (${days[d.getDay()]})`;
+        }
+
+        function getCurrentFormattedTime() {
+            return new Date().toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+        }
+
+        /*************************************************************************
+         * 5. NAVIGATION & UI RENDERING
+         *************************************************************************/
+        function switchMainTab(tabName) {
+            const tabs = ['kiosk', 'admin', 'database'];
+            tabs.forEach(t => {
+                const view = document.getElementById(`view-${t}`);
+                const btn = document.getElementById(`tabBtn-${t}`);
+                if (t === tabName) {
+                    view.classList.remove('hidden');
+                    btn.className = "flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 bg-skkeRed-600 text-white shadow";
+                } else {
+                    view.classList.add('hidden');
+                    btn.className = "flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 text-gray-300 hover:text-white hover:bg-white/10";
+                }
+            });
+            renderAllViews();
+        }
+
+        function renderAllViews() {
+            renderActiveProgramBanner();
+            renderKioskLiveFeed();
+            renderProgramHistoryList();
+            renderAdminAttendanceTable();
+            renderDatabaseTable();
+            renderOfficialPrintSheet();
+        }
+
+        function renderActiveProgramBanner() {
+            const prog = getActiveProgram();
+            if (!prog) return;
+
+            document.getElementById('bannerProgramTitle').textContent = prog.title;
+            document.getElementById('bannerProgramDate').innerHTML = `<i class="fa-regular fa-calendar-check mr-1 text-skkeRed-600"></i> ${formatDateMalay(prog.date)}`;
+            document.getElementById('bannerProgramNote').textContent = `Arahan / Catatan: ${prog.note || 'Tiada catatan tambahan'}`;
+
+            // Calculate stats
+            const total = staffList.length;
+            let presentCount = 0;
+            staffList.forEach(s => {
+                if (prog.records && prog.records[s.id] && prog.records[s.id].status === 'HADIR') {
+                    presentCount++;
+                }
+            });
+            const absentCount = total - presentCount;
+
+            document.getElementById('bannerStatTotal').textContent = total;
+            document.getElementById('bannerStatPresent').textContent = presentCount;
+            document.getElementById('bannerStatAbsent').textContent = absentCount;
+        }
+
+        /*************************************************************************
+         * 6. WORKFLOW PENDAFTARAN KEHADIRAN (IC CHECK-IN & FIRST-TIME LINKING)
+         *************************************************************************/
+        function cleanICInput(inputEl) {
+            const digitsOnly = inputEl.value.replace(/[^0-9]/g, '').slice(0, 12);
+            inputEl.value = digitsOnly;
+            const counter = document.getElementById('icDigitCount');
+            if (counter) {
+                counter.textContent = `${digitsOnly.length} / 12 digit dimasukkan`;
+                counter.className = digitsOnly.length === 12 ? 'text-emerald-600 font-bold' : 'text-gray-500';
+            }
+        }
+
+        function clearICInput() {
+            const input = document.getElementById('icNumberInput');
+            input.value = '';
+            cleanICInput(input);
+            input.focus();
+            document.getElementById('firstTimeRegBox').classList.add('hidden');
+        }
+
+        function handleICSubmission(event) {
+            event.preventDefault();
+            const icInput = document.getElementById('icNumberInput');
+            const ic = icInput.value.replace(/[^0-9]/g, '');
+
+            if (ic.length < 6) {
+                showToast('Sila masukkan sekurang-kurangnya 12 digit Nombor Kad Pengenalan yang sah.', 'error');
+                return;
+            }
+
+            // Check if IC already exists in staffList
+            const matchedStaff = staffList.find(s => s.ic === ic);
+
+            if (matchedStaff) {
+                // KES 1: KALI KEDUA DAN SETERUSNYA (IC SUDAH DIDAFTARKAN)
+                document.getElementById('firstTimeRegBox').classList.add('hidden');
+                recordStaffAttendanceNow(matchedStaff, false);
+                icInput.value = '';
+                cleanICInput(icInput);
+            } else {
+                // KES 2: KALI PERTAMA (IC BELUM ADA DALAM SISTEM)
+                pendingFirstTimeIC = ic;
+                openFirstTimeRegistrationBox(ic);
+            }
+        }
+
+        function openFirstTimeRegistrationBox(ic) {
+            const box = document.getElementById('firstTimeRegBox');
+            document.getElementById('ftDisplayIC').textContent = ic;
+            document.getElementById('lastCheckinCard').classList.add('hidden');
+            
+            setFirstTimeMode('existing');
+            document.getElementById('ftSearchStaffInput').value = '';
+            filterUnlinkedStaffDropdown();
+
+            box.classList.remove('hidden');
+            box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            showToast('Pendaftaran Kali Pertama: Sila pilih atau sahkan nama penuh anda untuk dipautkan dengan No. IC ini.', 'info');
+        }
+
+        function setFirstTimeMode(mode) {
+            firstTimeMode = mode;
+            const btnExisting = document.getElementById('ftModeBtn-existing');
+            const btnNew = document.getElementById('ftModeBtn-new');
+            const secExisting = document.getElementById('ftSection-existing');
+            const secNew = document.getElementById('ftSection-new');
+
+            if (mode === 'existing') {
+                btnExisting.className = "flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-bold bg-skkeRed-600 text-white transition";
+                btnNew.className = "flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-bold text-gray-600 hover:bg-gray-100 transition";
+                secExisting.classList.remove('hidden');
+                secNew.classList.add('hidden');
+            } else {
+                btnNew.className = "flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-bold bg-skkeRed-600 text-white transition";
+                btnExisting.className = "flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-bold text-gray-600 hover:bg-gray-100 transition";
+                secNew.classList.remove('hidden');
+                secExisting.classList.add('hidden');
+            }
+        }
+
+        function filterUnlinkedStaffDropdown() {
+            const query = (document.getElementById('ftSearchStaffInput').value || '').toUpperCase().trim();
+            const selectEl = document.getElementById('ftSelectStaffId');
+            selectEl.innerHTML = '';
+
+            // Filter staff that don't have an IC yet (or show all matching so user isn't stuck)
+            const unlinkedStaff = staffList.filter(s => !s.ic && s.name.toUpperCase().includes(query));
+
+            if (unlinkedStaff.length === 0) {
+                const opt = document.createElement('option');
+                opt.disabled = true;
+                opt.textContent = '-- Tiada nama ditemui (Gunakan tab Guru / Staf Baharu) --';
+                selectEl.appendChild(opt);
+                return;
+            }
+
+            unlinkedStaff.forEach((s, idx) => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.className = "py-1.5 px-2 rounded hover:bg-red-50 cursor-pointer";
+                opt.textContent = `${s.bil}. ${s.name} (${s.role})`;
+                if (idx === 0) opt.selected = true;
+                selectEl.appendChild(opt);
+            });
+        }
+
+        function confirmFirstTimeRegistration() {
+            if (!pendingFirstTimeIC) return;
+
+            if (firstTimeMode === 'existing') {
+                const selectedStaffId = document.getElementById('ftSelectStaffId').value;
+                if (!selectedStaffId) {
+                    showToast('Sila pilih nama anda daripada senarai terlebih dahulu.', 'error');
+                    return;
+                }
+                const staffObj = staffList.find(s => s.id === selectedStaffId);
+                if (!staffObj) return;
+
+                // Bind IC permanently to this staff member
+                staffObj.ic = pendingFirstTimeIC;
+                saveStaffData();
+
+                // Hide first time box & record attendance immediately
+                document.getElementById('firstTimeRegBox').classList.add('hidden');
+                const icInput = document.getElementById('icNumberInput');
+                icInput.value = '';
+                cleanICInput(icInput);
+
+                recordStaffAttendanceNow(staffObj, true);
+            } else {
+                const customName = (document.getElementById('ftCustomNameInput').value || '').toUpperCase().trim();
+                const customCat = document.getElementById('ftCustomCategoryInput').value;
+                const customRole = (document.getElementById('ftCustomRoleInput').value || 'GURU').toUpperCase().trim();
+
+                if (!customName || customName.length < 3) {
+                    showToast('Sila masukkan Nama Penuh anda dengan lengkap.', 'error');
+                    return;
+                }
+
+                const newStaffObj = {
+                    id: 'S' + Date.now(),
+                    bil: staffList.length + 1,
+                    name: customName,
+                    role: customRole,
+                    category: customCat,
+                    ic: pendingFirstTimeIC
+                };
+
+                staffList.push(newStaffObj);
+                saveStaffData();
+
+                document.getElementById('firstTimeRegBox').classList.add('hidden');
+                document.getElementById('ftCustomNameInput').value = '';
+                const icInput = document.getElementById('icNumberInput');
+                icInput.value = '';
+                cleanICInput(icInput);
+
+                recordStaffAttendanceNow(newStaffObj, true);
+            }
+        }
+
+        function cancelFirstTimeRegistration() {
+            pendingFirstTimeIC = '';
+            document.getElementById('firstTimeRegBox').classList.add('hidden');
+        }
+
+        function recordStaffAttendanceNow(staffObj, isFirstTime) {
+            const prog = getActiveProgram();
+            if (!prog) return;
+            if (!prog.records) prog.records = {};
+
+            const existingRec = prog.records[staffObj.id];
+            const nowTime = getCurrentFormattedTime();
+
+            if (existingRec && existingRec.status === 'HADIR') {
+                // Already checked in for this program
+                showLastCheckinBanner(staffObj, existingRec.timeIn, true, isFirstTime);
+                showToast(`Makluman: ${staffObj.name} telah pun direkodkan hadir pada jam ${existingRec.timeIn}.`, 'info');
+            } else {
+                prog.records[staffObj.id] = {
+                    status: 'HADIR',
+                    timeIn: nowTime,
+                    timestamp: Date.now(),
+                    note: existingRec ? existingRec.note : ''
+                };
+                saveProgramsData();
+                showLastCheckinBanner(staffObj, nowTime, false, isFirstTime);
+                showToast(`Kehadiran berjaya direkodkan: ${staffObj.name} (${nowTime})`, 'success');
+            }
+
+            renderAllViews();
+        }
+
+        function showLastCheckinBanner(staffObj, timeStr, alreadyCheckedIn, isFirstTime) {
+            const card = document.getElementById('lastCheckinCard');
+            document.getElementById('lcTime').textContent = timeStr;
+            document.getElementById('lcName').textContent = staffObj.name;
+            document.getElementById('lcRole').textContent = `${staffObj.role} • No. IC: ${staffObj.ic}`;
+            
+            const msgEl = document.getElementById('lcMessage');
+            if (isFirstTime) {
+                msgEl.innerHTML = `<strong>Pendaftaran Kali Pertama Selesai!</strong> No. IC anda telah disimpan secara kekal. Untuk program akan datang, anda hanya perlu masukkan No. IC sahaja.`;
+            } else if (alreadyCheckedIn) {
+                msgEl.innerHTML = `Kehadiran anda telah pun direkodkan sebelum ini bagi program aktif ini pada jam <strong>${timeStr}</strong>.`;
+            } else {
+                msgEl.innerHTML = `Terima kasih! Kehadiran anda telah disahkan bagi program semasa.`;
+            }
+
+            card.classList.remove('hidden');
+        }
+
+        function renderKioskLiveFeed() {
+            const prog = getActiveProgram();
+            const container = document.getElementById('kioskLiveFeedList');
+            const badge = document.getElementById('liveFeedCountBadge');
+            const query = (document.getElementById('liveFeedSearch').value || '').toUpperCase().trim();
+
+            if (!prog || !container) return;
+
+            const presentList = [];
+            staffList.forEach(s => {
+                const rec = prog.records ? prog.records[s.id] : null;
+                if (rec && rec.status === 'HADIR') {
+                    presentList.push({
+                        staff: s,
+                        timeIn: rec.timeIn,
+                        timestamp: rec.timestamp || 0
+                    });
+                }
+            });
+
+            // Sort newest check-in first
+            presentList.sort((a, b) => b.timestamp - a.timestamp);
+            badge.textContent = `${presentList.length} / ${staffList.length} Hadir`;
+
+            const filtered = presentList.filter(item => item.staff.name.toUpperCase().includes(query));
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 px-4 text-gray-400">
+                        <i class="fa-regular fa-clipboard text-4xl mb-2"></i>
+                        <p class="text-sm font-semibold text-gray-500">Tiada rekod kehadiran ditemui</p>
+                        <p class="text-xs">Masukkan No. IC di sebelah kiri untuk mula mendaftar kehadiran.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map((item, index) => `
+                <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 hover:bg-emerald-50/60 border border-gray-200 transition">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                        <div class="truncate">
+                            <div class="text-xs sm:text-sm font-bold text-gray-900 truncate">${item.staff.name}</div>
+                            <div class="text-[11px] text-gray-500">${item.staff.role}</div>
+                        </div>
+                    </div>
+                    <div class="shrink-0 text-right">
+                        <span class="inline-block px-2.5 py-1 bg-white border border-emerald-300 text-emerald-800 font-mono text-xs font-bold rounded-lg">
+                            ${item.timeIn}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        /*************************************************************************
+         * 7. PANEL ADMIN: PENGURUSAN PROGRAM & REKOD TERDAHULU
+         *************************************************************************/
+        function handleCreateOrUpdateProgram(event) {
+            event.preventDefault();
+            const editId = document.getElementById('editProgramId').value;
+            const title = document.getElementById('progTitleInput').value.trim().toUpperCase();
+            const date = document.getElementById('progDateInput').value;
+            const type = document.getElementById('progTypeInput').value;
+            const note = document.getElementById('progNoteInput').value.trim();
+
+            if (!title || !date) {
+                showToast('Sila lengkapkan Tajuk Program dan Tarikh.', 'error');
+                return;
+            }
+
+            if (editId) {
+                // Update existing program
+                const prog = programsList.find(p => p.id === editId);
+                if (prog) {
+                    prog.title = title;
+                    prog.date = date;
+                    prog.type = type;
+                    prog.note = note;
+                    saveProgramsData();
+                    showToast('Maklumat program berjaya dikemas kini!', 'success');
+                }
+                resetProgramForm();
+            } else {
+                // Create brand new program and set as active
+                const newProg = {
+                    id: 'PROG-' + Date.now(),
+                    title: title,
+                    date: date,
+                    type: type,
+                    note: note || 'Semua Guru & Staf Sokongan',
+                    createdAt: new Date().toISOString(),
+                    records: {}
+                };
+                programsList.unshift(newProg);
+                activeProgramId = newProg.id;
+                saveProgramsData();
+                resetProgramForm();
+                showToast(`Program baharu "${title}" telah dicipta dan diaktifkan!`, 'success');
+            }
+
+            renderAllViews();
+        }
+
+        function resetProgramForm() {
+            document.getElementById('editProgramId').value = '';
+            document.getElementById('progTitleInput').value = '';
+            document.getElementById('progDateInput').value = getTodayISO();
+            document.getElementById('progNoteInput').value = '';
+            document.getElementById('saveProgBtn').innerHTML = `<i class="fa-solid fa-plus-circle"></i> Cipta & Jadikan Program Aktif`;
+            document.getElementById('cancelEditProgBtn').classList.add('hidden');
+        }
+
+        function editProgramDetails(progId) {
+            const prog = programsList.find(p => p.id === progId);
+            if (!prog) return;
+            document.getElementById('editProgramId').value = prog.id;
+            document.getElementById('progTitleInput').value = prog.title;
+            document.getElementById('progDateInput').value = prog.date;
+            document.getElementById('progTypeInput').value = prog.type || 'PROGRAM';
+            document.getElementById('progNoteInput').value = prog.note || '';
+            document.getElementById('saveProgBtn').innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan Program`;
+            document.getElementById('cancelEditProgBtn').classList.remove('hidden');
+            document.getElementById('progTitleInput').focus();
+        }
+
+        function selectActiveProgram(progId) {
+            activeProgramId = progId;
+            saveProgramsData();
+            renderAllViews();
+            const prog = getActiveProgram();
+            showToast(`Program aktif ditukar kepada: ${prog.title}`, 'info');
+        }
+
+        function deleteProgram(progId) {
+            if (programsList.length <= 1) {
+                showToast('Sekurang-kurangnya satu program mesti kekal dalam sistem.', 'error');
+                return;
+            }
+            programsList = programsList.filter(p => p.id !== progId);
+            if (activeProgramId === progId) {
+                activeProgramId = programsList[0].id;
+            }
+            saveProgramsData();
+            renderAllViews();
+            showToast('Rekod program telah dipadamkan.', 'info');
+        }
+
+        function renderProgramHistoryList() {
+            const container = document.getElementById('programHistoryList');
+            const badge = document.getElementById('totalProgramsBadge');
+            if (!container) return;
+
+            badge.textContent = `${programsList.length} Program Direkodkan`;
+
+            container.innerHTML = programsList.map(prog => {
+                const isActive = prog.id === activeProgramId;
+                let presentCount = 0;
+                staffList.forEach(s => {
+                    if (prog.records && prog.records[s.id] && prog.records[s.id].status === 'HADIR') {
+                        presentCount++;
+                    }
+                });
+                const pct = staffList.length > 0 ? Math.round((presentCount / staffList.length) * 100) : 0;
+
+                return `
+                    <div class="p-3.5 rounded-xl border-2 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${isActive ? 'border-skkeRed-600 bg-red-50/40' : 'border-gray-200 bg-gray-50 hover:bg-white'}">
+                        <div class="space-y-1 min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                ${isActive 
+                                    ? `<span class="px-2 py-0.5 bg-skkeRed-600 text-white text-[10px] font-extrabold rounded uppercase">Aktif Semasa</span>` 
+                                    : `<span class="px-2 py-0.5 bg-gray-200 text-gray-700 text-[10px] font-bold rounded uppercase">Rekod Terdahulu</span>`
+                                }
+                                <span class="text-xs font-semibold text-gray-500">${formatDateMalay(prog.date)}</span>
+                            </div>
+                            <h4 class="text-sm font-extrabold text-gray-900 truncate">${prog.title}</h4>
+                            <div class="text-xs text-gray-600 flex items-center gap-3">
+                                <span class="text-emerald-700 font-bold"><i class="fa-solid fa-user-check mr-1"></i>${presentCount}/${staffList.length} Hadir (${pct}%)</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            ${!isActive ? `
+                                <button onclick="selectActiveProgram('${prog.id}')" class="px-3 py-1.5 bg-gray-900 hover:bg-skkeRed-600 text-white text-xs font-bold rounded-lg transition">
+                                    Pilih / Aktifkan
+                                </button>
+                            ` : ''}
+                            <button onclick="editProgramDetails('${prog.id}')" title="Edit Tajuk / Tarikh" class="p-2 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 rounded-lg text-xs">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            ${programsList.length > 1 ? `
+                                <button onclick="deleteProgram('${prog.id}')" title="Padam Program" class="p-2 bg-white hover:bg-red-50 text-red-600 border border-gray-300 rounded-lg text-xs">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function setAdminAttendanceFilter(filter) {
+            currentAdminFilter = filter;
+            const filters = ['ALL', 'PRESENT', 'ABSENT', 'GURU', 'STAF'];
+            filters.forEach(f => {
+                const btn = document.getElementById(`filterBtn-${f}`);
+                if (f === filter) {
+                    btn.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-skkeRed-600 text-white";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-gray-700 border border-gray-300 hover:bg-gray-100";
+                }
+            });
+            renderAdminAttendanceTable();
+        }
+
+        function renderAdminAttendanceTable() {
+            const prog = getActiveProgram();
+            const tbody = document.getElementById('adminAttendanceTbody');
+            if (!prog || !tbody) return;
+
+            document.getElementById('adminTableProgramTitle').textContent = `${prog.title} (${formatDateMalay(prog.date)})`;
+            const query = (document.getElementById('adminAttendanceSearch').value || '').toUpperCase().trim();
+
+            const filtered = staffList.filter(s => {
+                const rec = prog.records ? prog.records[s.id] : null;
+                const isPresent = rec && rec.status === 'HADIR';
+
+                if (currentAdminFilter === 'PRESENT' && !isPresent) return false;
+                if (currentAdminFilter === 'ABSENT' && isPresent) return false;
+                if (currentAdminFilter === 'GURU' && s.category !== 'GURU') return false;
+                if (currentAdminFilter === 'STAF' && s.category !== 'STAF SOKONGAN') return false;
+
+                if (query) {
+                    const matchName = s.name.toUpperCase().includes(query);
+                    const matchIC = (s.ic || '').includes(query);
+                    const matchRole = s.role.toUpperCase().includes(query);
+                    return matchName || matchIC || matchRole;
+                }
+                return true;
+            });
+
+            tbody.innerHTML = filtered.map((s, idx) => {
+                const rec = (prog.records && prog.records[s.id]) ? prog.records[s.id] : { status: 'TIDAK HADIR', timeIn: '', note: '' };
+                const isPresent = rec.status === 'HADIR';
+
+                return `
+                    <tr class="hover:bg-gray-50 transition ${isPresent ? 'bg-emerald-50/20' : ''}">
+                        <td class="py-3 px-4 text-center font-bold text-gray-500">${s.bil}</td>
+                        <td class="py-3 px-4 font-bold text-gray-900">${s.name}</td>
+                        <td class="py-3 px-4">
+                            <span class="inline-block text-[11px] font-bold px-2 py-0.5 rounded ${s.category === 'GURU' ? 'bg-blue-50 text-blue-800' : 'bg-purple-50 text-purple-800'}">
+                                ${s.role}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-center font-mono text-xs">
+                            ${s.ic 
+                                ? `<span class="font-bold text-gray-800 bg-gray-100 px-2.5 py-1 rounded-md border border-gray-300">${s.ic}</span>` 
+                                : `<span class="text-amber-600 italic text-xs">Belum Daftar IC</span>`
+                            }
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            ${isPresent 
+                                ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                                     <i class="fa-solid fa-circle-check"></i> HADIR (${rec.timeIn})
+                                   </span>`
+                                : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                                     Belum Hadir
+                                   </span>`
+                            }
+                        </td>
+                        <td class="py-3 px-4">
+                            <input type="text" 
+                                   value="${rec.note || ''}" 
+                                   placeholder="Contoh: CRK / MC / Kursus..."
+                                   onchange="updateAttendanceNote('${s.id}', this.value)"
+                                   class="w-full px-2.5 py-1.5 text-xs bg-white border border-gray-300 rounded-lg focus:border-skkeRed-600 outline-none">
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            ${isPresent
+                                ? `<button onclick="toggleManualAttendance('${s.id}', false)" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs rounded-lg border border-red-200 transition">
+                                     Batal Hadir
+                                   </button>`
+                                : `<button onclick="toggleManualAttendance('${s.id}', true)" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm transition">
+                                     Tandakan Hadir
+                                   </button>`
+                            }
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function toggleManualAttendance(staffId, markPresent) {
+            const prog = getActiveProgram();
+            if (!prog) return;
+            if (!prog.records) prog.records = {};
+
+            const existingNote = prog.records[staffId] ? prog.records[staffId].note : '';
+
+            if (markPresent) {
+                prog.records[staffId] = {
+                    status: 'HADIR',
+                    timeIn: getCurrentFormattedTime(),
+                    timestamp: Date.now(),
+                    note: existingNote
+                };
+            } else {
+                prog.records[staffId] = {
+                    status: 'TIDAK HADIR',
+                    timeIn: '',
+                    timestamp: 0,
+                    note: existingNote
+                };
+            }
+
+            saveProgramsData();
+            renderAllViews();
+        }
+
+        function updateAttendanceNote(staffId, noteText) {
+            const prog = getActiveProgram();
+            if (!prog) return;
+            if (!prog.records) prog.records = {};
+
+            if (!prog.records[staffId]) {
+                prog.records[staffId] = { status: 'TIDAK HADIR', timeIn: '', timestamp: 0, note: noteText.trim() };
+            } else {
+                prog.records[staffId].note = noteText.trim();
+            }
+            saveProgramsData();
+            renderOfficialPrintSheet();
+            showToast('Catatan kehadiran telah disimpan.', 'info');
+        }
+
+        function markAllPresentConfirm() {
+            const prog = getActiveProgram();
+            if (!prog) return;
+            if (!prog.records) prog.records = {};
+            const nowTime = getCurrentFormattedTime();
+
+            staffList.forEach(s => {
+                if (!prog.records[s.id] || prog.records[s.id].status !== 'HADIR') {
+                    prog.records[s.id] = {
+                        status: 'HADIR',
+                        timeIn: nowTime,
+                        timestamp: Date.now(),
+                        note: prog.records[s.id] ? prog.records[s.id].note : ''
+                    };
+                }
+            });
+            saveProgramsData();
+            renderAllViews();
+            showToast('Semua 50 guru & staf telah ditandakan HADIR.', 'success');
+        }
+
+        /*************************************************************************
+         * 8. PANGKALAN DATA INDUK GURU & STAF (EDIT IC / TAMBAH NAMA)
+         *************************************************************************/
+        function renderDatabaseTable() {
+            const tbody = document.getElementById('databaseTbody');
+            if (!tbody) return;
+
+            const linkedCount = staffList.filter(s => s.ic && s.ic.length >= 6).length;
+            document.getElementById('dbStatTotal').textContent = staffList.length;
+            document.getElementById('dbStatLinked').textContent = linkedCount;
+            document.getElementById('dbStatUnlinked').textContent = staffList.length - linkedCount;
+
+            const query = (document.getElementById('dbSearchInput').value || '').toUpperCase().trim();
+            const filtered = staffList.filter(s => {
+                return s.name.toUpperCase().includes(query) || (s.ic || '').includes(query) || s.role.toUpperCase().includes(query);
+            });
+
+            tbody.innerHTML = filtered.map(s => `
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="py-3 px-4 text-center font-bold text-gray-500">${s.bil}</td>
+                    <td class="py-3 px-4 font-bold text-gray-900">
+                        <input type="text" 
+                               value="${s.name}" 
+                               onchange="updateStaffMasterField('${s.id}', 'name', this.value)"
+                               class="w-full bg-transparent hover:bg-white focus:bg-white px-2 py-1 rounded border border-transparent hover:border-gray-300 focus:border-skkeRed-600 font-bold uppercase outline-none">
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold ${s.category === 'GURU' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}">
+                            ${s.category}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <input type="text" 
+                               value="${s.role}" 
+                               onchange="updateStaffMasterField('${s.id}', 'role', this.value)"
+                               class="w-full bg-transparent hover:bg-white focus:bg-white px-2 py-1 rounded border border-transparent hover:border-gray-300 focus:border-skkeRed-600 text-xs font-semibold uppercase outline-none">
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="flex items-center gap-2">
+                            <input type="text" 
+                                   value="${s.ic || ''}" 
+                                   maxlength="12"
+                                   placeholder="Masukkan 12 digit IC..."
+                                   oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                                   onchange="updateStaffMasterField('${s.id}', 'ic', this.value)"
+                                   class="w-44 px-3 py-1.5 font-mono text-xs font-bold rounded-lg border ${s.ic ? 'bg-emerald-50 border-emerald-400 text-emerald-950' : 'bg-amber-50 border-amber-300 text-gray-800'} focus:border-skkeRed-600 outline-none">
+                            ${s.ic ? `<i class="fa-solid fa-circle-check text-emerald-600" title="IC Telah Dipautkan"></i>` : ''}
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        ${s.ic ? `
+                            <button onclick="clearStaffIC('${s.id}')" title="Reset IC" class="text-xs text-red-600 hover:underline font-semibold">
+                                Reset IC
+                            </button>
+                        ` : `<span class="text-xs text-gray-400">-</span>`}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateStaffMasterField(staffId, field, value) {
+            const staffObj = staffList.find(s => s.id === staffId);
+            if (!staffObj) return;
+
+            if (field === 'ic') {
+                const cleanIC = value.replace(/[^0-9]/g, '');
+                // Check duplicate IC
+                if (cleanIC && staffList.some(other => other.id !== staffId && other.ic === cleanIC)) {
+                    showToast('Ralat: Nombor IC tersebut telah pun didaftarkan pada nama guru lain!', 'error');
+                    renderDatabaseTable();
+                    return;
+                }
+                staffObj.ic = cleanIC;
+            } else {
+                staffObj[field] = value.trim().toUpperCase();
+            }
+
+            saveStaffData();
+            renderAllViews();
+            showToast(`Data ${staffObj.name} berjaya dikemas kini.`, 'success');
+        }
+
+        function clearStaffIC(staffId) {
+            const staffObj = staffList.find(s => s.id === staffId);
+            if (!staffObj) return;
+            staffObj.ic = '';
+            saveStaffData();
+            renderAllViews();
+            showToast(`Pautan No. IC bagi ${staffObj.name} telah dikosongkan.`, 'info');
+        }
+
+        function openAddStaffModal() {
+            const m = document.getElementById('addStaffModal');
+            m.classList.remove('hidden');
+            m.classList.add('flex');
+        }
+
+        function closeAddStaffModal() {
+            const m = document.getElementById('addStaffModal');
+            m.classList.add('hidden');
+            m.classList.remove('flex');
+        }
+
+        function handleAddNewStaffSubmit(event) {
+            event.preventDefault();
+            const name = document.getElementById('newStaffName').value.trim().toUpperCase();
+            const category = document.getElementById('newStaffCategory').value;
+            const role = document.getElementById('newStaffRole').value.trim().toUpperCase() || 'GURU';
+            const ic = document.getElementById('newStaffIC').value.replace(/[^0-9]/g, '');
+
+            if (!name) return;
+
+            const newStaff = {
+                id: 'S' + Date.now(),
+                bil: staffList.length + 1,
+                name,
+                category,
+                role,
+                ic
+            };
+
+            staffList.push(newStaff);
+            saveStaffData();
+            closeAddStaffModal();
+            document.getElementById('newStaffName').value = '';
+            document.getElementById('newStaffIC').value = '';
+            renderAllViews();
+            showToast(`${name} berjaya ditambah ke dalam pangkalan data.`, 'success');
+        }
+
+        /*************************************************************************
+         * 9. CETAKAN BORANG RASMI SEKOLAH (MENGIKUT FORMAT WORD SKKE1)
+         *************************************************************************/
+        function renderOfficialPrintSheet() {
+            const prog = getActiveProgram();
+            if (!prog) return;
+
+            document.getElementById('printProgTitle').textContent = prog.title;
+            document.getElementById('printProgDate').textContent = formatDateMalay(prog.date);
+            document.getElementById('printProgNote').textContent = prog.note || '-';
+
+            const guruList = staffList.filter(s => s.category === 'GURU');
+            const stafSokonganList = staffList.filter(s => s.category === 'STAF SOKONGAN');
+
+            // Render 2-Column Guru Table (matching the official 2-column form)
+            const halfGuru = Math.ceil(guruList.length / 2);
+            const guruTbody = document.getElementById('printGuruTbody');
+            let guruRowsHtml = '';
+
+            for (let i = 0; i < halfGuru; i++) {
+                const leftGuru = guruList[i];
+                const rightGuru = guruList[i + halfGuru];
+
+                const leftRec = (leftGuru && prog.records && prog.records[leftGuru.id]) ? prog.records[leftGuru.id] : null;
+                const rightRec = (rightGuru && prog.records && prog.records[rightGuru.id]) ? prog.records[rightGuru.id] : null;
+
+                guruRowsHtml += `
+                    <tr>
+                        <td class="text-center font-bold">${leftGuru ? (i + 1) : ''}</td>
+                        <td>${leftGuru ? `<span class="font-semibold">${leftGuru.name}</span> ${leftGuru.role !== 'GURU' ? `<span class="text-[8pt] text-gray-700">(${leftGuru.role})</span>` : ''}` : ''}</td>
+                        <td class="text-center font-bold">${leftRec && leftRec.status === 'HADIR' ? leftRec.timeIn : ''}</td>
+                        <td class="text-center text-[8.5pt]">${leftRec && leftRec.note ? leftRec.note : (leftRec && leftRec.status === 'HADIR' ? 'HADIR' : '')}</td>
+                        
+                        <td class="text-center font-bold">${rightGuru ? (i + 1 + halfGuru) : ''}</td>
+                        <td>${rightGuru ? `<span class="font-semibold">${rightGuru.name}</span> ${rightGuru.role !== 'GURU' ? `<span class="text-[8pt] text-gray-700">(${rightGuru.role})</span>` : ''}` : ''}</td>
+                        <td class="text-center font-bold">${rightRec && rightRec.status === 'HADIR' ? rightRec.timeIn : ''}</td>
+                        <td class="text-center text-[8.5pt]">${rightRec && rightRec.note ? rightRec.note : (rightRec && rightRec.status === 'HADIR' ? 'HADIR' : '')}</td>
+                    </tr>
+                `;
+            }
+            guruTbody.innerHTML = guruRowsHtml;
+
+            // Render 2-Column Staf Sokongan Table
+            const halfStaf = Math.ceil(stafSokonganList.length / 2);
+            const stafTbody = document.getElementById('printStafTbody');
+            let stafRowsHtml = '';
+
+            for (let i = 0; i < halfStaf; i++) {
+                const leftStaf = stafSokonganList[i];
+                const rightStaf = stafSokonganList[i + halfStaf];
+
+                const leftRec = (leftStaf && prog.records && prog.records[leftStaf.id]) ? prog.records[leftStaf.id] : null;
+                const rightRec = (rightStaf && prog.records && prog.records[rightStaf.id]) ? prog.records[rightStaf.id] : null;
+
+                stafRowsHtml += `
+                    <tr>
+                        <td class="text-center font-bold">${leftStaf ? (i + 1) : ''}</td>
+                        <td>${leftStaf ? `<span class="font-semibold">${leftStaf.name}</span> <span class="text-[8pt]">(${leftStaf.role})</span>` : ''}</td>
+                        <td class="text-center font-bold">${leftRec && leftRec.status === 'HADIR' ? leftRec.timeIn : ''}</td>
+                        <td class="text-center text-[8.5pt]">${leftRec && leftRec.note ? leftRec.note : (leftRec && leftRec.status === 'HADIR' ? 'HADIR' : '')}</td>
+                        
+                        <td class="text-center font-bold">${rightStaf ? (i + 1 + halfStaf) : ''}</td>
+                        <td>${rightStaf ? `<span class="font-semibold">${rightStaf.name}</span> <span class="text-[8pt]">(${rightStaf.role})</span>` : ''}</td>
+                        <td class="text-center font-bold">${rightRec && rightRec.status === 'HADIR' ? rightRec.timeIn : ''}</td>
+                        <td class="text-center text-[8.5pt]">${rightRec && rightRec.note ? rightRec.note : (rightRec && rightRec.status === 'HADIR' ? 'HADIR' : '')}</td>
+                    </tr>
+                `;
+            }
+            stafTbody.innerHTML = stafRowsHtml;
+
+            // Update Print Summary Stats
+            const total = staffList.length;
+            let present = 0;
+            staffList.forEach(s => {
+                if (prog.records && prog.records[s.id] && prog.records[s.id].status === 'HADIR') {
+                    present++;
+                }
+            });
+            const absent = total - present;
+            const presentPct = total > 0 ? ((present / total) * 100).toFixed(1) : '0.0';
+            const absentPct = total > 0 ? ((absent / total) * 100).toFixed(1) : '0.0';
+
+            document.getElementById('printStatPresent').textContent = present;
+            document.getElementById('printStatPresentPct').textContent = `${presentPct}%`;
+            document.getElementById('printStatAbsent').textContent = absent;
+            document.getElementById('printStatAbsentPct').textContent = `${absentPct}%`;
+            document.getElementById('printStatTotal').textContent = total;
+        }
+
+        /*************************************************************************
+         * 10. CSV EXPORT & JSON BACKUP / RESTORE
+         *************************************************************************/
+        function exportCurrentProgramCSV() {
+            const prog = getActiveProgram();
+            if (!prog) return;
+
+            const rows = [
+                ['SEKOLAH KEBANGSAAN KING EDWARD VII (1) TAIPING (ABB6062)'],
+                ['TAJUK PROGRAM', prog.title],
+                ['TARIKH', prog.date],
+                ['ARAHAN / CATATAN', prog.note || '-'],
+                [],
+                ['BIL', 'NAMA PENUH', 'KATEGORI', 'JAWATAN', 'NO. KAD PENGENALAN', 'STATUS KEHADIRAN', 'MASA HADIR', 'CATATAN']
+            ];
+
+            staffList.forEach((s, idx) => {
+                const rec = (prog.records && prog.records[s.id]) ? prog.records[s.id] : null;
+                const status = (rec && rec.status === 'HADIR') ? 'HADIR' : 'TIDAK HADIR';
+                const timeIn = (rec && rec.timeIn) ? rec.timeIn : '-';
+                const note = (rec && rec.note) ? rec.note : '';
+
+                rows.push([
+                    idx + 1,
+                    `"${s.name}"`,
+                    `"${s.category}"`,
+                    `"${s.role}"`,
+                    `"'${s.ic || ''}"`,
+                    status,
+                    timeIn,
+                    `"${note}"`
+                ]);
+            });
+
+            const csvContent = "\uFEFF" + rows.map(e => e.join(",")).join("\n");
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Kehadiran_SKKE1_${prog.date}_${prog.title.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 25)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast('Fail CSV (Excel) berjaya dimuat turun!', 'success');
+        }
+
+        function exportBackupJSON() {
+            const backupPayload = {
+                school: "SK KING EDWARD VII (1) TAIPING",
+                code: "ABB6062",
+                exportedAt: new Date().toISOString(),
+                staffList,
+                programsList,
+                activeProgramId
+            };
+            const blob = new Blob([JSON.stringify(backupPayload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Backup_Sistem_Kehadiran_SKKE1_${getTodayISO()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast('Fail sandaran (Backup JSON) berjaya dimuat turun.', 'success');
+        }
+
+        function importBackupJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.staffList && Array.isArray(data.staffList)) {
+                        staffList = data.staffList;
+                        saveStaffData();
+                    }
+                    if (data.programsList && Array.isArray(data.programsList)) {
+                        programsList = data.programsList;
+                        activeProgramId = data.activeProgramId || programsList[0]?.id;
+                        saveProgramsData();
+                    }
+                    renderAllViews();
+                    showToast('Data sandaran berjaya dipulihkan sepenuhnya!', 'success');
+                } catch (err) {
+                    showToast('Fail JSON tidak sah atau rosak.', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        /*************************************************************************
+         * 11. CUSTOM TOAST NOTIFICATION (NO ALERT / CONFIRM)
+         *************************************************************************/
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const colors = {
+                success: 'bg-emerald-700 border-emerald-500 text-white',
+                error: 'bg-red-700 border-red-500 text-white',
+                info: 'bg-gray-900 border-gray-700 text-white'
+            };
+            const icons = {
+                success: 'fa-circle-check text-emerald-300',
+                error: 'fa-triangle-exclamation text-red-300',
+                info: 'fa-circle-info text-blue-300'
+            };
+
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3.5 rounded-xl shadow-2xl border-l-4 ${colors[type] || colors.info} transition-all duration-300 transform translate-x-0`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icons[type] || icons.info} text-lg shrink-0"></i>
+                <div class="text-xs sm:text-sm font-semibold leading-snug flex-1">${message}</div>
+                <button onclick="this.parentElement.remove()" class="text-white/70 hover:text-white">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            `;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                if (toast && toast.parentElement) {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 4500);
+        }
+    </script>
+</body>
+</html>
