@@ -140,3 +140,28 @@ function htmlJadual(list, edit) {
         <span style="font-weight:700;font-size:14px;white-space:nowrap">${jam12(j.mula)} – ${jam12(j.tamat)}</span>
         <span style="font-size:12px;color:#9097A3;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${[j.nama_cawangan ? '📍 ' + esc(j.nama_cawangan) : '', esc(j.lokasi || ''), esc(j.catatan || '')].filter(Boolean).join(' · ')}</span>${edit ? '<span style="margin-left:auto;color:#9097A3">✎</span>' : ''}</div>`).join('')}</div></div>`).join('');
 }
+
+/* ====== Kecilkan gambar di telefon sebelum dihantar (QR / resit) ====== */
+function kecilkanGambar(fail, maxPx, maxPanjang) {
+  return new Promise((ok, gagal) => {
+    if (!fail) return gagal('Tiada fail.');
+    if (!/^image\/(png|jpeg|webp)$/.test(fail.type)) return gagal('Jenis fail tidak disokong. Guna JPG, PNG atau WEBP.');
+    if (fail.size > 10 * 1024 * 1024) return gagal('Fail terlalu besar (maksimum 10 MB).');
+    const img = new Image(), url = URL.createObjectURL(fail);
+    img.onload = () => {
+      let px = maxPx, data = '';
+      for (let i = 0; i < 8; i++) {
+        const k = Math.min(1, px / Math.max(img.width, img.height)), cv = document.createElement('canvas');
+        cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+        const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); cx.drawImage(img, 0, 0, cv.width, cv.height);
+        for (const q of [0.92, 0.8, 0.65]) { data = cv.toDataURL('image/jpeg', q); if (data.length <= maxPanjang) break; }
+        if (data.length <= maxPanjang) break;
+        px = Math.round(px * 0.85);
+      }
+      URL.revokeObjectURL(url);
+      data.length <= maxPanjang ? ok(data) : gagal('Gambar terlalu besar walaupun selepas dikecilkan.');
+    };
+    img.onerror = () => gagal('Gambar tidak dapat dibaca.');
+    img.src = url;
+  });
+}

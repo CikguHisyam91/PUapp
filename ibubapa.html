@@ -54,6 +54,10 @@ label{display:block;margin:12px 0 6px;color:var(--pudar);font-size:14px}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--kad2);border:1px solid var(--emas);padding:12px 16px;border-radius:12px;width:max-content;max-width:92%;display:none;z-index:60}
 .cek{display:flex;gap:10px;align-items:center;margin-top:12px;color:var(--teks)}.cek input{width:22px;height:22px;min-height:0;flex:none}
 .muat{opacity:.6;pointer-events:none}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:flex-end;justify-content:center;z-index:50}
+#modal .isi{background:var(--kad);border:1px solid var(--garis);border-radius:20px 20px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom));width:100%;max-width:560px;max-height:92vh;overflow:auto}
+.cipB{display:flex;flex-wrap:wrap;gap:6px}.cipB button{min-height:40px;padding:6px 12px;border-radius:20px;font-size:14px}.cipB button.on{background:var(--emas);color:#1a1405;border-color:var(--emas);font-weight:700}
+textarea{width:100%;background:var(--kad2);color:var(--teks);border:1px solid var(--garis);border-radius:12px;padding:12px 14px;font:inherit;font-size:16px}
 </style>
 </head>
 <body>
@@ -61,6 +65,7 @@ label{display:block;margin:12px 0 6px;color:var(--pudar);font-size:14px}
 <img src="logo.png" alt="" style="width:110px;height:110px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px #E2B55A">
 <div>Memuatkan...</div></div></div>
 <div id="toast"></div>
+<div id="modal"><div class="isi" id="modalIsi"></div></div>
 <script src="bersama.js"></script>
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbwYLSghcfcLVKLg2plYc9Slj8E0KuNu8LX7HOugVTSIWxwCfv2hcBZB_l0uc5JArfxV/exec';
@@ -171,6 +176,16 @@ function lukis(r) {
     <div class="pudar" style="font-size:12px;margin-top:10px">✓ dibayar · ✕ belum dibayar · – dikecualikan</div>
     <div class="baris" style="margin-top:6px"><span class="pudar">Jumlah dibayar ${th}</span><b>RM${jumYB.toFixed(2)}</b></div>
     <div class="baris"><span class="pudar">Yuran tahunan ${th}</span><b>${ytIni ? tag('Dibayar RM' + ytIni.jumlah, 'HIJAU') : tag('Belum', 'KUNING')}</b></div></div>
+  ${r.bayar ? `<div class="kad"><h3>💳 Bayar Yuran</h3>
+    <div style="text-align:center"><img src="${esc(r.bayar.qr)}" alt="QR bayaran" style="width:220px;height:220px;object-fit:contain;background:#fff;border-radius:14px;padding:6px"></div>
+    <div class="baris"><span class="pudar">Penerima</span><b>${esc(r.bayar.info.nama || '-')}</b></div>
+    ${r.bayar.info.bank ? `<div class="baris"><span class="pudar">Bank</span><b>${esc(r.bayar.info.bank)} ${esc(r.bayar.info.akaun || '')}</b></div>` : ''}
+    <div class="baris"><span class="pudar">Rujukan</span><b>${esc(a.no_ahli)}</b></div>
+    ${r.bayar.info.nota ? `<p class="pudar" style="font-size:13px">${esc(r.bayar.info.nota)}</p>` : ''}
+    <div style="background:#3a321f;border-radius:10px;padding:10px;font-size:12px;color:#E2B55A;margin:8px 0">⚠️ Pastikan nama penerima dalam app bank <b>sama</b> seperti di atas sebelum membayar. QR dikemas kini ${esc(r.bayar.dikemaskini)}. Jika ragu, hubungi jurulatih.</div>
+    <div style="display:flex;gap:8px"><a href="${esc(r.bayar.qr)}" download="QR-${esc(g.kod)}.jpg" style="flex:1;text-decoration:none"><button class="penuh">⬇️ Simpan QR</button></a><button class="utama" style="flex:1;width:auto;font-size:15px" onclick="borangBayar()">Saya dah bayar</button></div>
+    <p class="pudar" style="font-size:12px;margin-bottom:0">Cara bayar: simpan QR → buka app bank → <b>Scan QR</b> → pilih gambar dari galeri.</p>
+    ${r.notis.length ? `<div style="margin-top:10px">${r.notis.map(n => `<div class="baris"><span class="pudar" style="font-size:13px">${esc(n.tarikh.slice(0, 10))} · ${n.jenis === 'TAHUNAN' ? 'Tahunan' : n.bulan.split(',').map(m => BLN[+m]).join(', ')} · RM${esc(n.jumlah)}</span><b>${tag(n.status === 'DISAHKAN' ? 'Disahkan' : n.status === 'DITOLAK' ? 'Ditolak' : 'Menunggu', n.status === 'DISAHKAN' ? 'HIJAU' : n.status === 'DITOLAK' ? 'MERAH' : 'KUNING')}</b></div>`).join('')}</div>` : ''}</div>` : ''}
   <div class="kad"><h3>Fizikal & BMI ${f ? `<span class="pudar" style="font-size:13px;font-weight:400">${tarikhMY(f.tarikh)}</span>` : ''}</h3>
     <div class="baris"><span class="pudar">Kategori usia</span><b>${kats.length ? kats.map(k => tag(k.nama, 'BIRU')).join(' ') : '-'}</b></div>
     ${f ? `<div class="baris"><span class="pudar">Berat / Tinggi</span><b>${esc(f.berat)} kg / ${esc(f.tinggi || '-')} cm</b></div>
@@ -183,6 +198,35 @@ function lukis(r) {
   <p class="pudar" style="font-size:12px;text-align:center">🔒 Maklumat ini hanya untuk ibu bapa / penjaga. No. KP dipaparkan separa.</p>`;
 }
 pasangApp('Portal Ibu Bapa', 'pwa_ib');
+function modal(h) { $('#modalIsi').innerHTML = h; $('#modal').style.display = h ? 'flex' : 'none'; }
+document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') modal(''); });
+function borangBayar() {
+  const r = S.data[S.pilih], th = Number(r.tahun), dibayar = new Set(r.yuranBulanan.map(x => x.bulan));
+  S.bl = new Set(); S.resit = '';
+  modal(`<h3 style="color:#E2B55A;margin-top:0">Notis Bayaran</h3>
+    <div class="cipB" id="jenisB"><button class="on" onclick="pilihJenis(this,'BULANAN')">Yuran bulanan</button><button onclick="pilihJenis(this,'TAHUNAN')">Yuran tahunan</button></div>
+    <div id="pilihBln"><label>Bulan yang dibayar (${th})</label><div class="cipB">${BLN.slice(1).map((b, i) => dibayar.has(i + 1) ? `<button disabled style="opacity:.35">${b} ✓</button>` : `<button onclick="this.classList.toggle('on');S.bl.has(${i + 1})?S.bl.delete(${i + 1}):S.bl.add(${i + 1})">${b}</button>`).join('')}</div></div>
+    <label>Jumlah dibayar (RM)</label><input id="bJum" inputmode="decimal" style="font-size:22px;font-weight:800;text-align:center">
+    <label>Resit / tangkap layar bayaran *</label><input type="file" id="bResit" accept="image/png,image/jpeg,image/webp" onchange="pilihResit(this)" style="padding:10px">
+    <img id="bPra" style="display:none;width:100%;max-height:240px;object-fit:contain;background:#fff;border-radius:10px;margin-top:8px">
+    <label>Catatan (pilihan)</label><input id="bCat">
+    <button class="utama" style="margin-top:14px" onclick="hantarBayar()">Hantar Notis</button>
+    <button class="penuh" style="margin-top:8px" onclick="modal('')">Batal</button>`);
+  S.jenis = 'BULANAN';
+}
+function pilihJenis(el, j) { S.jenis = j; document.querySelectorAll('#jenisB button').forEach(b => b.classList.remove('on')); el.classList.add('on'); $('#pilihBln').style.display = j === 'BULANAN' ? 'block' : 'none'; }
+async function pilihResit(inp) {
+  try { S.resit = await kecilkanGambar(inp.files[0], 1000, 46000); const im = $('#bPra'); im.src = S.resit; im.style.display = 'block'; }
+  catch (e) { S.resit = ''; toast(String(e)); }
+}
+async function hantarBayar() {
+  const a = S.anak[S.pilih], r = S.data[S.pilih];
+  if (S.jenis === 'BULANAN' && !S.bl.size) return toast('Pilih bulan yang dibayar.');
+  if (!(parseFloat($('#bJum').value) > 0)) return toast('Isi jumlah bayaran.');
+  if (!S.resit) return toast('Sila lampirkan resit bayaran.');
+  const x = await api({ action: 'ibubapa_bayar', no_kp: a.kp, telefon: a.tel, data: { jenis: S.jenis, tahun: r.tahun, bulan: [...S.bl], jumlah: $('#bJum').value, resit: S.resit, catatan: $('#bCat').value } });
+  toast(x.msg); if (x.ok) { modal(''); delete S.data[S.pilih]; papar(); }
+}
 papar();
 </script>
 </body>

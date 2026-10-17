@@ -31,7 +31,8 @@ var HARI_AKTIF = 60;
 
 var JADUAL = {
   NEGERI: ['KOD','NAMA'],
-  GELANGGANG: ['KOD','NAMA','NEGERI','ALAMAT','KETUA_ID','TARIKH_DAFTAR','STATUS','AKTIVITI_TERAKHIR','LOGO'],
+  GELANGGANG: ['KOD','NAMA','NEGERI','ALAMAT','KETUA_ID','TARIKH_DAFTAR','STATUS','AKTIVITI_TERAKHIR','LOGO','QR_BAYAR','INFO_BAYAR','QR_DIKEMASKINI'],
+  BAYARAN_NOTIS: ['ID','KOD_GELANGGANG','NO_KP','TARIKH_HANTAR','JENIS','TAHUN','BULAN','JUMLAH','RESIT','CATATAN','STATUS','DIPROSES_OLEH','TARIKH_PROSES'],
   PENGGUNA: ['ID','HASH','SALT','NAMA','TELEFON','PERANAN','NEGERI','KOD_GELANGGANG','KETUA','STATUS','TARIKH_DAFTAR','GAGAL','KUNCI_HINGGA','WAJIB_TUKAR'],
   SESI: ['TOKEN','ID','LUPUT'],
   AHLI: ['NO_AHLI','NO_KP','NAMA','JANTINA','TARIKH_LAHIR','BENGKUNG','GELANGGANG_UTAMA','STATUS','TARIKH_DAFTAR','TEL_WARIS','ID_LAMA'],
@@ -124,8 +125,8 @@ function jawab_(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
 }
 
-var AWAM = { borang_info: 1, borang_hantar: 1, ibubapa: 1, ping: 1, negeri: 1, daftar: 1, login: 1, status_awal: 1, cipta_super: 1 };
-var TULIS = { borang_hantar: 1, mohon_lulus: 1, mohon_tolak: 1, tukar_kod: 1, jad_simpan: 1, jad_padam: 1, reset_katalaluan: 1, caw_simpan: 1, caw_padam: 1, caw_tag: 1, logo_simpan: 1, kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, lulus_gelanggang: 1, status_gelanggang: 1,
+var AWAM = { ibubapa_bayar: 1, borang_info: 1, borang_hantar: 1, ibubapa: 1, ping: 1, negeri: 1, daftar: 1, login: 1, status_awal: 1, cipta_super: 1 };
+var TULIS = { ibubapa_bayar: 1, qr_simpan: 1, notis_sahkan: 1, notis_tolak: 1, borang_hantar: 1, mohon_lulus: 1, mohon_tolak: 1, tukar_kod: 1, jad_simpan: 1, jad_padam: 1, reset_katalaluan: 1, caw_simpan: 1, caw_padam: 1, caw_tag: 1, logo_simpan: 1, kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, lulus_gelanggang: 1, status_gelanggang: 1,
   status_pengguna: 1, set_ketua: 1, lantik_admin: 1, daftar_ahli: 1, kemaskini_ahli: 1, status_ahli: 1,
   rekod_yuran: 1, padam_yuran: 1, mohon_gelanggang: 1 };
 
@@ -133,7 +134,7 @@ function urus_(p) {
   var lock = null;
   try {
     var a = p.action;
-    var VERSI_SKEMA = '6';
+    var VERSI_SKEMA = '7';
     if (PropertiesService.getScriptProperties().getProperty('SKEMA') !== VERSI_SKEMA || !sh_('PENGGUNA')) {
       binaSheet_(); PropertiesService.getScriptProperties().setProperty('SKEMA', VERSI_SKEMA);
     }
@@ -1029,6 +1030,9 @@ AWAM_FN.ibubapa = function (p) {
   return { ok: true, anak: { nama: a.NAMA, no_ahli: a.NO_AHLI, no_kp: topengKP_(a.NO_KP), jantina: a.JANTINA, tarikh_lahir: a.TARIKH_LAHIR,
       bengkung: a.BENGKUNG, status: a.STATUS, tarikh_daftar: a.TARIKH_DAFTAR },
     gelanggang: { nama: g.NAMA || '', kod: g.KOD || '', logo: g.LOGO || '', cawangan: cwRec ? cwRec.NAMA : '', negeri: namaNegeri_(g.NEGERI), ketua: ketua ? ketua.NAMA : '', telKetua: ketua ? ketua.TELEFON : '' },
+    bayar: g.QR_BAYAR ? { qr: g.QR_BAYAR, info: infoBayar_(g), dikemaskini: g.QR_DIKEMASKINI || '' } : null,
+    notis: baca_('BAYARAN_NOTIS').filter(function (n) { return n.NO_KP === kp && n.KOD_GELANGGANG === g.KOD; }).slice(-5).reverse()
+      .map(function (n) { return { tarikh: n.TARIKH_HANTAR, jenis: n.JENIS, tahun: n.TAHUN, bulan: n.BULAN, jumlah: n.JUMLAH, status: n.STATUS }; }),
     jadual: g.KOD ? jadualGel_(g.KOD).filter(function (j) { return !j.cawangan || j.cawangan === cwAnak; }) : [],
     tahun: th, hadir: hadir, yuranBulanan: yb, pengecualian: kec, yuranTahunan: yt, fizikal: fiz };
 };
@@ -1255,4 +1259,84 @@ API.mohon_tolak = function (u, p) {
   if (x.STATUS !== 'MENUNGGU') return { ok: false, msg: 'Permohonan ini sudah diproses.' };
   kemaskini_('PERMOHONAN', x._r, { STATUS: 'DITOLAK', SEBAB_TOLAK: p.sebab || '', DIPROSES_OLEH: u.ID, TARIKH_PROSES: masa_() });
   return { ok: true, msg: 'Permohonan ditolak.' };
+};
+
+/* ======================= QR BAYARAN YURAN =======================
+ * Setiap gelanggang ada QR (DuitNow / bank) sendiri. Hanya KETUA jurulatih boleh tukar.
+ * Setiap pertukaran dicatat dalam LOG_AUDIT dan tarikh pertukaran dipaparkan kepada ibu bapa (elak QR palsu senyap-senyap).
+ * Ibu bapa hantar notis "sudah bayar" + resit; jurulatih sahkan → yuran direkod automatik. */
+function infoBayar_(g) { try { return JSON.parse(g.INFO_BAYAR || '{}'); } catch (e) { return {}; } }
+function gambarSah_(d, maks) { return !d || (/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=]+$/.test(d) && d.length <= (maks || 48000)); }
+API.qr_get = function (u) {
+  var g = gelJur_(u);
+  return { ok: true, qr: g.QR_BAYAR || '', info: infoBayar_(g), dikemaskini: g.QR_DIKEMASKINI || '', bolehUbah: u.KETUA === 'YA' };
+};
+API.qr_simpan = function (u, p) {
+  var g = gelJur_(u);
+  if (u.KETUA !== 'YA') return { ok: false, msg: 'Hanya ketua jurulatih boleh menukar QR bayaran.' };
+  if (!gambarSah_(p.qr)) return { ok: false, msg: 'Gambar QR tidak sah atau terlalu besar.' };
+  var i = p.info || {}, pot = function (v, n) { return String(v || '').replace(/[<>]/g, '').trim().slice(0, n); };
+  var info = { nama: pot(i.nama, 80), bank: pot(i.bank, 40), akaun: pot(i.akaun, 30), nota: pot(i.nota, 160) };
+  if (p.qr && !info.nama) return { ok: false, msg: 'Nama penerima wajib diisi supaya ibu bapa boleh semak sebelum bayar.' };
+  kemaskini_('GELANGGANG', g._r, { QR_BAYAR: p.qr || '', INFO_BAYAR: JSON.stringify(info), QR_DIKEMASKINI: masa_() });
+  log_(u.ID, 'QR_BAYARAN', g.KOD + (p.qr ? ' dikemas kini → ' + info.nama + ' ' + info.bank : ' dibuang'));
+  return { ok: true, msg: p.qr ? 'QR bayaran disimpan.' : 'QR bayaran dibuang.' };
+};
+AWAM_FN.ibubapa_bayar = function (p) {
+  var kp = bersihKP_(p.no_kp), c = CacheService.getScriptCache(), kunci = 'ib_' + kp.replace(/\D/g, '');
+  if (Number(c.get(kunci) || 0) >= 5) return { ok: false, msg: 'Terlalu banyak cubaan. Cuba lagi selepas 15 minit.' };
+  var a = cariSatu_('AHLI', 'NO_KP', kp), t = digitTel_(p.telefon);
+  if (!a || t.length < 8 || digitTel_(a.TEL_WARIS) !== t) { c.put(kunci, String(Number(c.get(kunci) || 0) + 1), 900); return { ok: false, msg: 'Pengesahan gagal.' }; }
+  if (c.get('ibn_' + kunci)) return { ok: false, msg: 'Notis baru sahaja dihantar. Tunggu sebentar.' };
+  var g = cariSatu_('GELANGGANG', 'KOD', a.GELANGGANG_UTAMA); if (!g) return { ok: false, msg: 'Gelanggang tiada.' };
+  var d = p.data || {}, jenis = d.jenis === 'TAHUNAN' ? 'TAHUNAN' : 'BULANAN', th = String(d.tahun || ''), bln = (d.bulan || []).map(Number).filter(function (m) { return m >= 1 && m <= 12; });
+  if (!/^\d{4}$/.test(th)) return { ok: false, msg: 'Tahun tidak sah.' };
+  if (jenis === 'BULANAN' && !bln.length) return { ok: false, msg: 'Pilih bulan yang dibayar.' };
+  if (!(nombor_(d.jumlah) > 0)) return { ok: false, msg: 'Isi jumlah bayaran.' };
+  if (!d.resit) return { ok: false, msg: 'Sila lampirkan resit / tangkap layar bayaran.' };
+  if (!gambarSah_(d.resit)) return { ok: false, msg: 'Gambar resit tidak sah atau terlalu besar.' };
+  tambah_('BAYARAN_NOTIS', { ID: 'B' + Date.now(), KOD_GELANGGANG: g.KOD, NO_KP: kp, TARIKH_HANTAR: masa_(), JENIS: jenis, TAHUN: th,
+    BULAN: bln.join(','), JUMLAH: String(nombor_(d.jumlah)), RESIT: d.resit, CATATAN: String(d.catatan || '').replace(/[<>]/g, '').slice(0, 200),
+    STATUS: 'MENUNGGU', DIPROSES_OLEH: '', TARIKH_PROSES: '' });
+  c.put('ibn_' + kunci, '1', 60);
+  return { ok: true, msg: 'Notis bayaran dihantar. Jurulatih akan mengesahkan.' };
+};
+API.notis_senarai = function (u) {
+  var g = gelJur_(u), nama = {};
+  baca_('AHLI').forEach(function (a) { nama[a.NO_KP] = a; });
+  return { ok: true, notis: baca_('BAYARAN_NOTIS').filter(function (n) { return n.KOD_GELANGGANG === g.KOD; }).map(function (n) {
+    var a = nama[n.NO_KP] || {};
+    return { id: n.ID, no_kp: n.NO_KP, nama: a.NAMA || n.NO_KP, no_ahli: a.NO_AHLI || '', tarikh: n.TARIKH_HANTAR, jenis: n.JENIS, tahun: n.TAHUN, bulan: n.BULAN,
+      jumlah: n.JUMLAH, resit: n.STATUS === 'MENUNGGU' ? n.RESIT : '', catatan: n.CATATAN, status: n.STATUS };
+  }).sort(function (a, b) { return b.tarikh.localeCompare(a.tarikh); }).slice(0, 100) };
+};
+API.notis_resit = function (u, p) {
+  var g = gelJur_(u), n = cariSatu_('BAYARAN_NOTIS', 'ID', p.id);
+  if (!n || n.KOD_GELANGGANG !== g.KOD) return { ok: false, msg: 'Tiada.' };
+  return { ok: true, resit: n.RESIT };
+};
+API.notis_sahkan = function (u, p) {
+  var g = gelJur_(u), n = cariSatu_('BAYARAN_NOTIS', 'ID', p.id);
+  if (!n || n.KOD_GELANGGANG !== g.KOD) return { ok: false, msg: 'Notis tiada.' };
+  if (n.STATUS !== 'MENUNGGU') return { ok: false, msg: 'Notis sudah diproses.' };
+  var tarikh = n.TARIKH_HANTAR.slice(0, 10);
+  if (n.JENIS === 'TAHUNAN') {
+    var a = cariSatu_('AHLI', 'NO_KP', n.NO_KP);
+    var r = API.rekod_yuran(u, { kod: g.KOD, no_ahli: a ? a.NO_AHLI : '', tahun: n.TAHUN, jumlah: n.JUMLAH, tarikh: tarikh, paksa: true });
+    if (!r.ok) return r;
+  } else {
+    var bl = n.BULAN.split(',').filter(String), sebulan = Math.round(nombor_(n.JUMLAH) / bl.length * 100) / 100;
+    for (var i = 0; i < bl.length; i++) {
+      var r2 = API.yb_simpan(u, { no_kp: n.NO_KP, bulan: bl[i], tahun: n.TAHUN, jumlah: sebulan, tarikh: tarikh, kaedah: 'QR' });
+      if (!r2.ok) return r2;
+    }
+  }
+  kemaskini_('BAYARAN_NOTIS', n._r, { STATUS: 'DISAHKAN', DIPROSES_OLEH: u.ID, TARIKH_PROSES: masa_() });
+  return { ok: true, msg: 'Bayaran disahkan & yuran direkod.' };
+};
+API.notis_tolak = function (u, p) {
+  var g = gelJur_(u), n = cariSatu_('BAYARAN_NOTIS', 'ID', p.id);
+  if (!n || n.KOD_GELANGGANG !== g.KOD || n.STATUS !== 'MENUNGGU') return { ok: false, msg: 'Notis tiada / sudah diproses.' };
+  kemaskini_('BAYARAN_NOTIS', n._r, { STATUS: 'DITOLAK', CATATAN: (n.CATATAN ? n.CATATAN + ' | ' : '') + 'Ditolak: ' + String(p.sebab || '').slice(0, 100), DIPROSES_OLEH: u.ID, TARIKH_PROSES: masa_() });
+  return { ok: true, msg: 'Notis ditolak.' };
 };

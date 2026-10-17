@@ -315,7 +315,7 @@ function tabMenu() {
     <div id="info"><p class="pudar" style="text-align:center">Memuatkan ringkasan...</p></div>
     <div class="menu">${MENU_JUR.map(m => `<button onclick="pergi('${m[0]}')"><span class="i">${m[1]}</span><b>${m[2]}</b><small>${m[3]}</small></button>`).join('')}</div>`;
   infografik();
-  api('mohon_senarai').then(r => { const n = r.ok ? r.permohonan.filter(x => x.status === 'MENUNGGU').length : 0;
+  api('mohon_senarai').then(r => { const n = r.ok && r.permohonan ? r.permohonan.filter(x => x.status === 'MENUNGGU').length : 0;
     const b = [...document.querySelectorAll('.menu button')].find(x => x.textContent.includes('Permohonan'));
     if (b && n) b.insertAdjacentHTML('beforeend', `<span class="tag t-MERAH" style="position:absolute;top:12px;right:12px">${n} baharu</span>`), b.style.position = 'relative'; });
 }
@@ -336,7 +336,7 @@ async function infografik() {
   const maxB = Math.max(1, ...bilB, lain);
   const pc = x => n ? Math.round(x / n * 100) : 0;
   el.innerHTML = `
-  <div class="ring" style="cursor:pointer" onclick="pergi('gelang')"><div class="pudar" style="font-size:13px;margin-bottom:10px">📅 Jadual latihan</div>${htmlJadual(rj.ok ? rj.jadual : [])}</div>
+  <div class="ring" style="cursor:pointer" onclick="pergi('gelang')"><div class="pudar" style="font-size:13px;margin-bottom:10px">📅 Jadual latihan</div>${htmlJadual((rj.ok && rj.jadual) || [])}</div>
   <div class="grid" style="grid-template-columns:1fr 1fr;margin-bottom:12px">
     <div class="ring" style="margin:0"><div class="pudar" style="font-size:13px">Ahli aktif</div><div class="besar" style="font-size:36px">${n}</div><div class="pudar" style="font-size:12px">orang pesilat</div></div>
     <div class="ring" style="margin:0;cursor:pointer" onclick="pergi('kew')"><div class="pudar" style="font-size:13px">Baki akaun</div><div class="besar" style="font-size:${baki != null && Math.abs(baki) >= 10000 ? 21 : 25}px;color:${baki < 0 ? 'var(--merah)' : 'var(--hijau)'}">${baki == null ? '-' : rm(baki)}</div><div class="pudar" style="font-size:12px">terkini ${th}</div></div>
@@ -754,7 +754,9 @@ async function tabYB() {
   S.yb = {}; r.bayaran.forEach(b => S.yb[b.no_kp + '|' + b.bulan] = b);
   S.kec = k.ok ? k.senarai : [];
   S.ybAhli = ahli; S.ybTapis = S.ybTapis || 'semua';
-  $('#isi').innerHTML = `${pilihCaw('tabYB')}<div class="baris" style="margin-bottom:12px"><div>${pilihBulan('tabYB', S.ybBulan, 'ybBulan')}</div><div style="flex:none;width:120px">${pilihTahun('tabYB', S.ybTahun, 'ybTahun')}</div></div>
+  const nt = await api('notis_senarai'); S.notis = nt.ok ? nt.notis : [];
+  const nMenunggu = S.notis.filter(x => x.status === 'MENUNGGU').length;
+  $('#isi').innerHTML = `${nMenunggu ? `<button class="penuh" style="margin-bottom:12px;border-color:var(--emas);color:var(--emas);font-weight:700" onclick="paparNotis()">🔔 ${nMenunggu} bayaran QR menunggu pengesahan ›</button>` : ''}${pilihCaw('tabYB')}<div class="baris" style="margin-bottom:12px"><div>${pilihBulan('tabYB', S.ybBulan, 'ybBulan')}</div><div style="flex:none;width:120px">${pilihTahun('tabYB', S.ybTahun, 'ybTahun')}</div></div>
     <div id="ringYB"></div><div id="kecYB"></div>${cariBox('cariYB', 'lukisYB')}<div id="cipYB"></div><div id="senYB"></div>${nota}`;
   lukisYB();
 }
@@ -993,7 +995,8 @@ function cetakKelas() {
 
 /* ---- Gelanggang: logo & cawangan ---- */
 async function tabGelang() {
-  const [c, ahli, jd] = await Promise.all([api('caw_get'), api('senarai_ahli', { tahun: S.tahun }), api('jad_get')]);
+  const [c, ahli, jd, qr] = await Promise.all([api('caw_get'), api('senarai_ahli', { tahun: S.tahun }), api('jad_get'), api('qr_get')]);
+  S.qr = qr.ok ? qr : { qr: '', info: {} };
   S.cawList = c.ok ? c.cawangan : []; S.ahli = ahli.ok ? ahli.ahli : []; S.jadual = jd.ok ? jd.jadual : [];
   const aktif = S.ahli.filter(a => a.status_gel === 'AKTIF'), tiada = aktif.filter(a => !a.cawangan).length;
   const kod3 = String(S.u.kod_gelanggang || '').split('-')[1] || '';
@@ -1001,6 +1004,11 @@ async function tabGelang() {
       <div style="display:flex;align-items:center;gap:12px"><div style="font-size:28px;font-weight:800;letter-spacing:2px;color:var(--emas)">${esc(S.u.kod_gelanggang)}</div>
       ${S.u.ketua ? `<button class="kecil" style="margin-left:auto" onclick="borangKod()">✎ Tukar kod</button>` : ''}</div>
       <p class="pudar" style="font-size:12px;margin-bottom:0">${S.u.ketua ? 'Format: KODNEGERI-3 HURUF. Hanya 3 huruf terakhir boleh ditukar.' : 'Hanya ketua jurulatih boleh menukar kod.'}</p></div>
+    <div class="kad"><h3>💳 QR Bayaran Yuran</h3>
+      ${S.qr.qr ? `<div style="display:flex;gap:14px;align-items:center"><img src="${esc(S.qr.qr)}" style="width:110px;height:110px;object-fit:contain;background:#fff;border-radius:10px;flex:none">
+        <div style="font-size:14px"><b>${esc(S.qr.info.nama || '')}</b><br><span class="pudar">${esc(S.qr.info.bank || '')} ${esc(S.qr.info.akaun || '')}</span><br><span class="pudar" style="font-size:12px">Dikemas kini ${esc(S.qr.dikemaskini)}</span></div></div>`
+        : '<p class="pudar" style="margin:0">Belum ada QR. Ibu bapa tidak nampak pilihan bayar online.</p>'}
+      ${S.qr.bolehUbah ? `<button class="utama penuh" style="margin-top:12px" onclick="borangQR()">${S.qr.qr ? '✎ Tukar QR / maklumat' : '+ Muat naik QR'}</button>` : '<p class="pudar" style="font-size:12px;margin-bottom:0">Hanya ketua jurulatih boleh menukar QR.</p>'}</div>
     <div class="kad"><h3>📅 Jadual Latihan</h3>${htmlJadual(S.jadual, true)}
       <button class="utama penuh" style="margin-top:12px" onclick="borangJadual()">+ Tambah Slot Latihan</button></div>
     <div class="kad"><h3>Logo Gelanggang</h3>
@@ -1178,6 +1186,48 @@ async function tolakMohon(id) {
   const sebab = prompt('Sebab permohonan ditolak (pilihan):', ''); if (sebab === null) return;
   const r = await api('mohon_tolak', { id, sebab }); toast(r.msg); if (r.ok) { modal(''); tabMohon(); }
 }
+
+/* ---- QR bayaran (ketua) ---- */
+function borangQR() {
+  const i = S.qr.info || {}; S.qrBaru = S.qr.qr || '';
+  modal(`<h3 style="color:var(--emas);margin-top:0">💳 QR Bayaran Yuran</h3>
+    <div style="text-align:center"><img id="qrPra" src="${esc(S.qrBaru || 'icon-192.png')}" style="width:200px;height:200px;object-fit:contain;background:#fff;border-radius:12px;${S.qrBaru ? '' : 'opacity:.2'}"></div>
+    <input type="file" id="fQR" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="pilihQR(this)">
+    <button class="penuh" style="margin-top:10px" onclick="$('#fQR').click()">📷 Pilih gambar QR</button>
+    <p class="pudar" style="font-size:12px">JPG / PNG / WEBP, maksimum 10 MB. Gunakan QR <b>DuitNow</b> atau QR bank rasmi. Pastikan QR jelas & tidak dipotong.</p>
+    <label>Nama penerima (seperti dipapar app bank) *</label><input id="qNama" value="${esc(i.nama || '')}">
+    <div class="baris"><div><label>Bank</label><input id="qBank" value="${esc(i.bank || '')}" placeholder="cth. Maybank"></div><div><label>No. akaun (pilihan)</label><input id="qAkaun" value="${esc(i.akaun || '')}" inputmode="numeric"></div></div>
+    <label>Nota kepada pembayar</label><input id="qNota" value="${esc(i.nota || 'Tulis No. Ahli & bulan dalam rujukan bayaran')}">
+    <div class="pdpa">🔒 Setiap pertukaran QR direkod dalam log audit, dan tarikh pertukaran dipaparkan kepada ibu bapa.</div>
+    <button class="utama penuh" style="margin-top:14px" onclick="simpanQR()">Simpan</button>
+    ${S.qr.qr ? `<button class="bahaya penuh" style="margin-top:8px" onclick="S.qrBaru='';simpanQR(true)">Buang QR</button>` : ''}
+    <button class="penuh" style="margin-top:8px" onclick="modal('')">Batal</button>`);
+}
+async function pilihQR(inp) {
+  const f = inp.files[0]; inp.value = '';
+  try { S.qrBaru = await kecilkanGambar(f, 600, 46000); const im = $('#qrPra'); im.src = S.qrBaru; im.style.opacity = 1; }
+  catch (e) { toast(String(e)); }
+}
+async function simpanQR(buang) {
+  if (!buang && !S.qrBaru) return toast('Pilih gambar QR dahulu.');
+  if (buang && !confirm('Buang QR bayaran?')) return;
+  const r = await api('qr_simpan', { qr: S.qrBaru, info: buang ? {} : { nama: $('#qNama').value, bank: $('#qBank').value, akaun: $('#qAkaun').value, nota: $('#qNota').value } });
+  toast(r.msg); if (r.ok) { modal(''); tabGelang(); }
+}
+/* ---- Notis bayaran dari ibu bapa ---- */
+function paparNotis() {
+  const l = S.notis.filter(x => x.status === 'MENUNGGU');
+  modal(`<h3 style="color:var(--emas);margin-top:0">🔔 Bayaran Menunggu Pengesahan</h3>
+    <p class="pudar" style="font-size:13px;margin-top:0">Semak resit dan pastikan wang telah <b>masuk ke akaun</b> sebelum sahkan.</p>
+    ${l.map(n => `<div class="kad" style="background:var(--kad2)"><b>${esc(n.nama)}</b> <span class="pudar" style="font-size:13px">${esc(n.no_ahli)}</span>
+      <div style="font-size:14px;margin:4px 0">${n.jenis === 'TAHUNAN' ? `Yuran tahunan ${esc(n.tahun)}` : `Yuran bulanan: ${n.bulan.split(',').map(m => BULAN_PENUH[+m].slice(0, 3)).join(', ')} ${esc(n.tahun)}`} — <b style="color:var(--emas)">RM${Number(n.jumlah).toFixed(2)}</b></div>
+      <div class="pudar" style="font-size:12px">${esc(n.tarikh)}${n.catatan ? ' · ' + esc(n.catatan) : ''}</div>
+      ${n.resit ? `<img src="${esc(n.resit)}" style="width:100%;max-height:360px;object-fit:contain;background:#fff;border-radius:10px;margin-top:8px" onclick="window.open().document.write('<img src=&quot;'+this.src+'&quot; style=&quot;max-width:100%&quot;>')">` : ''}
+      <div class="baris" style="margin-top:10px"><button class="bahaya" onclick="tolakNotis('${esc(n.id)}')">Tolak</button><button class="utama" onclick="sahkanNotis('${esc(n.id)}')">✅ Sahkan</button></div></div>`).join('') || '<p class="pudar">Tiada.</p>'}
+    <button class="penuh" onclick="modal('')">Tutup</button>`);
+}
+async function sahkanNotis(id) { if (!confirm('Sahkan wang telah diterima?')) return; const r = await api('notis_sahkan', { id }); toast(r.msg); if (r.ok) { modal(''); tabYB(); } }
+async function tolakNotis(id) { const sebab = prompt('Sebab ditolak (cth. wang belum masuk):', ''); if (sebab === null) return; const r = await api('notis_tolak', { id, sebab }); toast(r.msg); if (r.ok) { modal(''); tabYB(); } }
 
 /* ================= AKAUN ================= */
 function tabAkaun() {
