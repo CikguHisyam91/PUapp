@@ -1,7 +1,7 @@
 /* Service worker SilatApp: membolehkan pemasangan ke skrin utama & buka laju.
    Laman sentiasa cuba ambil versi terkini dari internet dahulu (network-first). */
-const CACHE = 'silatapp-v4';
-const ASAS = ['./', './index.html', './ibubapa.html', './daftar.html', './bersama.js', './logo.png', './icon-192.png', './icon-512.png'];
+const CACHE = 'silatapp-v5';
+const ASAS = ['./', './index.html', './ibubapa.html', './daftar.html', './bersama.js', './qrcode.js', './poster.js', './logo.png', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASAS)).catch(() => {})); self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(k => Promise.all(k.filter(x => x !== CACHE).map(x => caches.delete(x))))); self.clients.claim(); });
 self.addEventListener('fetch', e => {

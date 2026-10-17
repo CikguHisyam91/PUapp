@@ -148,6 +148,8 @@ table.kp td.c,table.kp th.c{text-align:center}
 <div id="toast"></div>
 <div id="cetak"></div>
 <script src="bersama.js"></script>
+<script src="qrcode.js"></script>
+<script src="poster.js"></script>
 <script>
 /* ====== TETAPAN: URL Web App Apps Script ====== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbwYLSghcfcLVKLg2plYc9Slj8E0KuNu8LX7HOugVTSIWxwCfv2hcBZB_l0uc5JArfxV/exec';
@@ -276,10 +278,11 @@ const MENU_JUR = [
   ['yb', '💳', 'Yuran', 'Yuran bulanan'],
   ['kew', '💰', 'Kewangan', 'Masuk & keluar'],
   ['fiz', '⚖️', 'Fizikal & BMI', 'Kelas berat & BMI'],
+  ['poster', '🖼️', 'Poster', 'Muat turun & kongsi'],
   ['gelang', '🏟️', 'Gelanggang', 'Jadual, cawangan & logo'],
   ['akaun', '⚙️', 'Akaun', 'Kata laluan']
 ];
-const FN = () => ({ papan: tabPapan, lulus: tabLulus, gel: tabGel, jur: tabJur, ahli: tabAhli, daftar: tabDaftar, akaun: tabAkaun, hadir: tabHadir, gelang: tabGelang, mohon: tabMohon, yb: tabYB, kew: tabKew, fiz: tabFiz, menu: tabMenu });
+const FN = () => ({ papan: tabPapan, lulus: tabLulus, gel: tabGel, jur: tabJur, ahli: tabAhli, daftar: tabDaftar, akaun: tabAkaun, hadir: tabHadir, gelang: tabGelang, mohon: tabMohon, poster: tabPoster, yb: tabYB, kew: tabKew, fiz: tabFiz, menu: tabMenu });
 function pergi(t) { S.tab = t; window.scrollTo(0, 0); mula(); }
 
 async function mula() {
@@ -1228,6 +1231,35 @@ function paparNotis() {
 }
 async function sahkanNotis(id) { if (!confirm('Sahkan wang telah diterima?')) return; const r = await api('notis_sahkan', { id }); toast(r.msg); if (r.ok) { modal(''); tabYB(); } }
 async function tolakNotis(id) { const sebab = prompt('Sebab ditolak (cth. wang belum masuk):', ''); if (sebab === null) return; const r = await api('notis_tolak', { id, sebab }); toast(r.msg); if (r.ok) { modal(''); tabYB(); } }
+
+/* ---- Poster gelanggang ---- */
+async function tabPoster() {
+  const jd = await api('jad_get');
+  S.posterInfo = { nama: S.u.nama_gelanggang, negeri: S.u.namaNegeri, logo: S.u.logo || '', jadual: (jd.ok && jd.jadual) || [],
+    linkDaftar: linkBorang(''), linkPortal: new URL('ibubapa.html', location.href).href.split('?')[0] };
+  $('#isi').innerHTML = `<p class="pudar" style="margin-top:0;font-size:14px">Poster dijana automatik dengan nama, logo & QR gelanggang anda. Saiz 1080 × 1920 (sesuai WhatsApp Status, Telegram & cetak A4).</p>
+    ${Object.entries(POSTER_JENIS).map(([k, v]) => `<div class="kad"><h3>${esc(v.nama)}</h3>
+      <div id="pra_${k}" style="text-align:center"><p class="pudar">Menjana poster...</p></div>
+      <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:10px"><button onclick="muatTurunPoster('${k}')">⬇️ Muat turun</button><button class="utama" onclick="kongsiPoster('${k}')">📤 Kongsi</button></div></div>`).join('')}`;
+  S.posterBlob = {};
+  for (const k of Object.keys(POSTER_JENIS)) {
+    const cv = await janaPoster(k, S.posterInfo);
+    S.posterBlob[k] = await new Promise(r => cv.toBlob(r, 'image/png'));
+    const el = $('#pra_' + k); if (el) el.innerHTML = `<img src="${URL.createObjectURL(S.posterBlob[k])}" style="width:100%;max-width:340px;border-radius:12px;border:1px solid var(--garis)">`;
+  }
+}
+const namaFailPoster = k => `${S.u.kod_gelanggang}-${k}.png`;
+function muatTurunPoster(k) {
+  const b = S.posterBlob && S.posterBlob[k]; if (!b) return toast('Poster belum siap dijana.');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = namaFailPoster(k); a.click();
+}
+async function kongsiPoster(k) {
+  const b = S.posterBlob && S.posterBlob[k]; if (!b) return toast('Poster belum siap dijana.');
+  const f = new File([b], namaFailPoster(k), { type: 'image/png' }), i = S.posterInfo;
+  const teks = k === 'portal' ? `Portal Ibu Bapa ${i.nama}: ${i.linkPortal}` : `Pendaftaran pesilat ${i.nama}: ${i.linkDaftar}`;
+  if (navigator.canShare && navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f], text: teks }); } catch (e) {} }
+  else { muatTurunPoster(k); toast('Poster dimuat turun. Lampirkan dalam WhatsApp / Telegram.', 5000); }
+}
 
 /* ================= AKAUN ================= */
 function tabAkaun() {
