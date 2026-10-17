@@ -41,6 +41,8 @@ var JADUAL = {
   // Data dalaman gelanggang (HANYA jurulatih gelanggang itu nampak)
   KEHADIRAN: ['TARIKH','KOD_GELANGGANG','HADIR','BIL_HADIR','CATATAN','DIREKOD_OLEH','CAWANGAN'],
   CAWANGAN: ['ID','KOD_GELANGGANG','NAMA','ALAMAT','STATUS','TARIKH_DAFTAR'],
+  PERMOHONAN: ['ID','KOD_GELANGGANG','CAWANGAN','TARIKH_MOHON','NO_KP','NAMA','JANTINA','TARIKH_LAHIR','ALAMAT','TEL_PESILAT','SEKOLAH_KERJA',
+    'NAMA_WARIS','HUBUNGAN_WARIS','NO_KP_WARIS','TEL_WARIS','EMEL_WARIS','KESIHATAN','KEBENARAN_WARIS','AKUR_ADAT','PDPA','STATUS','SEBAB_TOLAK','DIPROSES_OLEH','TARIKH_PROSES','NO_AHLI'],
   JADUAL_LATIHAN: ['ID','KOD_GELANGGANG','CAWANGAN','HARI','MULA','TAMAT','LOKASI','CATATAN'],
   YURAN_BULANAN: ['NO_KP','KOD_GELANGGANG','TAHUN','BULAN','JUMLAH','TARIKH_BAYAR','KAEDAH','DIREKOD_OLEH'],
   KEWANGAN: ['ID','KOD_GELANGGANG','TARIKH','JENIS','KATEGORI','KETERANGAN','JUMLAH','DIREKOD_OLEH'],
@@ -122,8 +124,8 @@ function jawab_(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
 }
 
-var AWAM = { ibubapa: 1, ping: 1, negeri: 1, daftar: 1, login: 1, status_awal: 1, cipta_super: 1 };
-var TULIS = { tukar_kod: 1, jad_simpan: 1, jad_padam: 1, reset_katalaluan: 1, caw_simpan: 1, caw_padam: 1, caw_tag: 1, logo_simpan: 1, kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, lulus_gelanggang: 1, status_gelanggang: 1,
+var AWAM = { borang_info: 1, borang_hantar: 1, ibubapa: 1, ping: 1, negeri: 1, daftar: 1, login: 1, status_awal: 1, cipta_super: 1 };
+var TULIS = { borang_hantar: 1, mohon_lulus: 1, mohon_tolak: 1, tukar_kod: 1, jad_simpan: 1, jad_padam: 1, reset_katalaluan: 1, caw_simpan: 1, caw_padam: 1, caw_tag: 1, logo_simpan: 1, kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, lulus_gelanggang: 1, status_gelanggang: 1,
   status_pengguna: 1, set_ketua: 1, lantik_admin: 1, daftar_ahli: 1, kemaskini_ahli: 1, status_ahli: 1,
   rekod_yuran: 1, padam_yuran: 1, mohon_gelanggang: 1 };
 
@@ -131,7 +133,7 @@ function urus_(p) {
   var lock = null;
   try {
     var a = p.action;
-    var VERSI_SKEMA = '5';
+    var VERSI_SKEMA = '6';
     if (PropertiesService.getScriptProperties().getProperty('SKEMA') !== VERSI_SKEMA || !sh_('PENGGUNA')) {
       binaSheet_(); PropertiesService.getScriptProperties().setProperty('SKEMA', VERSI_SKEMA);
     }
@@ -1166,4 +1168,91 @@ API.jad_padam = function (u, p) {
   if (!j || j.KOD_GELANGGANG !== g.KOD) return { ok: false, msg: 'Jadual tiada.' };
   padamBaris_('JADUAL_LATIHAN', j._r);
   return { ok: true, msg: 'Slot latihan dipadam.' };
+};
+
+/* ======================= BORANG PENDAFTARAN ONLINE (awam) =======================
+ * Link: daftar.html?g=KOD-GELANGGANG  (pilihan: &c=ID-CAWANGAN)
+ * Permohonan masuk ke sheet PERMOHONAN berstatus MENUNGGU; jurulatih gelanggang itu luluskan / tolak.
+ * Bawah 18 tahun: maklumat waris & kebenaran ibu bapa WAJIB. Akuan adat & adab perguruan WAJIB untuk semua. */
+function gelAwam_(kod) {
+  var g = cariSatu_('GELANGGANG', 'KOD', kodSemasa_(String(kod || '').trim().toUpperCase()));
+  return g && g.STATUS === 'AKTIF' ? g : null;
+}
+function umurDari_(tarikhLahir, kp) {
+  var y = Number(String(tarikhLahir || '').slice(0, 4)), m = Number(String(tarikhLahir || '').slice(5, 7)), d = Number(String(tarikhLahir || '').slice(8, 10));
+  if (!y) { var x = String(kp || '').replace(/\D/g, ''); if (x.length < 6) return null; y = Number(x.slice(0, 2)); y += y > new Date().getFullYear() % 100 ? 1900 : 2000; m = Number(x.slice(2, 4)); d = Number(x.slice(4, 6)); }
+  var k = new Date(), u = k.getFullYear() - y;
+  if (k.getMonth() + 1 < m || (k.getMonth() + 1 === m && k.getDate() < d)) u--;
+  return u;
+}
+AWAM_FN.borang_info = function (p) {
+  var g = gelAwam_(p.g);
+  if (!g) return { ok: false, msg: 'Pautan borang tidak sah atau gelanggang tidak aktif.' };
+  var k = g.KETUA_ID ? cariSatu_('PENGGUNA', 'ID', g.KETUA_ID) : null;
+  return { ok: true, gelanggang: { kod: g.KOD, nama: g.NAMA, negeri: namaNegeri_(g.NEGERI), alamat: g.ALAMAT, logo: g.LOGO || '', ketua: k ? k.NAMA : '' },
+    cawangan: baca_('CAWANGAN').filter(function (c) { return c.KOD_GELANGGANG === g.KOD && c.STATUS !== 'PADAM'; }).map(function (c) { return { id: c.ID, nama: c.NAMA }; }),
+    jadual: jadualGel_(g.KOD) };
+};
+AWAM_FN.borang_hantar = function (p) {
+  var g = gelAwam_(p.g); if (!g) return { ok: false, msg: 'Gelanggang tidak aktif.' };
+  var d = p.data || {}, kp = bersihKP_(d.no_kp);
+  if (String(kp).replace(/\D/g, '').length !== 12) return { ok: false, msg: 'No. KP / MyKid mesti 12 digit.' };
+  if (!d.nama || !d.jantina || !d.tarikh_lahir) return { ok: false, msg: 'Sila lengkapkan nama, jantina dan tarikh lahir.' };
+  if (!d.akur_adat) return { ok: false, msg: 'Sila tandakan akuan adat dan adab perguruan.' };
+  if (!d.pdpa) return { ok: false, msg: 'Sila bersetuju dengan notis PDPA.' };
+  var umur = umurDari_(d.tarikh_lahir, kp), bawah18 = umur == null || umur < 18;
+  if (bawah18) {
+    if (!d.nama_waris || !d.hubungan_waris || !d.tel_waris) return { ok: false, msg: 'Pemohon bawah 18 tahun: maklumat ibu bapa / penjaga wajib diisi.' };
+    if (!d.kebenaran_waris) return { ok: false, msg: 'Pemohon bawah 18 tahun: kebenaran ibu bapa / penjaga wajib ditandakan.' };
+  } else if (!d.tel_pesilat && !d.tel_waris) return { ok: false, msg: 'Sila isi no. telefon.' };
+  var c = CacheService.getScriptCache(), kunci = 'bh_' + kp.replace(/\D/g, '');
+  if (c.get(kunci)) return { ok: false, msg: 'Permohonan untuk No. KP ini baru sahaja dihantar. Sila tunggu.' };
+  var ada = baca_('PERMOHONAN').some(function (x) { return x.NO_KP === kp && x.KOD_GELANGGANG === g.KOD && x.STATUS === 'MENUNGGU'; });
+  if (ada) return { ok: false, msg: 'Permohonan untuk No. KP ini sedang menunggu kelulusan jurulatih.' };
+  var sudah = baca_('KEAHLIAN_GELANGGANG').some(function (k) { return k.NO_KP === kp && k.KOD_GELANGGANG === g.KOD && k.STATUS === 'AKTIF'; });
+  if (sudah) return { ok: false, msg: 'Pemohon ini sudah menjadi ahli aktif gelanggang ini.' };
+  var caw = d.cawangan && baca_('CAWANGAN').some(function (x) { return x.ID === d.cawangan && x.KOD_GELANGGANG === g.KOD; }) ? d.cawangan : '';
+  var t = masa_(), id = 'P' + Date.now(), pot = function (v, n) { return String(v || '').trim().slice(0, n || 200); };
+  tambah_('PERMOHONAN', { ID: id, KOD_GELANGGANG: g.KOD, CAWANGAN: caw, TARIKH_MOHON: t, NO_KP: kp, NAMA: pot(d.nama, 120).toUpperCase(),
+    JANTINA: d.jantina === 'P' ? 'P' : 'L', TARIKH_LAHIR: pot(d.tarikh_lahir, 10), ALAMAT: pot(d.alamat, 300), TEL_PESILAT: pot(d.tel_pesilat, 20),
+    SEKOLAH_KERJA: pot(d.sekolah), NAMA_WARIS: pot(d.nama_waris, 120).toUpperCase(), HUBUNGAN_WARIS: pot(d.hubungan_waris, 30),
+    NO_KP_WARIS: pot(d.no_kp_waris, 20), TEL_WARIS: pot(d.tel_waris, 20), EMEL_WARIS: pot(d.emel_waris, 120), KESIHATAN: pot(d.kesihatan, 300),
+    KEBENARAN_WARIS: d.kebenaran_waris ? 'YA ' + t : (bawah18 ? '' : 'DEWASA'), AKUR_ADAT: 'YA ' + t, PDPA: 'YA ' + t,
+    STATUS: 'MENUNGGU', SEBAB_TOLAK: '', DIPROSES_OLEH: '', TARIKH_PROSES: '', NO_AHLI: '' });
+  c.put(kunci, '1', 120);
+  log_('AWAM', 'PERMOHONAN_BARU', g.KOD + ' ' + id);
+  return { ok: true, id: id, msg: 'Permohonan dihantar! Jurulatih ' + g.NAMA + ' akan menyemak dan meluluskannya.' };
+};
+
+/* ---------- Jurulatih: semak permohonan ---------- */
+API.mohon_senarai = function (u) {
+  var g = gelJur_(u), caw = {};
+  baca_('CAWANGAN').forEach(function (c) { caw[c.ID] = c.NAMA; });
+  var ahliKp = {}; baca_('AHLI').forEach(function (a) { ahliKp[a.NO_KP] = a; });
+  return { ok: true, permohonan: baca_('PERMOHONAN').filter(function (x) { return x.KOD_GELANGGANG === g.KOD; }).map(function (x) {
+    var a = ahliKp[x.NO_KP];
+    return { id: x.ID, cawangan: x.CAWANGAN, nama_cawangan: caw[x.CAWANGAN] || '', tarikh: x.TARIKH_MOHON, no_kp: x.NO_KP, nama: x.NAMA, jantina: x.JANTINA,
+      tarikh_lahir: x.TARIKH_LAHIR, umur: umurDari_(x.TARIKH_LAHIR, x.NO_KP), alamat: x.ALAMAT, tel_pesilat: x.TEL_PESILAT, sekolah: x.SEKOLAH_KERJA,
+      nama_waris: x.NAMA_WARIS, hubungan_waris: x.HUBUNGAN_WARIS, no_kp_waris: x.NO_KP_WARIS, tel_waris: x.TEL_WARIS, emel_waris: x.EMEL_WARIS,
+      kesihatan: x.KESIHATAN, kebenaran: x.KEBENARAN_WARIS, adat: x.AKUR_ADAT, status: x.STATUS, sebab: x.SEBAB_TOLAK, no_ahli: x.NO_AHLI,
+      wujud: a ? { no_ahli: a.NO_AHLI, utama: a.GELANGGANG_UTAMA } : null };
+  }).sort(function (a, b) { return b.tarikh.localeCompare(a.tarikh); }) };
+};
+API.mohon_lulus = function (u, p) {
+  var g = gelJur_(u), x = cariSatu_('PERMOHONAN', 'ID', p.id);
+  if (!x || x.KOD_GELANGGANG !== g.KOD) return { ok: false, msg: 'Permohonan tiada.' };
+  if (x.STATUS !== 'MENUNGGU') return { ok: false, msg: 'Permohonan ini sudah diproses.' };
+  var r = daftarAhliTeras_(g, { no_kp: x.NO_KP, nama: x.NAMA, jantina: x.JANTINA, tarikh_lahir: x.TARIKH_LAHIR, bengkung: p.bengkung || 'Hitam Kosong (Ahli Baharu)',
+    tel_waris: x.TEL_WARIS || x.TEL_PESILAT, cawangan: p.cawangan != null ? p.cawangan : x.CAWANGAN }, p.mod || '', u.ID);
+  if (!r.ok) return r;
+  kemaskini_('PERMOHONAN', x._r, { STATUS: 'LULUS', DIPROSES_OLEH: u.ID, TARIKH_PROSES: masa_(), NO_AHLI: r.no_ahli || '' });
+  catatAktiviti_(g.KOD);
+  return { ok: true, no_ahli: r.no_ahli, msg: 'Diluluskan. ' + r.msg };
+};
+API.mohon_tolak = function (u, p) {
+  var g = gelJur_(u), x = cariSatu_('PERMOHONAN', 'ID', p.id);
+  if (!x || x.KOD_GELANGGANG !== g.KOD) return { ok: false, msg: 'Permohonan tiada.' };
+  if (x.STATUS !== 'MENUNGGU') return { ok: false, msg: 'Permohonan ini sudah diproses.' };
+  kemaskini_('PERMOHONAN', x._r, { STATUS: 'DITOLAK', SEBAB_TOLAK: p.sebab || '', DIPROSES_OLEH: u.ID, TARIKH_PROSES: masa_() });
+  return { ok: true, msg: 'Permohonan ditolak.' };
 };

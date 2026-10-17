@@ -270,7 +270,8 @@ async function keluar(senyap) {
 /* ================= KERANGKA UTAMA ================= */
 const MENU_JUR = [
   ['ahli', '👥', 'Ahli', 'Senarai & kad ahli'],
-  ['daftar', '➕', 'Daftar Ahli', 'Pendaftaran baharu'],
+  ['mohon', '📝', 'Permohonan', 'Borang online & kelulusan'],
+  ['daftar', '➕', 'Daftar Ahli', 'Pendaftaran manual'],
   ['hadir', '✅', 'Kehadiran', 'Rekod latihan'],
   ['yb', '💳', 'Yuran', 'Yuran bulanan'],
   ['kew', '💰', 'Kewangan', 'Masuk & keluar'],
@@ -278,7 +279,7 @@ const MENU_JUR = [
   ['gelang', '🏟️', 'Gelanggang', 'Jadual, cawangan & logo'],
   ['akaun', '⚙️', 'Akaun', 'Kata laluan']
 ];
-const FN = () => ({ papan: tabPapan, lulus: tabLulus, gel: tabGel, jur: tabJur, ahli: tabAhli, daftar: tabDaftar, akaun: tabAkaun, hadir: tabHadir, gelang: tabGelang, yb: tabYB, kew: tabKew, fiz: tabFiz, menu: tabMenu });
+const FN = () => ({ papan: tabPapan, lulus: tabLulus, gel: tabGel, jur: tabJur, ahli: tabAhli, daftar: tabDaftar, akaun: tabAkaun, hadir: tabHadir, gelang: tabGelang, mohon: tabMohon, yb: tabYB, kew: tabKew, fiz: tabFiz, menu: tabMenu });
 function pergi(t) { S.tab = t; window.scrollTo(0, 0); mula(); }
 
 async function mula() {
@@ -314,6 +315,9 @@ function tabMenu() {
     <div id="info"><p class="pudar" style="text-align:center">Memuatkan ringkasan...</p></div>
     <div class="menu">${MENU_JUR.map(m => `<button onclick="pergi('${m[0]}')"><span class="i">${m[1]}</span><b>${m[2]}</b><small>${m[3]}</small></button>`).join('')}</div>`;
   infografik();
+  api('mohon_senarai').then(r => { const n = r.ok ? r.permohonan.filter(x => x.status === 'MENUNGGU').length : 0;
+    const b = [...document.querySelectorAll('.menu button')].find(x => x.textContent.includes('Permohonan'));
+    if (b && n) b.insertAdjacentHTML('beforeend', `<span class="tag t-MERAH" style="position:absolute;top:12px;right:12px">${n} baharu</span>`), b.style.position = 'relative'; });
 }
 async function infografik() {
   const th = new Date().getFullYear();
@@ -1118,6 +1122,62 @@ async function simpanJadual(id) {
   toast(r.msg); if (r.ok) { modal(''); tabGelang(); }
 }
 async function padamJadual(id) { if (!confirm('Padam slot latihan ini?')) return; const r = await api('jad_padam', { id }); toast(r.msg); if (r.ok) { modal(''); tabGelang(); } }
+
+/* ---- Permohonan (borang pendaftaran online) ---- */
+const linkBorang = caw => new URL('daftar.html', location.href).href.split('?')[0] + '?g=' + encodeURIComponent(S.u.kod_gelanggang) + (caw ? '&c=' + encodeURIComponent(caw) : '');
+async function tabMohon() {
+  const [r, c] = await Promise.all([api('mohon_senarai'), api('caw_get')]);
+  if (!r.ok) return $('#isi').innerHTML = `<p>${esc(r.msg)}</p>`;
+  S.mohon = r.permohonan; S.cawList = c.ok ? c.cawangan : []; S.mTapis = S.mTapis || 'MENUNGGU'; S.mCaw = S.mCaw || '';
+  lukisMohon();
+}
+function lukisMohon() {
+  const link = linkBorang(S.mCaw), teks = `Borang pendaftaran pesilat ${S.u.nama_gelanggang} (Sri Gayong Panglima Ulung). Sila isi di pautan ini:`;
+  const kira = st => S.mohon.filter(x => x.status === st).length;
+  const l = S.mohon.filter(x => x.status === S.mTapis);
+  $('#isi').innerHTML = `<div class="kad"><h3>🔗 Kongsi Borang Pendaftaran</h3>
+      ${S.cawList.length ? `<select style="margin-bottom:10px" onchange="S.mCaw=this.value;lukisMohon()"><option value="">Semua cawangan (pemohon pilih sendiri)</option>${S.cawList.map(x => `<option value="${esc(x.id)}" ${x.id === S.mCaw ? 'selected' : ''}>📍 ${esc(x.nama)}</option>`).join('')}</select>` : ''}
+      <div style="background:var(--kad2);border-radius:12px;padding:10px 12px;font-size:13px;word-break:break-all;user-select:all">${esc(link)}</div>
+      <div class="grid" style="grid-template-columns:repeat(3,1fr);margin-top:10px">
+        <a href="https://wa.me/?text=${encodeURIComponent(teks + '\n' + link)}" target="_blank" style="text-decoration:none"><button class="penuh" style="border-color:#2d5a43;color:var(--hijau)">WhatsApp</button></a>
+        <a href="https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(teks)}" target="_blank" style="text-decoration:none"><button class="penuh" style="border-color:#24506e;color:#5ab4e2">Telegram</button></a>
+        <button onclick="navigator.clipboard.writeText(${esc(JSON.stringify(link))}).then(()=>toast('Pautan disalin'))">📋 Salin</button></div>
+      <a href="${esc(link)}" target="_blank" style="display:block;text-align:center;font-size:13px;margin-top:10px">Pratonton borang ›</a></div>
+    ${cip('mTapis', [['MENUNGGU', `Menunggu (${kira('MENUNGGU')})`], ['LULUS', `Diluluskan (${kira('LULUS')})`], ['DITOLAK', `Ditolak (${kira('DITOLAK')})`]], S.mTapis, 'lukisMohon')}
+    ${l.map(x => `<div class="item" onclick="bukaMohon('${esc(x.id)}')"><div class="k"><b>${esc(x.nama)}</b>
+      <small>${x.umur != null ? x.umur + ' thn · ' : ''}${x.jantina === 'P' ? 'P' : 'L'}${x.nama_cawangan ? ' · 📍 ' + esc(x.nama_cawangan) : ''} · ${esc(tarikhMY(x.tarikh))}</small></div>
+      <div class="r">${x.status === 'MENUNGGU' ? (x.wujud ? tag('SUDAH AHLI', 'KUNING') : tag('BAHARU', 'BIRU')) : x.status === 'LULUS' ? tag(x.no_ahli || 'LULUS', 'HIJAU') : tag('DITOLAK', 'MERAH')}</div></div>`).join('') || '<p class="pudar">Tiada permohonan.</p>'}`;
+}
+function bukaMohon(id) {
+  const x = S.mohon.find(m => m.id === id); if (!x) return;
+  const brs = (k, v) => v ? `<div class="bar2"><span class="pudar">${k}</span><b style="font-weight:600">${esc(v)}</b></div>` : '';
+  const telW = String(x.tel_waris || x.tel_pesilat || '').replace(/\D/g, '').replace(/^6?0/, '60');
+  modal(`<h3 style="color:var(--emas);margin:0">${esc(x.nama)}</h3><p class="pudar" style="margin:4px 0 0;font-size:13px">Dimohon ${esc(x.tarikh)}</p>
+    <div class="kotakHasil">${brs('No. KP', x.no_kp)}${brs('Umur', x.umur != null ? x.umur + ' tahun' : '')}${brs('Jantina', x.jantina === 'P' ? 'Perempuan' : 'Lelaki')}${brs('Tarikh lahir', tarikhMY(x.tarikh_lahir))}
+      ${brs('Cawangan', x.nama_cawangan)}${brs('Sekolah / kerja', x.sekolah)}${brs('Alamat', x.alamat)}${brs('Tel. pesilat', x.tel_pesilat)}${brs('Kesihatan', x.kesihatan)}</div>
+    <div class="kotakHasil">${brs('Waris', x.nama_waris)}${brs('Hubungan', x.hubungan_waris)}${brs('No. KP waris', x.no_kp_waris)}${brs('Tel. waris', x.tel_waris)}${brs('E-mel', x.emel_waris)}
+      ${brs('Kebenaran waris', x.kebenaran ? (x.kebenaran === 'DEWASA' ? 'Tidak perlu (18+)' : '✅ ' + x.kebenaran.replace('YA ', '')) : '❌ Tiada')}${brs('Akuan adat & adab', x.adat ? '✅ ' + x.adat.replace('YA ', '') : '')}</div>
+    ${x.wujud ? `<div class="pdpa">⚠️ No. KP ini sudah berdaftar sebagai <b>${esc(x.wujud.no_ahli)}</b> (gelanggang utama ${esc(x.wujud.utama)}). Pilih cara di bawah.</div>` : ''}
+    ${x.sebab ? `<p class="pudar">Sebab ditolak: ${esc(x.sebab)}</p>` : ''}
+    ${x.status === 'MENUNGGU' ? `
+      ${S.cawList.length ? `<label>Cawangan</label><select id="mlCaw"><option value="">— Tiada —</option>${S.cawList.map(c => `<option value="${esc(c.id)}" ${c.id === x.cawangan ? 'selected' : ''}>${esc(c.nama)}</option>`).join('')}</select>` : ''}
+      <label>Bengkung semasa</label>${pilihBengkung('mlBeng', BENGKUNG[0])}
+      ${x.wujud ? `<button class="utama penuh" style="margin-top:14px" onclick="lulusMohon('${esc(x.id)}','pindah')">Luluskan — Pindah ke gelanggang ini</button>
+        <button class="penuh" style="margin-top:8px" onclick="lulusMohon('${esc(x.id)}','bersama')">Luluskan — Ahli Bersama</button>`
+      : `<button class="utama penuh" style="margin-top:14px" onclick="lulusMohon('${esc(x.id)}','')">✅ Luluskan & Daftar Ahli</button>`}
+      <button class="bahaya penuh" style="margin-top:8px" onclick="tolakMohon('${esc(x.id)}')">Tolak</button>` : ''}
+    ${telW.length > 9 ? `<a href="https://wa.me/${telW}" target="_blank" style="text-decoration:none"><button class="penuh" style="margin-top:8px;border-color:#2d5a43;color:var(--hijau)">💬 WhatsApp waris</button></a>` : ''}
+    <button class="penuh" style="margin-top:8px" onclick="modal('')">Tutup</button>`);
+}
+async function lulusMohon(id, mod) {
+  const r = await api('mohon_lulus', { id, mod, bengkung: $('#mlBeng').value, cawangan: $('#mlCaw') ? $('#mlCaw').value : null });
+  if (r.pendua) { toast(r.msg, 6000); return; }
+  toast(r.msg, 6000); if (r.ok) { modal(''); tabMohon(); }
+}
+async function tolakMohon(id) {
+  const sebab = prompt('Sebab permohonan ditolak (pilihan):', ''); if (sebab === null) return;
+  const r = await api('mohon_tolak', { id, sebab }); toast(r.msg); if (r.ok) { modal(''); tabMohon(); }
+}
 
 /* ================= AKAUN ================= */
 function tabAkaun() {

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Borang Pendaftaran Pesilat</title>
+<meta property="og:title" content="Borang Pendaftaran Pesilat — Sri Gayong Panglima Ulung">
+<meta property="og:description" content="Daftar sebagai pesilat Seni Silat Gayong secara online.">
+<meta property="og:image" content="icon-512.png">
+<link rel="icon" href="icon-192.png">
+<meta name="theme-color" content="#0F1115">
+<style>
+:root{--bg:#0F1115;--kad:#181B22;--kad2:#20242D;--garis:#2C313C;--teks:#E8E9EC;--pudar:#9097A3;--emas:#E2B55A;--hijau:#3FB97B;--merah:#E0605A}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--teks);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:620px;margin:0 auto;padding:16px 14px 50px}
+.kepala{text-align:center;padding:10px 0 6px}
+.kepala img{width:110px;height:110px;border-radius:50%;background:#fff;object-fit:cover;box-shadow:0 0 0 3px var(--emas)}
+.kepala h1{font-size:20px;margin:12px 0 2px;color:var(--emas)}
+.kepala .g{font-size:17px;font-weight:700}.kepala small{color:var(--pudar)}
+.kad{background:var(--kad);border:1px solid var(--garis);border-radius:16px;padding:16px;margin-bottom:12px}
+.kad h3{margin:0 0 4px;color:var(--emas);font-size:16px}
+label{display:block;margin:12px 0 6px;color:var(--pudar);font-size:14px}
+label .w{color:var(--merah)}
+input,select,textarea{width:100%;background:var(--kad2);color:var(--teks);border:1px solid var(--garis);border-radius:12px;padding:12px 14px;font:inherit;font-size:16px;min-height:48px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--emas)}
+.baris{display:flex;gap:10px}.baris>*{flex:1;min-width:0}
+.pilih{display:flex;gap:8px}.pilih button{flex:1}
+button{background:var(--kad2);color:var(--teks);border:1px solid var(--garis);border-radius:12px;padding:12px 16px;font:inherit;font-size:15px;cursor:pointer;min-height:48px}
+button.on{border-color:var(--emas);color:var(--emas);font-weight:700}
+button.utama{background:var(--emas);color:#1a1405;border-color:var(--emas);font-weight:800;width:100%;font-size:17px;min-height:54px}
+.akuan{background:var(--kad2);border:1px solid var(--garis);border-radius:12px;padding:14px;font-size:14px;line-height:1.6}
+.akuan ol{margin:6px 0 0;padding-left:20px}
+.cek{display:flex;gap:12px;align-items:flex-start;margin-top:12px;color:var(--teks);font-size:15px;cursor:pointer}
+.cek input{width:24px;height:24px;min-height:0;flex:none;margin-top:1px;accent-color:#E2B55A}
+.pudar{color:var(--pudar)}
+.lencana{display:inline-block;padding:3px 10px;border-radius:8px;font-size:13px;font-weight:700;background:#3a321f;color:var(--emas)}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#3a2020;border:1px solid var(--merah);padding:12px 16px;border-radius:12px;width:max-content;max-width:92%;display:none;z-index:60}
+.muat{opacity:.6;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="app"><div style="min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#9097A3"><img src="logo.png" alt="" style="width:110px;height:110px;border-radius:50%;background:#fff"><div>Memuatkan borang...</div></div></div>
+<div id="toast"></div>
+<script src="bersama.js"></script>
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbwYLSghcfcLVKLg2plYc9Slj8E0KuNu8LX7HOugVTSIWxwCfv2hcBZB_l0uc5JArfxV/exec';
+
+/* ====== TEKS AKUAN (boleh diubah oleh Super Admin) ====== */
+const AKUAN_ADAT = [
+  'Mengikuti pembelajaran Seni Silat Gayong mengikut <b>adat dan adab perguruan Sri Gayong Panglima Ulung Malaysia</b>.',
+  'Menghormati guru, jurulatih, rakan seperguruan dan menjaga nama baik perguruan.',
+  'Mematuhi peraturan gelanggang, hadir latihan dengan berdisiplin dan berpakaian yang ditetapkan.',
+  'Tidak menyalahgunakan ilmu yang dipelajari untuk menganiaya, bergaduh atau menunjuk-nunjuk.',
+  'Menerima teguran dan tindakan tatatertib guru / jurulatih sekiranya melanggar adat dan adab perguruan.'
+];
+const KEBENARAN_WARIS = nama => `Saya, <b>${nama || '(nama ibu bapa / penjaga)'}</b>, selaku ibu bapa / penjaga yang sah, <b>memberi kebenaran</b> kepada anak / jagaan saya untuk menyertai latihan Seni Silat Gayong di gelanggang ini. Saya faham silat ialah aktiviti fizikal yang mempunyai risiko kecederaan, dan saya membenarkan jurulatih mengambil tindakan pertolongan cemas / membawa ke klinik sekiranya perlu sementara saya dihubungi.`;
+const NOTIS_PDPA = 'Maklumat dalam borang ini digunakan hanya untuk urusan keahlian dan pentadbiran gelanggang, disimpan dengan selamat dan tidak didedahkan kepada pihak luar, selaras Akta Perlindungan Data Peribadi 2010.';
+/* ======================================================== */
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(m) { const t = $('#toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(() => t.style.display = 'none', 4500); }
+const Q = new URLSearchParams(location.search);
+let G = null, jantina = '';
+
+async function api(data) {
+  const body = JSON.stringify(data);
+  try { const r = await fetchMasa(API_URL, { method: 'POST', credentials: 'omit', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body }); return await r.json(); }
+  catch (e) { try { const r = await fetchMasa(API_URL + '?p=' + encodeURIComponent(body), { credentials: 'omit' }); return await r.json(); } catch (e2) { return { ok: false, msg: 'Tiada sambungan internet. Cuba lagi.' }; } }
+}
+function tarikhDariKP(kp) {
+  const d = String(kp).replace(/\D/g, ''); if (d.length < 6) return '';
+  let y = Number(d.slice(0, 2)); y += y > new Date().getFullYear() % 100 ? 1900 : 2000;
+  return `${y}-${d.slice(2, 4)}-${d.slice(4, 6)}`;
+}
+function umur() {
+  const t = $('#lahir').value; if (!t) return null;
+  const k = new Date(), [y, m, d] = t.split('-').map(Number); let u = k.getFullYear() - y;
+  if (k.getMonth() + 1 < m || (k.getMonth() + 1 === m && k.getDate() < d)) u--; return u;
+}
+
+async function mula() {
+  const g = Q.get('g');
+  if (!g) return $('#app').innerHTML = `<div class="wrap"><div class="kad" style="margin-top:40px;text-align:center">Pautan borang tidak lengkap.<br><span class="pudar">Sila minta pautan daripada jurulatih gelanggang anda.</span></div></div>`;
+  const r = await api({ action: 'borang_info', g });
+  if (!r.ok) return $('#app').innerHTML = `<div class="wrap"><div class="kad" style="margin-top:40px;text-align:center">${esc(r.msg)}<br><br><button onclick="location.reload()">Cuba lagi</button></div></div>`;
+  G = r; lukis();
+}
+function lukis() {
+  const g = G.gelanggang, cp = Q.get('c') || '';
+  $('#app').innerHTML = `<div class="wrap">
+  <div class="kepala"><img src="${esc(g.logo || 'logo.png')}" alt=""><h1>Borang Pendaftaran Pesilat</h1><div class="g">${esc(g.nama)}</div><small>Sri Gayong Panglima Ulung · ${esc(g.negeri)}</small></div>
+  ${G.jadual.length ? `<div class="kad"><h3>📅 Jadual Latihan</h3>${htmlJadual(G.jadual)}</div>` : ''}
+  <div class="kad" id="borang">
+    <h3>1. Maklumat Pesilat</h3>
+    <label>No. Kad Pengenalan / MyKid <span class="w">*</span></label><input id="kp" inputmode="numeric" maxlength="14" placeholder="cth. 150512081234" oninput="isiDariKP()">
+    <label>Nama penuh (seperti dalam KP / MyKid) <span class="w">*</span></label><input id="nama" style="text-transform:uppercase">
+    <label>Tarikh lahir <span class="w">*</span></label><input type="date" id="lahir" onchange="kemasWaris()">
+    <label>Jantina <span class="w">*</span></label><div class="pilih" id="jan"><button type="button" onclick="pilihJan('L')">Lelaki</button><button type="button" onclick="pilihJan('P')">Perempuan</button></div>
+    <div id="umurInfo" class="pudar" style="font-size:13px;margin-top:6px"></div>
+    ${G.cawangan.length ? `<label>Cawangan / lokasi latihan</label><select id="caw"><option value="">— Pilih —</option>${G.cawangan.map(c => `<option value="${esc(c.id)}" ${c.id === cp ? 'selected' : ''}>${esc(c.nama)}</option>`).join('')}</select>` : ''}
+    <label>Sekolah / tempat kerja</label><input id="sekolah">
+    <label>Alamat rumah</label><textarea id="alamat" rows="2"></textarea>
+    <label>No. telefon pesilat (jika ada)</label><input id="telP" inputmode="tel">
+    <label>Masalah kesihatan / alahan (jika ada)</label><input id="sihat" placeholder="cth. Asma, alahan makanan laut. Kosongkan jika tiada.">
+
+    <h3 style="margin-top:22px">2. Maklumat Ibu Bapa / Penjaga <span id="wajibW" class="lencana" style="display:none">WAJIB · bawah 18 tahun</span></h3>
+    <label>Nama ibu bapa / penjaga <span class="w wW">*</span></label><input id="namaW" style="text-transform:uppercase" oninput="kemasWaris()">
+    <label>Hubungan <span class="w wW">*</span></label><select id="hub"><option value="">— Pilih —</option><option>Bapa</option><option>Ibu</option><option>Penjaga</option><option>Datuk / Nenek</option><option>Lain-lain</option></select>
+    <div class="baris"><div><label>No. KP waris</label><input id="kpW" inputmode="numeric"></div><div><label>No. telefon waris <span class="w wW">*</span></label><input id="telW" inputmode="tel"></div></div>
+    <label>E-mel waris</label><input id="emelW" type="email" inputmode="email">
+    <p class="pudar" style="font-size:12px;margin:8px 0 0">No. telefon waris juga digunakan untuk log masuk <b>Portal Ibu Bapa</b>.</p>
+
+    <div id="kotakKebenaran" style="display:none">
+      <h3 style="margin-top:22px">3. Kebenaran Ibu Bapa / Penjaga</h3>
+      <div class="akuan" id="teksKebenaran"></div>
+      <label class="cek"><input type="checkbox" id="kebenaran"> <span>Saya bersetuju dan memberi kebenaran seperti di atas.</span></label>
+    </div>
+
+    <h3 style="margin-top:22px"><span id="noAdat">3</span>. Akuan Adat & Adab Perguruan</h3>
+    <div class="akuan">Saya / anak jagaan saya <b>bersetuju</b> untuk:<ol>${AKUAN_ADAT.map(a => `<li>${a}</li>`).join('')}</ol></div>
+    <label class="cek"><input type="checkbox" id="adat"> <span>Saya bersetuju mengikuti pembelajaran mengikut adat dan adab perguruan <b>Sri Gayong Panglima Ulung Malaysia</b>.</span></label>
+
+    <div class="akuan" style="margin-top:16px;font-size:13px"><b>Notis PDPA:</b> ${NOTIS_PDPA}</div>
+    <label class="cek"><input type="checkbox" id="pdpa"> <span>Saya bersetuju dengan notis PDPA.</span></label>
+
+    <button class="utama" style="margin-top:22px" onclick="hantar()">Hantar Permohonan</button>
+    <p class="pudar" style="font-size:12px;text-align:center">Permohonan akan disemak dan diluluskan oleh jurulatih gelanggang.</p>
+  </div></div>`;
+  kemasWaris();
+}
+function pilihJan(j) { jantina = j; document.querySelectorAll('#jan button').forEach((b, i) => b.classList.toggle('on', (i === 0) === (j === 'L'))); }
+function isiDariKP() {
+  const d = $('#kp').value.replace(/\D/g, '');
+  if (d.length >= 6 && !$('#lahir').dataset.manual) $('#lahir').value = tarikhDariKP(d);
+  if (d.length === 12) pilihJan(Number(d.slice(-1)) % 2 ? 'L' : 'P');
+  kemasWaris();
+}
+function kemasWaris() {
+  const u = umur(), b18 = u == null || u < 18;
+  $('#umurInfo').textContent = u != null ? `Umur: ${u} tahun${b18 ? ' — kebenaran ibu bapa / penjaga diperlukan' : ''}` : '';
+  $('#wajibW').style.display = b18 ? 'inline-block' : 'none';
+  document.querySelectorAll('.wW').forEach(x => x.style.display = b18 ? 'inline' : 'none');
+  $('#kotakKebenaran').style.display = b18 ? 'block' : 'none';
+  $('#noAdat').textContent = b18 ? '4' : '3';
+  $('#teksKebenaran').innerHTML = KEBENARAN_WARIS(esc($('#namaW').value.toUpperCase()));
+}
+async function hantar() {
+  const u = umur(), b18 = u == null || u < 18;
+  const d = { no_kp: $('#kp').value, nama: $('#nama').value.trim(), tarikh_lahir: $('#lahir').value, jantina, cawangan: $('#caw') ? $('#caw').value : '',
+    sekolah: $('#sekolah').value, alamat: $('#alamat').value, tel_pesilat: $('#telP').value, kesihatan: $('#sihat').value,
+    nama_waris: $('#namaW').value.trim(), hubungan_waris: $('#hub').value, no_kp_waris: $('#kpW').value, tel_waris: $('#telW').value, emel_waris: $('#emelW').value,
+    kebenaran_waris: b18 ? $('#kebenaran').checked : false, akur_adat: $('#adat').checked, pdpa: $('#pdpa').checked };
+  if (d.no_kp.replace(/\D/g, '').length !== 12) return toast('No. KP / MyKid mesti 12 digit.');
+  if (!d.nama || !d.tarikh_lahir || !d.jantina) return toast('Sila lengkapkan nama, tarikh lahir dan jantina.');
+  if (b18 && (!d.nama_waris || !d.hubungan_waris || !d.tel_waris)) return toast('Sila isi maklumat ibu bapa / penjaga.');
+  if (!b18 && !d.tel_pesilat && !d.tel_waris) return toast('Sila isi no. telefon.');
+  if (b18 && !d.kebenaran_waris) return toast('Sila tandakan kebenaran ibu bapa / penjaga.');
+  if (!d.akur_adat) return toast('Sila tandakan akuan adat dan adab perguruan.');
+  if (!d.pdpa) return toast('Sila bersetuju dengan notis PDPA.');
+  $('#borang').classList.add('muat');
+  const r = await api({ action: 'borang_hantar', g: G.gelanggang.kod, data: d });
+  $('#borang').classList.remove('muat');
+  if (!r.ok) return toast(r.msg);
+  window.scrollTo(0, 0);
+  $('#app').innerHTML = `<div class="wrap"><div class="kepala"><img src="${esc(G.gelanggang.logo || 'logo.png')}" alt=""></div>
+    <div class="kad" style="text-align:center"><div style="font-size:48px">✅</div><h3 style="font-size:19px">Permohonan Dihantar</h3>
+      <p><b>${esc(d.nama.toUpperCase())}</b><br><span class="pudar">${esc(G.gelanggang.nama)}</span></p>
+      <p class="pudar" style="font-size:14px">Jurulatih akan menyemak permohonan ini. Selepas diluluskan, anda boleh menyemak kehadiran & yuran di <a href="ibubapa.html" style="color:var(--emas)">Portal Ibu Bapa</a> menggunakan No. KP pesilat dan no. telefon waris.</p>
+      <p class="pudar" style="font-size:12px">No. rujukan: ${esc(r.id)}</p>
+      <button onclick="location.reload()">Daftar pesilat lain</button></div></div>`;
+}
+document.addEventListener('change', e => { if (e.target.id === 'lahir') e.target.dataset.manual = 1; });
+mula();
+</script>
+</body>
+</html>
