@@ -1279,9 +1279,20 @@ async function kongsiPoster(k) {
 function tabAkaun() {
   const u = S.u;
   $('#isi').innerHTML = `<div class="kad"><h3>Akaun Saya</h3><p style="margin:0">${esc(u.nama)}<br><span class="pudar">ID: ${esc(u.id)} · ${esc(NAMA_PERANAN[u.peranan])} · ${esc(u.telefon)}</span></p></div>
+    <div class="kad"><h3>Kemaskini Maklumat</h3><label>Nama Penuh</label><input id="aNama" value="${esc(u.nama)}">
+    <label>No. Telefon</label><input id="aTel" inputmode="tel" value="${esc(u.telefon)}" placeholder="cth. 0123456789">
+    <button class="utama penuh" style="margin-top:14px" onclick="simpanProfil()">Simpan</button></div>
     <div class="kad"><h3>Tukar Kata Laluan</h3><label>Kata laluan lama</label><input type="password" id="pLama"><label>Kata laluan baharu (min 8)</label><input type="password" id="pBaru">
     <button class="utama penuh" style="margin-top:14px" onclick="tukarPw()">Tukar</button></div>
     <button class="bahaya penuh" onclick="keluar()">Log Keluar</button>`;
+}
+async function simpanProfil() {
+  const nama = $('#aNama').value.trim(), telefon = $('#aTel').value.trim();
+  if (nama.length < 3) return toast('Sila isi nama penuh.');
+  if (!/^\+?\d{9,13}$/.test(telefon.replace(/[\s-]/g, ''))) return toast('No. telefon tidak sah. Contoh: 0123456789');
+  const r = await api('kemaskini_profil', { nama, telefon });
+  toast(r.msg);
+  if (r.ok) { S.u.nama = r.nama; S.u.telefon = r.telefon; mula(); }
 }
 async function tukarPw() { const r = await api('tukar_katalaluan', { lama: $('#pLama').value, baru: $('#pBaru').value }); toast(r.msg); }
 

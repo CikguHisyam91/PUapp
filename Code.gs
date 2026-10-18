@@ -126,7 +126,7 @@ function jawab_(o) {
 }
 
 var AWAM = { ibubapa_bayar: 1, borang_info: 1, borang_hantar: 1, ibubapa: 1, ping: 1, negeri: 1, daftar: 1, login: 1, status_awal: 1, cipta_super: 1 };
-var TULIS = { ibubapa_bayar: 1, qr_simpan: 1, notis_sahkan: 1, notis_tolak: 1, borang_hantar: 1, mohon_lulus: 1, mohon_tolak: 1, tukar_kod: 1, jad_simpan: 1, jad_padam: 1, reset_katalaluan: 1, caw_simpan: 1, caw_padam: 1, caw_tag: 1, logo_simpan: 1, kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, lulus_gelanggang: 1, status_gelanggang: 1,
+var TULIS = { ibubapa_bayar: 1, qr_simpan: 1, notis_sahkan: 1, notis_tolak: 1, borang_hantar: 1, mohon_lulus: 1, mohon_tolak: 1, tukar_kod: 1, jad_simpan: 1, jad_padam: 1, reset_katalaluan: 1, caw_simpan: 1, caw_padam: 1, caw_tag: 1, logo_simpan: 1, kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, kemaskini_profil: 1, lulus_gelanggang: 1, status_gelanggang: 1,
   status_pengguna: 1, set_ketua: 1, lantik_admin: 1, daftar_ahli: 1, kemaskini_ahli: 1, status_ahli: 1,
   rekod_yuran: 1, padam_yuran: 1, mohon_gelanggang: 1 };
 
@@ -374,6 +374,16 @@ API.tukar_katalaluan = function (u, p) {
   kemaskini_('PENGGUNA', u._r, { HASH: hash_(p.baru, salt), SALT: salt, WAJIB_TUKAR: '' });
   log_(u.ID, 'TUKAR_KATALALUAN', '');
   return { ok: true, msg: 'Kata laluan ditukar.' };
+};
+
+API.kemaskini_profil = function (u, p) {
+  var nama = String(p.nama || '').trim().replace(/\s+/g, ' ');
+  var tel = String(p.telefon || '').replace(/[\s-]/g, '');
+  if (nama.length < 3 || nama.length > 80) return { ok: false, msg: 'Nama mesti 3–80 aksara.' };
+  if (!/^\+?\d{9,13}$/.test(tel)) return { ok: false, msg: 'No. telefon tidak sah. Contoh: 0123456789' };
+  kemaskini_('PENGGUNA', u._r, { NAMA: nama, TELEFON: tel });
+  log_(u.ID, 'KEMASKINI_PROFIL', 'Nama/telefon dikemaskini');
+  return { ok: true, msg: 'Maklumat akaun dikemaskini.', nama: nama, telefon: tel };
 };
 
 /* ---------- Gelanggang ---------- */
