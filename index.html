@@ -251,11 +251,25 @@ async function paparDaftar() {
 }
 function isiGelDaftar() {
   const n = $('#dNeg').value, l = S.gelAwam.filter(g => g.negeri === n);
+  if (!n) {
+    $('#dGel').innerHTML = `<option value="">— Pilih negeri dahulu —</option>`;
+    $('#gelBaru').style.display = 'none';
+    return;
+  }
+  if (!l.length) {
+    // Belum ada gelanggang di negeri ini: terus daftar gelanggang baharu
+    $('#dGel').innerHTML = `<option value="__BARU" selected>+ Daftar gelanggang baharu (belum ada gelanggang di negeri ini)</option>`;
+    $('#gelBaru').style.display = 'block';
+    return;
+  }
   $('#dGel').innerHTML = `<option value="">— Pilih gelanggang —</option>` + l.map(g => `<option value="${esc(g.kod)}">${esc(g.nama)} (${esc(g.kod)})</option>`).join('') + `<option value="__BARU">+ Mohon gelanggang baharu</option>`;
   $('#gelBaru').style.display = 'none';
 }
 async function hantarDaftar() {
   const gel = $('#dGel').value;
+  if (!$('#dNeg').value) return toast('Sila pilih negeri.');
+  if (!gel) return toast('Sila pilih gelanggang, atau pilih "+ Mohon gelanggang baharu" jika gelanggang anda belum ada dalam senarai.', 6000);
+  if (gel === '__BARU' && !$('#dGNama').value.trim()) return toast('Sila isi Nama Gelanggang Baharu.');
   const d = { id: $('#dId').value, katalaluan: $('#dPw').value, nama: $('#dNama').value, telefon: $('#dTel').value, negeri: $('#dNeg').value, pdpa: $('#dPdpa').checked };
   if (gel === '__BARU') d.gelanggang_baru = { nama: $('#dGNama').value, alamat: $('#dGAlamat').value };
   else d.kod_gelanggang = gel;
