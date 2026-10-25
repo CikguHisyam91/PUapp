@@ -416,6 +416,7 @@ async function tabPapan() {
 }
 function lukisPapan() {
   const r = S.papan;
+  if (S.u.peranan === 'ADMIN_NEGERI') return lukisNegeri(S.u.negeri, true);
   if (S.pNegeri) return lukisNegeri(S.pNegeri);
   const semua = gabungStat(r.gelanggang.map(g => g.stat));
   const ikutNeg = {}; r.gelanggang.forEach(g => (ikutNeg[g.negeri] = ikutNeg[g.negeri] || []).push(g));
@@ -452,23 +453,44 @@ function kadGel(g) {
       <small>${g.ahli} ahli${g.bersama ? ` (${g.bersama} bersama)` : ''} · ${g.bayar} bayar yuran ${esc(S.papan.tahun)}${g.kutipan ? ' · ' + rm(g.kutipan) : ''}</small></div>
       <div class="r" style="flex-direction:column;align-items:flex-end">${tag(g.status)}<small class="pudar" style="font-size:11px">${g.aktif60 ? 'Aktif 60h' : 'Senyap 60h'}</small></div></div>`;
 }
-function lukisNegeri(k) {
+function lukisNegeri(k, admin) {
   const gs = S.papan.gelanggang.filter(g => g.negeri === k), t = gabungStat(gs.map(g => g.stat));
-  $('#isi').innerHTML = `<div class="baris" style="margin-bottom:12px"><button class="ikon" style="flex:none" onclick="S.pNegeri='';lukisPapan()">←</button><h3 style="margin:0;color:var(--emas)">${esc(nmNeg(k))}</h3></div>
-    <div class="grid" style="grid-template-columns:1fr 1fr;margin-bottom:12px"><div class="stat"><b>${gs.length}</b><small>Gelanggang</small></div><div class="stat"><b>${t.n}</b><small>Ahli aktif</small></div></div>
+  const jur = gs.reduce((n, g) => n + (g.jurulatih || []).filter(j => j.status === 'AKTIF').length, 0);
+  const caw = gs.reduce((n, g) => n + (g.cawangan || []).filter(c => c.id).length, 0);
+  const menunggu = S.papan.menungguGel.length + S.papan.menungguJur.length;
+  const wa = tel => { const d = String(tel || '').replace(/\D/g, '').replace(/^6?0/, '60'); return d.length > 9 ? `https://wa.me/${d}` : ''; };
+  $('#isi').innerHTML = `<div class="baris" style="margin-bottom:12px">${admin ? '' : `<button class="ikon" style="flex:none" onclick="S.pNegeri='';lukisPapan()">←</button>`}<h3 style="margin:0;color:var(--emas)">${admin ? 'Negeri ' : ''}${esc(nmNeg(k))}</h3>
+      ${admin ? `<div style="flex:none;width:110px">${pilihTahun('tabPapan', S.tahun)}</div>` : ''}</div>
+    <div class="grid" style="margin-bottom:12px">
+      <div class="stat"><b>${gs.length}</b><small>Gelanggang</small></div>
+      <div class="stat"><b>${caw}</b><small>Cawangan</small></div>
+      <div class="stat"><b>${jur}</b><small>Jurulatih aktif</small></div>
+      <div class="stat"><b>${t.n}</b><small>Ahli aktif</small></div>
+      ${admin ? `<div class="stat" style="cursor:pointer" onclick="pergi('lulus')"><b>${menunggu}</b><small>Menunggu kelulusan ›</small></div>
+      <div class="stat"><b>${S.papan.gelAktif}<span class="pudar" style="font-size:14px"> / ${S.papan.gelAktif + S.papan.gelTidakAktif}</span></b><small>Aktif 60 hari</small></div>` : ''}
+    </div>
     <div class="ring">${blokInfo(t)}</div>
-    <h3 style="color:var(--emas)">Gelanggang di ${esc(nmNeg(k))}</h3>
-    ${gs.map(g => { const st = gabungStat([g.stat]); return `<div class="kad">
-      <div class="baris" style="margin-bottom:6px;align-items:flex-start"><div><b>${esc(g.nama)}</b><br><small class="pudar">${esc(g.kod)} · Ketua: ${esc(g.ketua || '-')} ${esc(g.telKetua)}</small></div><div style="flex:none">${tag(g.status)}</div></div>
-      <div class="pudar" style="font-size:13px;margin-bottom:10px">${st.n} ahli aktif · ${g.bayar} bayar yuran ${esc(S.papan.tahun)}${g.aktif60 ? '' : ' · tiada aktiviti 60 hari'}</div>
-      ${blokInfo(st)}
-      <button class="kecil penuh" style="margin-top:8px" onclick="S.gelPilih='${esc(g.kod)}';pergi('ahli')">Lihat senarai ahli ›</button></div>`; }).join('') || '<p class="pudar">Tiada gelanggang.</p>'}`;
-  window.scrollTo(0, 0);
+    ${admin ? `<div class="baris" style="margin:16px 0 8px"><h3 style="margin:0;color:var(--emas)">Gelanggang</h3><button class="kecil" style="flex:none" onclick="eksportPapan()">Eksport CSV</button></div>` : `<h3 style="color:var(--emas)">Gelanggang di ${esc(nmNeg(k))}</h3>`}
+    ${gs.map((g, gi) => { const st = gabungStat([g.stat]), cw = g.cawangan || [];
+      return `<div class="kad">
+      <div class="baris" style="margin-bottom:6px;align-items:flex-start"><div><b>${esc(g.nama)}</b><br><small class="pudar">${esc(g.kod)}</small></div><div style="flex:none">${tag(g.status)}</div></div>
+      <div class="pudar" style="font-size:13px;margin-bottom:10px">${g.ahli} ahli aktif${g.bersama ? ` (${g.bersama} ahli bersama)` : ''} · ${g.bayar} bayar yuran ${esc(S.papan.tahun)}${g.aktif60 ? '' : ' · ⚠️ tiada aktiviti 60 hari'}</div>
+      <div class="pudar" style="font-size:12px;margin-bottom:4px">👤 JURULATIH (${(g.jurulatih || []).length})</div>
+      ${(g.jurulatih || []).map(j => `<div class="baris" style="padding:5px 0"><span style="font-size:14px">${esc(j.nama)} ${j.ketua ? tag('KETUA') : ''} ${j.status !== 'AKTIF' ? tag(j.status) : ''}</span>
+        ${wa(j.telefon) ? `<a href="${wa(j.telefon)}" target="_blank" style="flex:none;color:var(--hijau);font-size:13px;text-decoration:none">💬 ${esc(j.telefon)}</a>` : `<small class="pudar" style="flex:none">${esc(j.telefon)}</small>`}</div>`).join('') || '<small class="pudar">Tiada jurulatih</small>'}
+      ${cw.length ? `<div class="pudar" style="font-size:12px;margin:12px 0 4px">📍 CAWANGAN (${cw.filter(c => c.id).length})</div>
+        <div class="jad"><table style="font-size:13px"><tr><th>Cawangan</th><th>Ahli</th><th>L/P</th><th>Kanak²</th><th>Men.</th><th>Dew.</th></tr>
+        ${cw.map((c, ci) => `<tr style="cursor:pointer" onclick="const e=document.getElementById('cw_${gi}_${ci}');e.style.display=e.style.display==='none'?'':'none'"><td><b style="${c.id ? '' : 'color:var(--pudar)'}">${esc(c.nama)} ›</b></td><td><b>${c.L + c.P}</b></td><td>${c.L}/${c.P}</td><td>${c.K}</td><td>${c.M}</td><td>${c.D}</td></tr>
+          <tr id="cw_${gi}_${ci}" style="display:none"><td colspan="6">${blokInfo(gabungStat([c]))}</td></tr>`).join('')}</table></div>` : ''}
+      <details style="margin-top:12px"><summary class="pudar" style="cursor:pointer;font-size:13px">Infografik gelanggang (ahli utama)</summary><div style="margin-top:10px">${blokInfo(st)}</div></details>
+      <button class="kecil penuh" style="margin-top:10px" onclick="S.gelPilih='${esc(g.kod)}';S.cawPilih='';pergi('ahli')">Lihat senarai ahli ›</button></div>`; }).join('') || '<p class="pudar">Tiada gelanggang.</p>'}`;
+  if (!admin) window.scrollTo(0, 0);
 }
 function eksportPapan() {
   const r = S.papan;
-  csv('ringkasan_gelanggang_' + r.tahun, [['Kod','Gelanggang','Negeri','Ketua','Telefon Ketua','Bil Ahli Aktif','Ahli Bersama','Bayar Yuran ' + r.tahun,'Kutipan (RM)','Status','Aktiviti Terakhir']]
-    .concat(r.gelanggang.map(g => [g.kod, g.nama, nmNeg(g.negeri), g.ketua, g.telKetua, g.ahli, g.bersama, g.bayar, g.kutipan, g.status, g.aktiviti])));
+  csv('ringkasan_gelanggang_' + r.tahun, [['Kod','Gelanggang','Negeri','Ketua','Telefon Ketua','Bil Ahli Aktif','Ahli Bersama','Bayar Yuran ' + r.tahun,'Kutipan (RM)','Status','Aktiviti Terakhir','Jurulatih','Cawangan']]
+    .concat(r.gelanggang.filter(g => S.u.peranan !== 'ADMIN_NEGERI' || g.negeri === S.u.negeri).map(g => [g.kod, g.nama, nmNeg(g.negeri), g.ketua, g.telKetua, g.ahli, g.bersama, g.bayar, g.kutipan, g.status, g.aktiviti,
+      (g.jurulatih || []).map(j => j.nama + ' (' + j.telefon + ')').join('; '), (g.cawangan || []).filter(c => c.id).map(c => c.nama + ': ' + (c.L + c.P)).join('; ')])));
 }
 
 /* ================= KELULUSAN ================= */
@@ -599,7 +621,7 @@ async function tabAhli() {
   const r = await api('senarai_ahli', { kod: S.gelPilih, tahun: S.tahun });
   if (!r.ok) return $('#isi').innerHTML = pilih + `<p>${esc(r.msg)}</p>`;
   if (u.peranan === 'JURULATIH') { const c = await api('caw_get'); S.cawList = c.ok ? c.cawangan : []; if (S.cawPilih == null) { try { S.cawPilih = localStorage.getItem('sp_caw') || ''; } catch (e) { S.cawPilih = ''; } } pilih = pilihCaw('tabAhli'); }
-  else S.cawPilih = '';
+  else { S.cawList = r.cawangan || []; if (S.cawPilih && S.cawPilih !== '__TIADA' && !S.cawList.some(c => c.id === S.cawPilih)) S.cawPilih = ''; pilih += pilihCaw('tabAhli'); }
   S.ahli = r.ahli; S.gelAhli = r.gelanggang; S.aTapis = S.aTapis == null ? 'AKTIF' : S.aTapis;
   const aktif = r.ahli.filter(a => a.status_gel === 'AKTIF');
   const bayar = aktif.filter(a => a.yuran).length;
@@ -616,7 +638,7 @@ function senaraiAhli() {
   const kira = s => S.ahli.filter(a => !s || a.status_gel === s).length;
   $('#cipA').innerHTML = cip('aTapis', [['AKTIF', `Aktif (${kira('AKTIF')})`], ['', `Semua (${kira('')})`], ['TIDAK AKTIF', `Tidak Aktif (${kira('TIDAK AKTIF')})`], ['BERPINDAH', `Berpindah (${kira('BERPINDAH')})`]], st, 'senaraiAhli');
   const l = S.ahli.filter(a => (!st || a.status_gel === st) && ikutCaw(a) && (a.nama + ' ' + a.no_ahli).toLowerCase().includes(q));
-  $('#senA').innerHTML = l.map(a => `<div class="item" onclick="bukaAhli('${esc(a.no_ahli)}')"><div class="k"><b>${esc(a.nama)}</b><small>${esc(a.no_ahli)} · ${esc(namaBengkung(a.bengkung) || '-')}</small></div>
+  $('#senA').innerHTML = l.map(a => `<div class="item" onclick="bukaAhli('${esc(a.no_ahli)}')"><div class="k"><b>${esc(a.nama)}</b><small>${esc(a.no_ahli)} · ${esc(namaBengkung(a.bengkung) || '-')}${a.nama_cawangan ? ' · 📍 ' + esc(a.nama_cawangan) : ''}</small></div>
     <div class="r">${a.jenis === 'BERSAMA' ? tag('BERSAMA') : ''}${a.status_gel !== 'AKTIF' ? tag(a.status_gel) : ''}${a.yuran ? tag(a.yuran, 'HIJAU') : ''}</div></div>`).join('') || '<p class="pudar">Tiada ahli.</p>';
 }
 function eksportAhli() {

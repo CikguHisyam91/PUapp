@@ -555,7 +555,9 @@ API.senarai_ahli = function (u, p) {
     .map(function (k) { var a = ahli[k.NO_KP]; return a ? ahliObj_(a, k, u, g.KOD, yur[a.NO_KP]) : null; })
     .filter(function (x) { return x; });
   rs.sort(function (a, b) { return a.nama.localeCompare(b.nama); });
-  return { ok: true, gelanggang: { kod: g.KOD, nama: g.NAMA, negeri: g.NEGERI }, ahli: rs, tahun: tahun };
+  var cw = {}; baca_('CAWANGAN').forEach(function (c) { if (c.KOD_GELANGGANG === g.KOD && c.STATUS !== 'PADAM') cw[c.ID] = c.NAMA; });
+  rs.forEach(function (x) { x.nama_cawangan = cw[x.cawangan] || ''; });
+  return { ok: true, gelanggang: { kod: g.KOD, nama: g.NAMA, negeri: g.NEGERI }, cawangan: Object.keys(cw).map(function (id) { return { id: id, nama: cw[id] }; }), ahli: rs, tahun: tahun };
 };
 
 API.semak_kp = function (u, p) {
@@ -716,9 +718,20 @@ API.papan = function (u, p) {
     sg.b[bk] = (sg.b[bk] || 0) + 1;
   });
 
-  var bilAhli = {}, bilBersama = {};
+  var bilAhli = {}, bilBersama = {}, statCaw = {}, ahliMap = {};
+  baca_('AHLI').forEach(function (a) { ahliMap[a.NO_KP] = a; });
+  var cawNama = {}; baca_('CAWANGAN').forEach(function (c) { if (c.STATUS !== 'PADAM') cawNama[c.ID] = { nama: c.NAMA, gel: c.KOD_GELANGGANG }; });
   baca_('KEAHLIAN_GELANGGANG').forEach(function (k) {
     if (k.STATUS !== 'AKTIF') return;
+    // Pecahan ikut cawangan (ahli aktif di gelanggang itu, termasuk ahli bersama)
+    var cid = k.CAWANGAN && cawNama[k.CAWANGAN] ? k.CAWANGAN : '', a = ahliMap[k.NO_KP] || {};
+    var sc = (statCaw[k.KOD_GELANGGANG] = statCaw[k.KOD_GELANGGANG] || {});
+    var st = sc[cid] || (sc[cid] = { id: cid, nama: cid ? cawNama[cid].nama : 'Belum ditag cawangan', L: 0, P: 0, K: 0, M: 0, D: 0, X: 0, b: {} });
+    st[/^P/i.test(a.JANTINA) ? 'P' : 'L']++;
+    var y = Number(String(a.TARIKH_LAHIR || '').slice(0, 4));
+    if (!y) { var dk = String(a.NO_KP || '').replace(/\D/g, ''); if (dk.length >= 6) { y = Number(dk.slice(0, 2)); y += y > thIni % 100 ? 1900 : 2000; } }
+    var um = y ? thIni - y : null; st[um == null ? 'X' : um <= 12 ? 'K' : um <= 17 ? 'M' : 'D']++;
+    var bk = String(a.BENGKUNG || '').trim() || '-'; st.b[bk] = (st.b[bk] || 0) + 1;
     bilAhli[k.KOD_GELANGGANG] = (bilAhli[k.KOD_GELANGGANG] || 0) + 1;
     if (k.JENIS === 'BERSAMA') bilBersama[k.KOD_GELANGGANG] = (bilBersama[k.KOD_GELANGGANG] || 0) + 1;
   });
@@ -739,7 +752,12 @@ API.papan = function (u, p) {
     var k = pengMap[g.KETUA_ID];
     gelList.push({ kod: g.KOD, nama: g.NAMA, negeri: g.NEGERI, status: g.STATUS, aktif60: !!ak, aktiviti: g.AKTIVITI_TERAKHIR,
       ketua: k ? k.NAMA : '', telKetua: k ? k.TELEFON : '', ahli: bilAhli[g.KOD] || 0, bersama: bilBersama[g.KOD] || 0,
-      bayar: bilYuran[g.KOD] || 0, kutipan: jumYuran[g.KOD] || 0, stat: statGel[g.KOD] || { L: 0, P: 0, K: 0, M: 0, D: 0, X: 0, b: {} } });
+      bayar: bilYuran[g.KOD] || 0, kutipan: jumYuran[g.KOD] || 0,
+      jurulatih: peng.filter(function (x) { return x.PERANAN === 'JURULATIH' && x.KOD_GELANGGANG === g.KOD && x.STATUS !== 'DITOLAK'; })
+        .map(function (x) { return { nama: x.NAMA, telefon: x.TELEFON, ketua: x.KETUA === 'YA', status: x.STATUS }; }),
+      cawangan: Object.keys(cawNama).filter(function (id) { return cawNama[id].gel === g.KOD; }).map(function (id) { return (statCaw[g.KOD] || {})[id] || { id: id, nama: cawNama[id].nama, L: 0, P: 0, K: 0, M: 0, D: 0, X: 0, b: {} }; })
+        .concat((statCaw[g.KOD] || {})[''] && Object.keys(cawNama).some(function (id) { return cawNama[id].gel === g.KOD; }) ? [statCaw[g.KOD]['']] : []),
+      stat: statGel[g.KOD] || { L: 0, P: 0, K: 0, M: 0, D: 0, X: 0, b: {} } });
   });
   gelList.sort(function (a, b) { return (a.negeri + a.nama).localeCompare(b.negeri + b.nama); });
 
