@@ -126,7 +126,7 @@ function jawab_(o) {
 }
 
 var AWAM = { ibubapa_bayar: 1, borang_info: 1, borang_hantar: 1, ibubapa: 1, ping: 1, negeri: 1, daftar: 1, login: 1, status_awal: 1, cipta_super: 1 };
-var TULIS = { ubah_admin: 1, ibubapa_bayar: 1, qr_simpan: 1, notis_sahkan: 1, notis_tolak: 1, borang_hantar: 1, mohon_lulus: 1, mohon_tolak: 1, tukar_kod: 1, jad_simpan: 1, jad_padam: 1, reset_katalaluan: 1, caw_simpan: 1, caw_padam: 1, caw_tag: 1, logo_simpan: 1, kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, kemaskini_profil: 1, lulus_gelanggang: 1, status_gelanggang: 1,
+var TULIS = { set_bertugas: 1, ubah_admin: 1, ibubapa_bayar: 1, qr_simpan: 1, notis_sahkan: 1, notis_tolak: 1, borang_hantar: 1, mohon_lulus: 1, mohon_tolak: 1, tukar_kod: 1, jad_simpan: 1, jad_padam: 1, reset_katalaluan: 1, caw_simpan: 1, caw_padam: 1, caw_tag: 1, logo_simpan: 1, kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, kemaskini_profil: 1, lulus_gelanggang: 1, status_gelanggang: 1,
   status_pengguna: 1, set_ketua: 1, lantik_admin: 1, daftar_ahli: 1, kemaskini_ahli: 1, status_ahli: 1,
   rekod_yuran: 1, padam_yuran: 1, mohon_gelanggang: 1 };
 
@@ -534,13 +534,13 @@ API.ubah_admin = function (u, p) {
 
 /* ---------- Ahli ---------- */
 function gelAhli_(u, kod) {
-  var k = u.PERANAN === 'JURULATIH' ? u.KOD_GELANGGANG : kod;
+  var k = u.PERANAN === 'JURULATIH' || !kod ? u.KOD_GELANGGANG : kod;
   var g = cariSatu_('GELANGGANG', 'KOD', k);
   if (!g || !bolehGel_(u, g)) throw new Error('Gelanggang tidak dijumpai atau di luar skop anda.');
   return g;
 }
 function kpPenuh_(u, kodGel) {
-  return u.PERANAN === 'SUPER_ADMIN' || (u.PERANAN === 'JURULATIH' && u.KOD_GELANGGANG === kodGel);
+  return u.PERANAN === 'SUPER_ADMIN' || (!!u.KOD_GELANGGANG && u.KOD_GELANGGANG === kodGel);
 }
 function ahliObj_(a, k, u, kodGel, yuranTahun) {
   return { no_ahli: a.NO_AHLI, no_kp: kpPenuh_(u, kodGel) ? a.NO_KP : topengKP_(a.NO_KP), nama: a.NAMA,
@@ -755,8 +755,8 @@ API.papan = function (u, p) {
     gelList.push({ kod: g.KOD, nama: g.NAMA, negeri: g.NEGERI, status: g.STATUS, aktif60: !!ak, aktiviti: g.AKTIVITI_TERAKHIR,
       ketua: k ? k.NAMA : '', telKetua: k ? k.TELEFON : '', ahli: bilAhli[g.KOD] || 0, bersama: bilBersama[g.KOD] || 0,
       bayar: bilYuran[g.KOD] || 0, kutipan: jumYuran[g.KOD] || 0,
-      jurulatih: peng.filter(function (x) { return x.PERANAN === 'JURULATIH' && x.KOD_GELANGGANG === g.KOD && x.STATUS !== 'DITOLAK'; })
-        .map(function (x) { return { nama: x.NAMA, telefon: x.TELEFON, ketua: x.KETUA === 'YA', status: x.STATUS }; }),
+      jurulatih: peng.filter(function (x) { return x.KOD_GELANGGANG === g.KOD && x.STATUS !== 'DITOLAK'; })
+        .map(function (x) { return { nama: x.NAMA, telefon: x.TELEFON, ketua: x.KETUA === 'YA', status: x.STATUS, peranan: x.PERANAN }; }),
       cawangan: Object.keys(cawNama).filter(function (id) { return cawNama[id].gel === g.KOD; }).map(function (id) { return (statCaw[g.KOD] || {})[id] || { id: id, nama: cawNama[id].nama, L: 0, P: 0, K: 0, M: 0, D: 0, X: 0, b: {} }; })
         .concat((statCaw[g.KOD] || {})[''] && Object.keys(cawNama).some(function (id) { return cawNama[id].gel === g.KOD; }) ? [statCaw[g.KOD]['']] : []),
       stat: statGel[g.KOD] || { L: 0, P: 0, K: 0, M: 0, D: 0, X: 0, b: {} } });
@@ -898,7 +898,8 @@ function jantina_(v) { var s = String(v || '').toUpperCase(); return /^P|PEREMPU
  * Kehadiran, yuran bulanan, kewangan & fizikal/BMI adalah data dalaman gelanggang.
  * Super Admin & Admin Negeri TIDAK boleh baca data ini. */
 function gelJur_(u) {
-  if (u.PERANAN !== 'JURULATIH') throw new Error('Modul ini untuk jurulatih gelanggang sahaja.');
+  // Jurulatih, ATAU Admin Negeri / Super Admin yang ditetapkan bertugas di sesebuah gelanggang (mod "Gelanggang Saya")
+  if (!u.KOD_GELANGGANG) throw new Error('Modul ini untuk jurulatih gelanggang sahaja.');
   var g = cariSatu_('GELANGGANG', 'KOD', u.KOD_GELANGGANG);
   if (!g || g.STATUS !== 'AKTIF') throw new Error('Gelanggang tidak aktif.');
   return g;
@@ -1392,4 +1393,23 @@ API.notis_tolak = function (u, p) {
   if (!n || n.KOD_GELANGGANG !== g.KOD || n.STATUS !== 'MENUNGGU') return { ok: false, msg: 'Notis tiada / sudah diproses.' };
   kemaskini_('BAYARAN_NOTIS', n._r, { STATUS: 'DITOLAK', CATATAN: (n.CATATAN ? n.CATATAN + ' | ' : '') + 'Ditolak: ' + String(p.sebab || '').slice(0, 100), DIPROSES_OLEH: u.ID, TARIKH_PROSES: masa_() });
   return { ok: true, msg: 'Notis ditolak.' };
+};
+
+/* ======================= GELANGGANG BERTUGAS (Admin Negeri / Super Admin yang juga jurulatih) =======================
+ * Super Admin tetapkan gelanggang tempat seseorang admin (atau dirinya sendiri) bertugas sebagai jurulatih / ketua.
+ * Admin itu kemudian boleh tukar ke mod "Gelanggang Saya" untuk merekod seperti jurulatih biasa. */
+API.set_bertugas = function (u, p) {
+  wajib_(u, ['SUPER_ADMIN']);
+  var x = cariSatu_('PENGGUNA', 'ID', p.id);
+  if (!x || ['ADMIN_NEGERI', 'SUPER_ADMIN'].indexOf(x.PERANAN) < 0) return { ok: false, msg: 'Hanya untuk akaun Admin Negeri / Super Admin.' };
+  var kod = String(p.kod || '').trim().toUpperCase();
+  if (kod) {
+    var g = cariSatu_('GELANGGANG', 'KOD', kod);
+    if (!g || g.STATUS !== 'AKTIF') return { ok: false, msg: 'Gelanggang tidak aktif.' };
+    if (x.PERANAN === 'ADMIN_NEGERI' && g.NEGERI !== x.NEGERI) return { ok: false, msg: 'Gelanggang mesti dalam negeri admin itu.' };
+    kemaskini_('PENGGUNA', x._r, { KOD_GELANGGANG: kod, KETUA: p.ketua ? 'YA' : 'TIDAK' });
+    if (p.ketua) kemaskini_('GELANGGANG', g._r, { KETUA_ID: x.ID });
+  } else kemaskini_('PENGGUNA', x._r, { KOD_GELANGGANG: '', KETUA: 'TIDAK' });
+  log_(u.ID, 'SET_BERTUGAS', x.ID + ' → ' + (kod || '(tiada)') + (p.ketua ? ' KETUA' : ''));
+  return { ok: true, msg: kod ? x.NAMA + ' kini bertugas di ' + kod + (p.ketua ? ' sebagai ketua.' : '.') : 'Gelanggang bertugas dibuang.' };
 };
