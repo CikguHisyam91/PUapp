@@ -126,7 +126,7 @@ function jawab_(o) {
 }
 
 var AWAM = { ibubapa_bayar: 1, borang_info: 1, borang_hantar: 1, ibubapa: 1, ping: 1, negeri: 1, daftar: 1, login: 1, status_awal: 1, cipta_super: 1 };
-var TULIS = { ibubapa_bayar: 1, qr_simpan: 1, notis_sahkan: 1, notis_tolak: 1, borang_hantar: 1, mohon_lulus: 1, mohon_tolak: 1, tukar_kod: 1, jad_simpan: 1, jad_padam: 1, reset_katalaluan: 1, caw_simpan: 1, caw_padam: 1, caw_tag: 1, logo_simpan: 1, kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, kemaskini_profil: 1, lulus_gelanggang: 1, status_gelanggang: 1,
+var TULIS = { ubah_admin: 1, ibubapa_bayar: 1, qr_simpan: 1, notis_sahkan: 1, notis_tolak: 1, borang_hantar: 1, mohon_lulus: 1, mohon_tolak: 1, tukar_kod: 1, jad_simpan: 1, jad_padam: 1, reset_katalaluan: 1, caw_simpan: 1, caw_padam: 1, caw_tag: 1, logo_simpan: 1, kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, kemaskini_profil: 1, lulus_gelanggang: 1, status_gelanggang: 1,
   status_pengguna: 1, set_ketua: 1, lantik_admin: 1, daftar_ahli: 1, kemaskini_ahli: 1, status_ahli: 1,
   rekod_yuran: 1, padam_yuran: 1, mohon_gelanggang: 1 };
 
@@ -496,7 +496,7 @@ API.lantik_admin = function (u, p) {
     if (x.PERANAN === 'SUPER_ADMIN') return { ok: false, msg: 'Tidak boleh.' };
     kemaskini_('PENGGUNA', x._r, { PERANAN: 'ADMIN_NEGERI', NEGERI: p.negeri, STATUS: 'AKTIF' });
     log_(u.ID, 'LANTIK_ADMIN', id + ' (sedia ada) → ' + p.negeri);
-    return { ok: true, msg: x.NAMA + ' dilantik sebagai Admin Negeri ' + namaNegeri_(p.negeri) + '.' };
+    return { ok: true, msg: x.NAMA + ' dilantik sebagai Admin Negeri ' + namaNegeri_(p.negeri) + '.' + gantiAdmin_(u, p.ganti, id) };
   }
   if (String(p.katalaluan || '').length < 8) return { ok: false, msg: 'Kata laluan sekurang-kurangnya 8 aksara.' };
   var salt = Utilities.getUuid();
@@ -504,7 +504,30 @@ API.lantik_admin = function (u, p) {
     PERANAN: 'ADMIN_NEGERI', NEGERI: p.negeri, KOD_GELANGGANG: '', KETUA: 'TIDAK', STATUS: 'AKTIF',
     TARIKH_DAFTAR: hariIni_(), GAGAL: '0', KUNCI_HINGGA: '' });
   log_(u.ID, 'LANTIK_ADMIN', id + ' → ' + p.negeri);
-  return { ok: true, msg: 'Admin Negeri ' + id + ' dicipta. Beri ID & kata laluan kepadanya.' };
+  return { ok: true, msg: 'Admin Negeri ' + id + ' dicipta. Beri ID & kata laluan kepadanya.' + gantiAdmin_(u, p.ganti, id) };
+};
+/* Gantikan admin lama: akaun lama digantung & semua sesinya dibatalkan */
+function gantiAdmin_(u, idLama, idBaru) {
+  if (!idLama || idLama === idBaru) return '';
+  var x = cariSatu_('PENGGUNA', 'ID', idLama);
+  if (!x || x.PERANAN !== 'ADMIN_NEGERI') return '';
+  kemaskini_('PENGGUNA', x._r, { STATUS: 'DIGANTUNG' });
+  var sh = sh_('SESI'), rs = baca_('SESI'), c = CacheService.getScriptCache();
+  for (var k = rs.length - 1; k >= 0; k--) if (rs[k].ID === x.ID) { c.remove('t_' + rs[k].TOKEN); sh.deleteRow(rs[k]._r); }
+  delete _tbl.SESI;
+  log_(u.ID, 'GANTI_ADMIN', idLama + ' → ' + idBaru);
+  return ' Admin lama (' + x.NAMA + ') telah digantung.';
+}
+/* Ubah maklumat / pindah negeri Admin Negeri */
+API.ubah_admin = function (u, p) {
+  wajib_(u, ['SUPER_ADMIN']);
+  var x = cariSatu_('PENGGUNA', 'ID', p.id);
+  if (!x || x.PERANAN !== 'ADMIN_NEGERI') return { ok: false, msg: 'Admin Negeri tidak dijumpai.' };
+  if (!NEGERI.some(function (n) { return n[0] === p.negeri; })) return { ok: false, msg: 'Pilih negeri.' };
+  var nama = String(p.nama || '').trim(); if (!nama) return { ok: false, msg: 'Nama wajib.' };
+  kemaskini_('PENGGUNA', x._r, { NAMA: nama.slice(0, 100), TELEFON: String(p.telefon || '').trim().slice(0, 20), NEGERI: p.negeri });
+  log_(u.ID, 'UBAH_ADMIN', x.ID + (x.NEGERI !== p.negeri ? ' ' + x.NEGERI + ' → ' + p.negeri : ''));
+  return { ok: true, msg: 'Maklumat ' + nama + ' dikemas kini.' };
 };
 
 /* ---------- Ahli ---------- */

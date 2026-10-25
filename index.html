@@ -518,7 +518,15 @@ async function tabJur() {
   const r = await api('senarai_pengguna'); if (!r.ok) return $('#isi').innerHTML = `<p>${esc(r.msg)}</p>`;
   const sa = S.u.peranan === 'SUPER_ADMIN';
   S.pengguna = r.pengguna;
-  $('#isi').innerHTML = (sa ? `<button class="utama penuh" style="margin-bottom:12px" onclick="borangAdmin()">+ Lantik Admin Negeri</button>` : '') +
+  $('#isi').innerHTML = (sa ? `<div class="kad"><div class="baris" style="margin-bottom:6px"><h3 style="margin:0">🏛️ Admin Negeri</h3><button class="kecil utama" style="flex:none" onclick="borangAdmin()">+ Tambah</button></div>
+      ${S.negeri.map(n => { const ad = S.pengguna.filter(p => p.peranan === 'ADMIN_NEGERI' && p.negeri === n[0]);
+        return `<div style="padding:10px 0;border-bottom:1px solid var(--garis)"><div class="baris"><b style="font-size:14px">${esc(n[1])}</b>
+          ${ad.some(a => a.status === 'AKTIF') ? '' : `<button class="kecil" style="flex:none" onclick="borangAdmin('${n[0]}')">+ Lantik</button>`}</div>
+          ${ad.map(a => `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center"><span style="flex:1;min-width:150px;font-size:14px">${esc(a.nama)} <small class="pudar">${esc(a.id)} · ${esc(a.telefon)}</small> ${a.status !== 'AKTIF' ? tag(a.status) : ''}</span>
+            <button class="kecil" onclick="ubahAdmin('${esc(a.id)}')">✎ Ubah</button>
+            ${a.status === 'AKTIF' ? `<button class="kecil" onclick="borangAdmin('${n[0]}','${esc(a.id)}')">🔁 Gantikan</button>` : `<button class="kecil" onclick="statusJur('${esc(a.id)}','AKTIF')">Aktifkan</button>`}</div>`).join('') || '<small class="pudar">Tiada admin</small>'}</div>`; }).join('')}
+      <p class="pudar" style="font-size:12px;margin-bottom:0">Satu negeri boleh ada lebih dari seorang Admin Negeri.</p></div>
+      <h3 style="color:var(--emas)">Semua Pengguna</h3>` : '') +
     cariBox('cariJ', 'senaraiJur', 'Cari nama / gelanggang...') + `<div id="senJ"></div>`;
   senaraiJur();
 }
@@ -532,10 +540,13 @@ function senaraiJur() {
     ${p.peranan === 'JURULATIH' ? `<button class="kecil" onclick="setKetua('${esc(p.id)}',${!p.ketua})">${p.ketua ? 'Buang Ketua' : 'Jadikan Ketua'}</button>` : ''}
     ${S.u.peranan === 'SUPER_ADMIN' ? `<button class="kecil" onclick="resetPw('${esc(p.id)}','${esc(p.nama)}')">🔑 Reset kata laluan</button>` : ''}</div></div>`).join('') || '<p class="pudar">Tiada.</p>';
 }
-function borangAdmin() {
-  modal(`<h3 style="color:var(--emas);margin-top:0">Lantik Admin Negeri</h3>
-    <label>ID Pengguna</label><input id="aId" autocapitalize="none">
-    <label>Negeri</label><select id="aNeg">${S.negeri.map(n => `<option value="${n[0]}">${esc(n[1])}</option>`).join('')}</select>
+function borangAdmin(neg, ganti) {
+  const lama = ganti ? S.pengguna.find(p => p.id === ganti) : null; S.gantiAdmin = ganti || '';
+  modal(`<h3 style="color:var(--emas);margin-top:0">${lama ? '🔁 Gantikan Admin Negeri' : 'Lantik Admin Negeri'}</h3>
+    ${lama ? `<div class="pdpa" style="margin-top:0">Admin semasa <b>${esc(lama.nama)}</b> (${esc(lama.id)}) akan <b>digantung</b> dan dilog keluar selepas admin baharu dilantik.</div>` : ''}
+    <label>ID Pengguna admin baharu</label><input id="aId" autocapitalize="none" placeholder="cth. admin.perak">
+    <p class="pudar" style="font-size:12px;margin:6px 0 0">Boleh guna ID pengguna sedia ada (cth. jurulatih) — perananya akan bertukar menjadi Admin Negeri.</p>
+    <label>Negeri</label><select id="aNeg">${S.negeri.map(n => `<option value="${n[0]}" ${n[0] === neg ? 'selected' : ''}>${esc(n[1])}</option>`).join('')}</select>
     <label>Nama</label><input id="aNama"><label>Telefon</label><input id="aTel" inputmode="tel">
     <label>Kata laluan sementara (min 8) — kosongkan jika ID sudah wujud</label><input id="aPw">
     <div class="baris" style="margin-top:14px"><button onclick="modal('')">Batal</button><button class="utama" onclick="lantikAdmin()">Lantik</button></div>`);
@@ -554,8 +565,23 @@ async function resetPw(id, nama) {
     <button class="utama penuh" style="margin-top:8px" onclick="modal('')">Selesai</button>`);
 }
 async function setKetua(id, ketua) { const r = await api('set_ketua', { id, ketua }); toast(r.msg); if (r.ok) mula(); }
+function ubahAdmin(id) {
+  const a = S.pengguna.find(p => p.id === id); if (!a) return;
+  modal(`<h3 style="color:var(--emas);margin-top:0">✎ Ubah Admin Negeri</h3><p class="pudar" style="margin:0">ID: <b style="color:var(--teks)">${esc(a.id)}</b></p>
+    <label>Nama</label><input id="uNama" value="${esc(a.nama)}"><label>Telefon</label><input id="uTel" inputmode="tel" value="${esc(a.telefon)}">
+    <label>Negeri (pindah negeri)</label><select id="uNeg">${S.negeri.map(n => `<option value="${n[0]}" ${n[0] === a.negeri ? 'selected' : ''}>${esc(n[1])}</option>`).join('')}</select>
+    <button class="utama penuh" style="margin-top:14px" onclick="simpanUbahAdmin('${esc(a.id)}')">Simpan</button>
+    <button class="penuh" style="margin-top:8px" onclick="resetPw('${esc(a.id)}','${esc(a.nama)}')">🔑 Reset kata laluan</button>
+    ${a.status === 'AKTIF' ? `<button class="bahaya penuh" style="margin-top:8px" onclick="modal('');statusJur('${esc(a.id)}','DIGANTUNG')">Buang / Gantung admin</button>` : ''}
+    <button class="penuh" style="margin-top:8px" onclick="modal('')">Batal</button>`);
+}
+async function simpanUbahAdmin(id) {
+  const r = await api('ubah_admin', { id, nama: $('#uNama').value, telefon: $('#uTel').value, negeri: $('#uNeg').value });
+  toast(r.msg); if (r.ok) { modal(''); mula(); }
+}
 async function lantikAdmin() {
-  const r = await api('lantik_admin', { id: $('#aId').value, negeri: $('#aNeg').value, nama: $('#aNama').value, telefon: $('#aTel').value, katalaluan: $('#aPw').value });
+  if (S.gantiAdmin && !confirm('Lantik admin baharu dan gantung admin lama?')) return;
+  const r = await api('lantik_admin', { id: $('#aId').value, negeri: $('#aNeg').value, nama: $('#aNama').value, telefon: $('#aTel').value, katalaluan: $('#aPw').value, ganti: S.gantiAdmin });
   toast(r.msg, 6000); if (r.ok) { modal(''); mula(); }
 }
 
