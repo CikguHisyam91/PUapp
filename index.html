@@ -437,6 +437,8 @@ function lukisPapan() {
   <div class="grid" style="margin-bottom:12px">
     <div class="stat"><b>${r.jumlah.semua}</b><small>Jumlah ahli aktif</small></div>
     <div class="stat"><b>${jumBengkung}</b><small>Pemegang bengkung</small></div>
+    <div class="stat"><b>${r.gelanggang.reduce((n, g) => n + (g.cawangan || []).filter(c => c.id).length, 0)}</b><small>Cawangan</small></div>
+    <div class="stat"><b>${r.gelanggang.reduce((n, g) => n + (g.jurulatih || []).filter(j => j.status === 'AKTIF').length, 0)}</b><small>Jurulatih aktif</small></div>
     <div class="stat"><b>${r.gelAktif}<span style="font-size:14px" class="pudar"> / ${r.gelAktif + r.gelTidakAktif}</span></b><small>Gelanggang aktif (60 hari)</small></div>
     <div class="stat" style="cursor:pointer" onclick="pergi('lulus')"><b>${r.menungguGel.length + r.menungguJur.length}</b><small>Menunggu kelulusan ›</small></div>
   </div>
@@ -450,7 +452,8 @@ function lukisPapan() {
 function kadGel(g) {
   return `<div class="item" onclick="S.gelPilih='${esc(g.kod)}';pergi('ahli')"><div class="k"><b>${esc(g.nama)}</b>
       <small>${esc(g.kod)} · ${esc(nmNeg(g.negeri))} · Ketua: ${esc(g.ketua || '-')} ${esc(g.telKetua)}</small><br>
-      <small>${g.ahli} ahli${g.bersama ? ` (${g.bersama} bersama)` : ''} · ${g.bayar} bayar yuran ${esc(S.papan.tahun)}${g.kutipan ? ' · ' + rm(g.kutipan) : ''}</small></div>
+      <small>${g.ahli} ahli${g.bersama ? ` (${g.bersama} bersama)` : ''} · ${g.bayar} bayar yuran ${esc(S.papan.tahun)}${g.kutipan ? ' · ' + rm(g.kutipan) : ''}</small>
+      ${(g.cawangan || []).filter(c => c.id).length ? `<br><small style="color:var(--emas)">📍 ${(g.cawangan || []).filter(c => c.id).map(c => `${esc(c.nama)} (${c.L + c.P})`).join(' · ')}</small>` : ''}</div>
       <div class="r" style="flex-direction:column;align-items:flex-end">${tag(g.status)}<small class="pudar" style="font-size:11px">${g.aktif60 ? 'Aktif 60h' : 'Senyap 60h'}</small></div></div>`;
 }
 function lukisNegeri(k, admin) {
@@ -527,7 +530,8 @@ async function tabGel() {
   const sa = S.u.peranan === 'SUPER_ADMIN';
   $('#isi').innerHTML = `<h3 style="color:var(--emas)">Senarai Gelanggang (${r.gelanggang.length})</h3>` +
     r.gelanggang.map(g => `<div class="kad"><div class="baris"><div><b>${esc(g.nama)}</b><br><small class="pudar">${esc(g.kod)} · ${esc(nmNeg(g.negeri))}</small></div><div style="flex:none">${tag(g.status)}</div></div>
-      <small class="pudar">${esc(g.alamat)}<br>Ketua: ${esc(g.ketua || '-')} ${esc(g.telKetua)} · Aktiviti: ${esc(tarikhMY(g.aktiviti) || '-')}</small>
+      <small class="pudar">${esc(g.alamat)}<br>Ketua: ${esc(g.ketua || '-')} ${esc(g.telKetua)} · ${g.jurulatih} jurulatih · Aktiviti: ${esc(tarikhMY(g.aktiviti) || '-')}</small>
+      ${(g.cawangan || []).length ? `<div style="margin-top:8px">${g.cawangan.map(c => `<div style="font-size:13px;padding:3px 0">📍 <b>${esc(c.nama)}</b> <span class="pudar">· ${c.bil} ahli${c.alamat ? ' · ' + esc(c.alamat) : ''}</span></div>`).join('')}</div>` : '<div class="pudar" style="font-size:12px;margin-top:6px">Tiada cawangan</div>'}
       <div class="baris balut" style="margin-top:10px">
       ${g.status === 'AKTIF' ? `<button class="kecil" onclick="statusGel('${esc(g.kod)}','TIDAK AKTIF','Tidak aktifkan gelanggang ini?')">Tidak aktifkan</button>` : ''}
       ${g.status === 'TIDAK AKTIF' || (sa && g.status === 'DISEKAT') ? `<button class="kecil" onclick="statusGel('${esc(g.kod)}','AKTIF')">Aktifkan</button>` : ''}

@@ -388,12 +388,14 @@ API.kemaskini_profil = function (u, p) {
 
 /* ---------- Gelanggang ---------- */
 API.senarai_gelanggang = function (u) {
-  var peng = baca_('PENGGUNA');
+  var peng = baca_('PENGGUNA'), caw = baca_('CAWANGAN').filter(function (c) { return c.STATUS !== 'PADAM'; }), bilCaw = {};
+  baca_('KEAHLIAN_GELANGGANG').forEach(function (k) { if (k.STATUS === 'AKTIF' && k.CAWANGAN) bilCaw[k.CAWANGAN] = (bilCaw[k.CAWANGAN] || 0) + 1; });
   var gel = baca_('GELANGGANG').filter(function (g) { return bolehGel_(u, g); }).map(function (g) {
     var k = cariSatu_('PENGGUNA', 'ID', g.KETUA_ID);
     return { kod: g.KOD, nama: g.NAMA, negeri: g.NEGERI, alamat: g.ALAMAT, status: g.STATUS,
       tarikh: g.TARIKH_DAFTAR, aktiviti: g.AKTIVITI_TERAKHIR, ketua: k ? k.NAMA : '', telKetua: k ? k.TELEFON : '',
-      jurulatih: peng.filter(function (x) { return x.KOD_GELANGGANG === g.KOD; }).length };
+      jurulatih: peng.filter(function (x) { return x.KOD_GELANGGANG === g.KOD; }).length,
+      cawangan: caw.filter(function (c) { return c.KOD_GELANGGANG === g.KOD; }).map(function (c) { return { id: c.ID, nama: c.NAMA, alamat: c.ALAMAT, bil: bilCaw[c.ID] || 0 }; }) };
   });
   return { ok: true, gelanggang: gel };
 };
