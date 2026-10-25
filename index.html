@@ -337,9 +337,10 @@ function tukarMod(m) {
   S.tab = ''; S.cawList = null; S.cawPilih = null; S.ahli = null; S.gelPilih = m === 'gel' ? S.u.kod_gelanggang : '';
   window.scrollTo(0, 0); mula();
 }
-function tabMenu() {
-  $('#isi').innerHTML = `<div class="ring" style="display:flex;gap:14px;align-items:center"><img src="${esc(logoGel())}" style="width:56px;height:56px;border-radius:50%;background:#fff;object-fit:cover">
-    <div><div style="font-weight:800;font-size:17px">${esc(S.u.nama_gelanggang)}</div><div class="pudar" style="font-size:14px">${esc(S.u.kod_gelanggang)} · ${esc(S.u.namaNegeri)}</div></div></div>
+async function tabMenu() {
+  await sediaCaw();
+  $('#isi').innerHTML = `${pilihCaw('tabMenu')}<div class="ring" style="display:flex;gap:14px;align-items:center"><img src="${esc(logoGel())}" style="width:56px;height:56px;border-radius:50%;background:#fff;object-fit:cover">
+    <div><div style="font-weight:800;font-size:17px">${esc(S.u.nama_gelanggang)}</div><div class="pudar" style="font-size:14px">${esc(S.u.kod_gelanggang)} · ${esc(S.u.namaNegeri)}</div>${S.cawList.length ? `<div style="font-size:13px;color:var(--emas);margin-top:2px">📍 ${esc(labelCaw())}</div>` : ''}</div></div>
     <div id="info"><p class="pudar" style="text-align:center">Memuatkan ringkasan...</p></div>
     <div class="menu">${MENU_JUR.map(m => `<button onclick="pergi('${m[0]}')"><span class="i">${m[1]}</span><b>${m[2]}</b><small>${m[3]}</small></button>`).join('')}</div>`;
   infografik();
@@ -349,9 +350,9 @@ function tabMenu() {
 }
 async function infografik() {
   const th = new Date().getFullYear();
-  const [ra, rk, rj] = await Promise.all([api('senarai_ahli', { tahun: th }), api('kew_get', { tahun: th }), api('jad_get')]);
+  const [ra, rk, rj] = await Promise.all([api('senarai_ahli', { tahun: th }), api('kew_get', { tahun: th, cawangan: S.cawPilih }), api('jad_get')]);
   const el = $('#info'); if (!el || !ra.ok) { if (el) el.innerHTML = ''; return; }
-  const ahli = ra.ahli.filter(a => a.status_gel === 'AKTIF'), n = ahli.length;
+  const ahli = ra.ahli.filter(a => a.status_gel === 'AKTIF' && ikutCaw(a)), n = ahli.length;
   const L = ahli.filter(a => !/^P/i.test(a.jantina)).length, P = n - L;
   const kump = [['Pra Sekolah', '≤ 6 thn', 0, 6], ['Sekolah Rendah', '7–12 thn', 7, 12], ['Sekolah Menengah', '13–17 thn', 13, 17], ['Dewasa', '18+ thn', 18, 999]];
   const umur = ahli.map(umurTahunIni), tiada = umur.filter(u => u == null).length;
@@ -364,7 +365,7 @@ async function infografik() {
   const maxB = Math.max(1, ...bilB, lain);
   const pc = x => n ? Math.round(x / n * 100) : 0;
   el.innerHTML = `
-  <div class="ring" style="cursor:pointer" onclick="pergi('gelang')"><div class="pudar" style="font-size:13px;margin-bottom:10px">📅 Jadual latihan</div>${htmlJadual((rj.ok && rj.jadual) || [])}</div>
+  <div class="ring" style="cursor:pointer" onclick="pergi('gelang')"><div class="pudar" style="font-size:13px;margin-bottom:10px">📅 Jadual latihan</div>${htmlJadual(((rj.ok && rj.jadual) || []).filter(j => !cawTertentu() || !j.cawangan || j.cawangan === S.cawPilih))}</div>
   <div class="grid" style="grid-template-columns:1fr 1fr;margin-bottom:12px">
     <div class="ring" style="margin:0"><div class="pudar" style="font-size:13px">Ahli aktif</div><div class="besar" style="font-size:36px">${n}</div><div class="pudar" style="font-size:12px">orang pesilat</div></div>
     <div class="ring" style="margin:0;cursor:pointer" onclick="pergi('kew')"><div class="pudar" style="font-size:13px">Baki akaun</div><div class="besar" style="font-size:${baki != null && Math.abs(baki) >= 10000 ? 21 : 25}px;color:${baki < 0 ? 'var(--merah)' : 'var(--hijau)'}">${baki == null ? '-' : rm(baki)}</div><div class="pudar" style="font-size:12px">terkini ${th}</div></div>
@@ -776,6 +777,21 @@ function pilihCaw(fn) {
     <option value="">🏟️ Semua cawangan</option>${S.cawList.map(c => `<option value="${esc(c.id)}" ${c.id === S.cawPilih ? 'selected' : ''}>📍 ${esc(c.nama)}</option>`).join('')}
     <option value="__TIADA" ${S.cawPilih === '__TIADA' ? 'selected' : ''}>— Belum ditag cawangan</option></select>`;
 }
+const cawTertentu = () => !!S.cawPilih && S.cawPilih !== '__TIADA';
+const labelCaw = () => !S.cawPilih ? 'Semua cawangan' : S.cawPilih === '__TIADA' ? 'Gelanggang induk / belum ditag' : namaCaw(S.cawPilih);
+async function sediaCaw() {
+  if (!S.cawList) { const c = await api('caw_get'); S.cawList = c.ok ? c.cawangan : []; }
+  if (S.cawPilih == null) { try { S.cawPilih = localStorage.getItem('sp_caw') || ''; } catch (e) { S.cawPilih = ''; } }
+  if (cawTertentu() && !S.cawList.some(x => x.id === S.cawPilih)) S.cawPilih = '';
+}
+function wajibCaw(fn, apa) {  // jika gelanggang ada cawangan, rekod mesti dibuat di bawah cawangan tertentu
+  if (!(S.cawList || []).length || S.cawPilih) return false;
+  $('#isi').innerHTML = `<div class="kad" style="text-align:center"><div style="font-size:40px">📍</div><h3>Pilih cawangan dahulu</h3>
+    <p class="pudar" style="font-size:14px">Rekod ${apa} disimpan berasingan bagi setiap cawangan.</p>
+    ${S.cawList.map(c => `<button class="penuh" style="margin-top:8px" onclick="S.cawPilih='${esc(c.id)}';try{localStorage.setItem('sp_caw',S.cawPilih)}catch(e){};${fn}()">📍 ${esc(c.nama)}</button>`).join('')}
+    <button class="penuh" style="margin-top:8px" onclick="S.cawPilih='__TIADA';${fn}()">— Ahli belum ditag cawangan</button></div>`;
+  return true;
+}
 const logoGel = () => (S.u && S.u.logo && modJur() ? S.u.logo : 'logo.png');
 const nota = '<p class="pudar" style="font-size:12px;text-align:center">🔒 Data ini hanya untuk gelanggang anda — tidak dihantar kepada Admin Negeri / Super Admin.</p>';
 function ringkasan(besar, kiri, kanan, peratus) {
@@ -786,6 +802,7 @@ function ringkasan(besar, kiri, kanan, peratus) {
 /* ---- Kehadiran ---- */
 async function tabHadir() {
   const ahli = await muatAhliJur(); if (!ahli) return;
+  if (wajibCaw('tabHadir', 'kehadiran')) return;
   S.hTarikh = S.hTarikh || hariIniStr();
   const h = await api('hadir_get', { tarikh: S.hTarikh, cawangan: S.cawPilih });
   S.hSet = new Set(h.hadir || []); S.hAhli = ahli; S.hTapis = S.hTapis || 'semua'; S.hAda = h.ada;
@@ -825,7 +842,8 @@ async function laporanHadir() {
 
 /* ---- Yuran bulanan + pengecualian ---- */
 const ymKey = () => `${S.ybTahun}-${String(S.ybBulan).padStart(2, '0')}`;
-const bulanKec = () => (S.kec || []).find(k => k.jenis === 'BULAN' && k.mula === ymKey());
+const bulanKec = () => (S.kec || []).find(k => k.jenis === 'BULAN' && k.mula === ymKey() && (k.cawangan || '') === (cawTertentu() ? S.cawPilih : ''));
+const cutiAhli = a => (S.kec || []).find(k => k.jenis === 'BULAN' && k.mula === ymKey() && (!k.cawangan || k.cawangan === a.cawangan));
 const ahliKec = kp => (S.kec || []).find(k => k.jenis === 'AHLI' && k.no_kp === kp && k.mula <= ymKey() && (!k.tamat || k.tamat >= ymKey()));
 const labelYM = ym => ym ? `${BULAN_PENUH[+ym.slice(5)].slice(0, 3)} ${ym.slice(0, 4)}` : '';
 async function tabYB() {
@@ -836,34 +854,36 @@ async function tabYB() {
   S.kec = k.ok ? k.senarai : [];
   S.ybAhli = ahli; S.ybTapis = S.ybTapis || 'semua';
   const nt = await api('notis_senarai'); S.notis = nt.ok ? nt.notis : [];
-  const nMenunggu = S.notis.filter(x => x.status === 'MENUNGGU').length;
+  const nMenunggu = S.notis.filter(x => x.status === 'MENUNGGU' && ikutCaw(x)).length;
   $('#isi').innerHTML = `${nMenunggu ? `<button class="penuh" style="margin-bottom:12px;border-color:var(--emas);color:var(--emas);font-weight:700" onclick="paparNotis()">🔔 ${nMenunggu} bayaran QR menunggu pengesahan ›</button>` : ''}${pilihCaw('tabYB')}<div class="baris" style="margin-bottom:12px"><div>${pilihBulan('tabYB', S.ybBulan, 'ybBulan')}</div><div style="flex:none;width:120px">${pilihTahun('tabYB', S.ybTahun, 'ybTahun')}</div></div>
     <div id="ringYB"></div><div id="kecYB"></div>${cariBox('cariYB', 'lukisYB')}<div id="cipYB"></div><div id="senYB"></div>${nota}`;
   lukisYB();
 }
 function lukisYB() {
-  const sudah = a => S.yb[a.no_kp + '|' + S.ybBulan], bk = bulanKec();
+  const sudah = a => S.yb[a.no_kp + '|' + S.ybBulan], bkPapar = bulanKec();
   const kecuali = S.ybAhli.filter(a => !sudah(a) && ahliKec(a.no_kp));
-  const wajib = S.ybAhli.filter(a => !kecuali.includes(a));
+  const cuti = S.ybAhli.filter(a => !sudah(a) && !kecuali.includes(a) && cutiAhli(a));
+  const bk = bkPapar;
+  const wajib = S.ybAhli.filter(a => !kecuali.includes(a) && !cuti.includes(a));
   const n = wajib.filter(sudah).length, t = wajib.length;
   const jum = S.ybAhli.reduce((x, a) => x + (sudah(a) ? Number(sudah(a).jumlah || 0) : 0), 0);
   $('#ringYB').innerHTML = bk
     ? `<div class="ring" style="border-color:#4c3d7a"><div class="besar">${rm(jum)}</div><div class="sub"><span>📅 ${BULAN_PENUH[S.ybBulan]} dikecualikan${bk.sebab ? ' — ' + esc(bk.sebab) : ''}</span></div><div class="pudar" style="font-size:13px">Tiada yuran wajib bulan ini.</div></div>`
-    : ringkasan(rm(jum), `${n} / ${t} orang bayar${kecuali.length ? ` · ${kecuali.length} dikecualikan` : ''}`, `${t - n} belum bayar`, t ? n / t * 100 : 0);
+    : ringkasan(rm(jum), `${n} / ${t} orang bayar${kecuali.length ? ` · ${kecuali.length} dikecualikan` : ''}${cuti.length ? ` · ${cuti.length} cuti` : ''}`, `${t - n} belum bayar`, t ? n / t * 100 : 0);
   const kecAhliAktif = (S.kec || []).filter(k => k.jenis === 'AHLI' && (!k.tamat || k.tamat >= ymKey())).length;
-  $('#kecYB').innerHTML = `<label class="cek" style="margin:0 0 10px;color:var(--pudar)"><input type="checkbox" ${bk ? 'checked' : ''} onchange="togolBulanKec(this)"> 📅 Kecualikan bulan ini (cuti / tanpa yuran)</label>
+  $('#kecYB').innerHTML = `<label class="cek" style="margin:0 0 10px;color:var(--pudar)"><input type="checkbox" ${bkPapar ? 'checked' : ''} onchange="togolBulanKec(this)"> 📅 Kecualikan bulan ini (cuti / tanpa yuran)${(S.cawList || []).length ? ` — <b>${esc(cawTertentu() ? namaCaw(S.cawPilih) : 'semua cawangan')}</b>` : ''}</label>
     <button class="penuh" style="text-align:left;border-color:#4c3d7a;background:#1d1830;color:#B9A4FF;font-weight:700;margin-bottom:12px" onclick="paparKecAhli()">💜 Pengecualian khas pesilat${kecAhliAktif ? ` (${kecAhliAktif})` : ''}</button>`;
-  const cipL = [['semua', `Semua (${S.ybAhli.length})`], ['belum', `Belum (${bk ? 0 : t - n})`], ['sudah', `Sudah (${S.ybAhli.filter(sudah).length})`]];
+  const cipL = [['semua', `Semua (${S.ybAhli.length})`], ['belum', `Belum (${t - n})`], ['sudah', `Sudah (${S.ybAhli.filter(sudah).length})`]];
   if (kecuali.length) cipL.push(['kecuali', `Dikecualikan (${kecuali.length})`]);
   $('#cipYB').innerHTML = cip('ybTapis', cipL, S.ybTapis, 'lukisYB');
   const q = ($('#cariYB').value || '').toLowerCase();
   const padan = a => S.ybTapis === 'semua' || (S.ybTapis === 'sudah' && sudah(a)) || (S.ybTapis === 'kecuali' && kecuali.includes(a))
-    || (S.ybTapis === 'belum' && !bk && !sudah(a) && !kecuali.includes(a));
+    || (S.ybTapis === 'belum' && !sudah(a) && !kecuali.includes(a) && !cuti.includes(a));
   const l = S.ybAhli.map((a, i) => [a, i]).filter(([a]) => a.nama.toLowerCase().includes(q) && padan(a));
   $('#senYB').innerHTML = l.map(([a, i]) => { const b = sudah(a), ke = !b && ahliKec(a.no_kp);
     const kanan = b ? `${tag('RM' + Number(b.jumlah || 0).toFixed(0), 'HIJAU')}<span class="pudar">✎</span>`
       : ke ? `<span class="tag" style="background:#2a2140;color:#B9A4FF">DIKECUALIKAN</span>`
-      : bk ? `<span class="tag t-TIDAK">CUTI</span>`
+      : cuti.includes(a) ? `<span class="tag t-TIDAK">CUTI</span>`
       : `<button class="utama kecil" style="min-height:42px;padding:8px 16px">+ Rekod</button>`;
     return `<div class="item" onclick="bukaYB(${i})"><div class="k"><b>${esc(a.nama)}</b><small>${esc(namaBengkung(a.bengkung) || a.no_ahli)}${b ? ' · ' + tarikhMY(b.tarikh) : ke && ke.sebab ? ' · ' + esc(ke.sebab) : ''}</small></div><div class="r">${kanan}</div></div>`; }).join('') || '<p class="pudar">Tiada.</p>';
 }
@@ -875,7 +895,7 @@ async function togolBulanKec(el) {
   } else {
     const sebab = prompt(`Sebab ${BULAN_PENUH[S.ybBulan]} ${S.ybTahun} dikecualikan? (cth. Cuti sekolah, Ramadan)`, '');
     if (sebab === null) { el.checked = false; return; }
-    const r = await api('kec_simpan', { jenis: 'BULAN', mula: ymKey(), sebab }); toast(r.msg);
+    const r = await api('kec_simpan', { jenis: 'BULAN', mula: ymKey(), sebab, cawangan: cawTertentu() ? S.cawPilih : '' }); toast(r.msg);
     if (r.ok) { const k = await api('kec_get'); S.kec = k.senarai || []; }
   }
   lukisYB();
@@ -928,13 +948,15 @@ async function padamYB() {
 /* ---- Kewangan ---- */
 async function tabKew() {
   S.kTahun = S.kTahun || new Date().getFullYear(); S.kTapis = S.kTapis || 'semua';
-  const r = await api('kew_get', { tahun: S.kTahun }); if (!r.ok) return $('#isi').innerHTML = `<p>${esc(r.msg)}</p>`;
+  await sediaCaw();
+  const r = await api('kew_get', { tahun: S.kTahun, cawangan: S.cawPilih }); if (!r.ok) return $('#isi').innerHTML = `<p>${esc(r.msg)}</p>`;
   S.kew = r;
   const masukLain = r.rekod.filter(x => x.jenis === 'MASUK').reduce((a, x) => a + x.jumlah, 0);
   const keluar = r.rekod.filter(x => x.jenis === 'KELUAR').reduce((a, x) => a + x.jumlah, 0);
   const yb = r.yuranBulanan.reduce((a, b) => a + b, 0);
   const masuk = masukLain + yb + r.yuranTahunan, baki = r.bakiLalu + masuk - keluar;
-  $('#isi').innerHTML = `<div style="margin-bottom:12px">${pilihTahun('tabKew', S.kTahun, 'kTahun')}</div>
+  $('#isi').innerHTML = `${pilihCaw('tabKew')}<div style="margin-bottom:12px">${pilihTahun('tabKew', S.kTahun, 'kTahun')}</div>
+    ${(S.cawList || []).length ? `<p class="pudar" style="font-size:13px;margin-top:0">📍 Akaun: <b style="color:var(--teks)">${esc(!S.cawPilih ? 'Gabungan semua cawangan + induk' : labelCaw())}</b></p>` : ''}
     <div class="ring"><div class="pudar" style="font-size:14px">Baki semasa</div><div class="besar" style="color:${baki < 0 ? 'var(--merah)' : 'var(--teks)'}">${rm(baki)}</div>
       <div class="sub" style="margin-bottom:0"><span>Baki dibawa: ${rm(r.bakiLalu)}</span></div></div>
     <div class="grid" style="margin-bottom:12px"><div class="stat"><b style="color:var(--hijau);font-size:18px">${rm(masuk)}</b><small>Masuk ${S.kTahun}</small></div>
@@ -948,6 +970,7 @@ async function tabKew() {
 }
 function borangKew() {
   modal(`<h3 style="color:var(--emas);margin-top:0">Tambah Rekod Kewangan</h3>
+    ${(S.cawList || []).length ? `<div class="pdpa" style="margin-top:0">📍 Disimpan di bawah: <b>${esc(cawTertentu() ? namaCaw(S.cawPilih) : 'Gelanggang induk')}</b></div>` : ''}
     <div class="cip" id="kJ"><button class="on" data-v="MASUK" onclick="document.querySelectorAll('#kJ button').forEach(x=>x.classList.remove('on'));this.classList.add('on')">⬇ Masuk</button><button data-v="KELUAR" onclick="document.querySelectorAll('#kJ button').forEach(x=>x.classList.remove('on'));this.classList.add('on')">⬆ Keluar</button></div>
     <label>Jumlah (RM)</label><input id="kJum" class="besarInput" inputmode="decimal">
     <label>Kategori</label><input id="kKat" list="kKatL" placeholder="cth. Derma, Peralatan"><datalist id="kKatL">${['Derma','Tajaan','Jualan','Peralatan','Pakaian','Pengangkutan','Makanan','Pertandingan','Sewa','Lain-lain'].map(x => `<option>${x}</option>`).join('')}</datalist>
@@ -956,7 +979,7 @@ function borangKew() {
     <button class="utama penuh" style="margin-top:14px" onclick="simpanKew()">Simpan</button><button class="penuh" style="margin-top:8px" onclick="modal('')">Batal</button>`);
 }
 async function simpanKew() {
-  const r = await api('kew_simpan', { tarikh: $('#kTarikh').value, jenis: $('#kJ .on').dataset.v, kategori: $('#kKat').value, keterangan: $('#kKet').value, jumlah: $('#kJum').value });
+  const r = await api('kew_simpan', { cawangan: S.cawPilih, tarikh: $('#kTarikh').value, jenis: $('#kJ .on').dataset.v, kategori: $('#kKat').value, keterangan: $('#kKet').value, jumlah: $('#kJum').value });
   toast(r.msg); if (r.ok) { modal(''); tabKew(); }
 }
 async function padamKew(id) { if (!confirm('Padam rekod ini?')) return; const r = await api('kew_padam', { id }); toast(r.msg); if (r.ok) tabKew(); }
@@ -1076,7 +1099,7 @@ function cetakKelas() {
 
 /* ---- Gelanggang: logo & cawangan ---- */
 async function tabGelang() {
-  const [c, ahli, jd, qr] = await Promise.all([api('caw_get'), api('senarai_ahli', { tahun: S.tahun }), api('jad_get'), api('qr_get')]);
+  const [c, ahli, jd, qr] = await Promise.all([api('caw_get'), api('senarai_ahli', { tahun: S.tahun }), api('jad_get'), api('qr_get', { cawangan: S.qrCaw || '' })]);
   S.qr = qr.ok ? qr : { qr: '', info: {} };
   S.cawList = c.ok ? c.cawangan : []; S.ahli = ahli.ok ? ahli.ahli : []; S.jadual = jd.ok ? jd.jadual : [];
   const aktif = S.ahli.filter(a => a.status_gel === 'AKTIF'), tiada = aktif.filter(a => !a.cawangan).length;
@@ -1086,6 +1109,8 @@ async function tabGelang() {
       ${S.u.ketua ? `<button class="kecil" style="margin-left:auto" onclick="borangKod()">✎ Tukar kod</button>` : ''}</div>
       <p class="pudar" style="font-size:12px;margin-bottom:0">${S.u.ketua ? 'Format: KODNEGERI-3 HURUF. Hanya 3 huruf terakhir boleh ditukar.' : 'Hanya ketua jurulatih boleh menukar kod.'}</p></div>
     <div class="kad"><h3>💳 QR Bayaran Yuran</h3>
+      ${S.cawList.length ? `<select style="margin-bottom:10px" onchange="S.qrCaw=this.value;tabGelang()"><option value="">🏟️ Gelanggang induk (lalai)</option>${S.cawList.map(c => `<option value="${esc(c.id)}" ${c.id === S.qrCaw ? 'selected' : ''}>📍 ${esc(c.nama)}</option>`).join('')}</select>
+        ${S.qrCaw && !S.qr.qr ? `<p class="pudar" style="font-size:12px;margin-top:0">Cawangan ini belum ada QR sendiri — ibu bapa akan nampak QR gelanggang induk${S.qr.qrInduk ? '' : ' (belum ditetapkan)'}.</p>` : ''}` : ''}
       ${S.qr.qr ? `<div style="display:flex;gap:14px;align-items:center"><img src="${esc(S.qr.qr)}" style="width:110px;height:110px;object-fit:contain;background:#fff;border-radius:10px;flex:none">
         <div style="font-size:14px"><b>${esc(S.qr.info.nama || '')}</b><br><span class="pudar">${esc(S.qr.info.bank || '')} ${esc(S.qr.info.akaun || '')}</span><br><span class="pudar" style="font-size:12px">Dikemas kini ${esc(S.qr.dikemaskini)}</span></div></div>`
         : '<p class="pudar" style="margin:0">Belum ada QR. Ibu bapa tidak nampak pilihan bayar online.</p>'}
@@ -1217,13 +1242,13 @@ const linkBorang = caw => new URL('daftar.html', location.href).href.split('?')[
 async function tabMohon() {
   const [r, c] = await Promise.all([api('mohon_senarai'), api('caw_get')]);
   if (!r.ok) return $('#isi').innerHTML = `<p>${esc(r.msg)}</p>`;
-  S.mohon = r.permohonan; S.cawList = c.ok ? c.cawangan : []; S.mTapis = S.mTapis || 'MENUNGGU'; S.mCaw = S.mCaw || '';
+  S.mohon = r.permohonan; S.cawList = c.ok ? c.cawangan : []; S.mTapis = S.mTapis || 'MENUNGGU'; await sediaCaw(); S.mCaw = cawTertentu() ? S.cawPilih : (S.mCaw || '');
   lukisMohon();
 }
 function lukisMohon() {
   const link = linkBorang(S.mCaw), teks = `Borang pendaftaran pesilat ${S.u.nama_gelanggang} (Sri Gayong Panglima Ulung). Sila isi di pautan ini:`;
-  const kira = st => S.mohon.filter(x => x.status === st).length;
-  const l = S.mohon.filter(x => x.status === S.mTapis);
+  const kira = st => S.mohon.filter(x => x.status === st && (!S.mCaw || x.cawangan === S.mCaw)).length;
+  const l = S.mohon.filter(x => x.status === S.mTapis && (!S.mCaw || x.cawangan === S.mCaw));
   $('#isi').innerHTML = `<div class="kad"><h3>🔗 Kongsi Borang Pendaftaran</h3>
       ${S.cawList.length ? `<select style="margin-bottom:10px" onchange="S.mCaw=this.value;lukisMohon()"><option value="">Semua cawangan (pemohon pilih sendiri)</option>${S.cawList.map(x => `<option value="${esc(x.id)}" ${x.id === S.mCaw ? 'selected' : ''}>📍 ${esc(x.nama)}</option>`).join('')}</select>` : ''}
       <div style="background:var(--kad2);border-radius:12px;padding:10px 12px;font-size:13px;word-break:break-all;user-select:all">${esc(link)}</div>
@@ -1292,12 +1317,12 @@ async function pilihQR(inp) {
 async function simpanQR(buang) {
   if (!buang && !S.qrBaru) return toast('Pilih gambar QR dahulu.');
   if (buang && !confirm('Buang QR bayaran?')) return;
-  const r = await api('qr_simpan', { qr: S.qrBaru, info: buang ? {} : { nama: $('#qNama').value, bank: $('#qBank').value, akaun: $('#qAkaun').value, nota: $('#qNota').value } });
+  const r = await api('qr_simpan', { cawangan: S.qrCaw || '', qr: S.qrBaru, info: buang ? {} : { nama: $('#qNama').value, bank: $('#qBank').value, akaun: $('#qAkaun').value, nota: $('#qNota').value } });
   toast(r.msg); if (r.ok) { modal(''); tabGelang(); }
 }
 /* ---- Notis bayaran dari ibu bapa ---- */
 function paparNotis() {
-  const l = S.notis.filter(x => x.status === 'MENUNGGU');
+  const l = S.notis.filter(x => x.status === 'MENUNGGU' && ikutCaw(x));
   modal(`<h3 style="color:var(--emas);margin-top:0">🔔 Bayaran Menunggu Pengesahan</h3>
     <p class="pudar" style="font-size:13px;margin-top:0">Semak resit dan pastikan wang telah <b>masuk ke akaun</b> sebelum sahkan.</p>
     ${l.map(n => `<div class="kad" style="background:var(--kad2)"><b>${esc(n.nama)}</b> <span class="pudar" style="font-size:13px">${esc(n.no_ahli)}</span>
@@ -1312,10 +1337,12 @@ async function tolakNotis(id) { const sebab = prompt('Sebab ditolak (cth. wang b
 
 /* ---- Poster gelanggang ---- */
 async function tabPoster() {
-  const jd = await api('jad_get');
-  S.posterInfo = { nama: S.u.nama_gelanggang, negeri: S.u.namaNegeri, logo: S.u.logo || '', jadual: (jd.ok && jd.jadual) || [],
-    linkDaftar: linkBorang(''), linkPortal: new URL('ibubapa.html', location.href).href.split('?')[0] };
-  $('#isi').innerHTML = `<p class="pudar" style="margin-top:0;font-size:14px">Poster dijana automatik dengan nama, logo & QR gelanggang anda. Saiz 1080 × 1920 (sesuai WhatsApp Status, Telegram & cetak A4).</p>
+  await sediaCaw();
+  const jd = await api('jad_get'), cw = cawTertentu() ? S.cawPilih : '';
+  S.posterInfo = { nama: S.u.nama_gelanggang + (cw ? ' — ' + namaCaw(cw) : ''), negeri: S.u.namaNegeri, logo: S.u.logo || '',
+    jadual: ((jd.ok && jd.jadual) || []).filter(j => !cw || !j.cawangan || j.cawangan === cw),
+    linkDaftar: linkBorang(cw), linkPortal: new URL('ibubapa.html', location.href).href.split('?')[0] };
+  $('#isi').innerHTML = `${pilihCaw('tabPoster')}<p class="pudar" style="margin-top:0;font-size:14px">Poster dijana automatik dengan nama, logo & QR gelanggang anda. Saiz 1080 × 1920 (sesuai WhatsApp Status, Telegram & cetak A4).</p>
     ${Object.entries(POSTER_JENIS).map(([k, v]) => `<div class="kad"><h3>${esc(v.nama)}</h3>
       <div id="pra_${k}" style="text-align:center"><p class="pudar">Menjana poster...</p></div>
       <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:10px"><button onclick="muatTurunPoster('${k}')">⬇️ Muat turun</button><button class="utama" onclick="kongsiPoster('${k}')">📤 Kongsi</button></div></div>`).join('')}`;

@@ -37,17 +37,17 @@ var JADUAL = {
   SESI: ['TOKEN','ID','LUPUT'],
   AHLI: ['NO_AHLI','NO_KP','NAMA','JANTINA','TARIKH_LAHIR','BENGKUNG','GELANGGANG_UTAMA','STATUS','TARIKH_DAFTAR','TEL_WARIS','ID_LAMA'],
   KEAHLIAN_GELANGGANG: ['NO_KP','KOD_GELANGGANG','JENIS','STATUS','TARIKH_MULA','TARIKH_TAMAT','CAWANGAN'],
-  YURAN_TAHUNAN: ['NO_KP','KOD_GELANGGANG','TAHUN','JUMLAH','TARIKH_BAYAR','DIREKOD_OLEH'],
+  YURAN_TAHUNAN: ['NO_KP','KOD_GELANGGANG','TAHUN','JUMLAH','TARIKH_BAYAR','DIREKOD_OLEH','CAWANGAN'],
   LOG_AUDIT: ['MASA','ID','TINDAKAN','BUTIRAN'],
   // Data dalaman gelanggang (HANYA jurulatih gelanggang itu nampak)
   KEHADIRAN: ['TARIKH','KOD_GELANGGANG','HADIR','BIL_HADIR','CATATAN','DIREKOD_OLEH','CAWANGAN'],
-  CAWANGAN: ['ID','KOD_GELANGGANG','NAMA','ALAMAT','STATUS','TARIKH_DAFTAR'],
+  CAWANGAN: ['ID','KOD_GELANGGANG','NAMA','ALAMAT','STATUS','TARIKH_DAFTAR','QR_BAYAR','INFO_BAYAR','QR_DIKEMASKINI'],
   PERMOHONAN: ['ID','KOD_GELANGGANG','CAWANGAN','TARIKH_MOHON','NO_KP','NAMA','JANTINA','TARIKH_LAHIR','ALAMAT','TEL_PESILAT','SEKOLAH_KERJA',
     'NAMA_WARIS','HUBUNGAN_WARIS','NO_KP_WARIS','TEL_WARIS','EMEL_WARIS','KESIHATAN','KEBENARAN_WARIS','AKUR_ADAT','PDPA','STATUS','SEBAB_TOLAK','DIPROSES_OLEH','TARIKH_PROSES','NO_AHLI'],
   JADUAL_LATIHAN: ['ID','KOD_GELANGGANG','CAWANGAN','HARI','MULA','TAMAT','LOKASI','CATATAN'],
-  YURAN_BULANAN: ['NO_KP','KOD_GELANGGANG','TAHUN','BULAN','JUMLAH','TARIKH_BAYAR','KAEDAH','DIREKOD_OLEH'],
-  KEWANGAN: ['ID','KOD_GELANGGANG','TARIKH','JENIS','KATEGORI','KETERANGAN','JUMLAH','DIREKOD_OLEH'],
-  PENGECUALIAN: ['ID','KOD_GELANGGANG','JENIS','NO_KP','MULA','TAMAT','SEBAB','DIREKOD_OLEH'],
+  YURAN_BULANAN: ['NO_KP','KOD_GELANGGANG','TAHUN','BULAN','JUMLAH','TARIKH_BAYAR','KAEDAH','DIREKOD_OLEH','CAWANGAN'],
+  KEWANGAN: ['ID','KOD_GELANGGANG','TARIKH','JENIS','KATEGORI','KETERANGAN','JUMLAH','DIREKOD_OLEH','CAWANGAN'],
+  PENGECUALIAN: ['ID','KOD_GELANGGANG','JENIS','NO_KP','MULA','TAMAT','SEBAB','DIREKOD_OLEH','CAWANGAN'],
   FIZIKAL: ['ID','NO_KP','KOD_GELANGGANG','TARIKH','BERAT','TINGGI','BMI','TEKAN_TUBI','BANGKIT_TUBI','LARI','CATATAN','DIREKOD_OLEH']
 };
 
@@ -134,7 +134,7 @@ function urus_(p) {
   var lock = null;
   try {
     var a = p.action;
-    var VERSI_SKEMA = '7';
+    var VERSI_SKEMA = '8';
     if (PropertiesService.getScriptProperties().getProperty('SKEMA') !== VERSI_SKEMA || !sh_('PENGGUNA')) {
       binaSheet_(); PropertiesService.getScriptProperties().setProperty('SKEMA', VERSI_SKEMA);
     }
@@ -670,7 +670,7 @@ API.rekod_yuran = function (u, p) {
       lama.map(function (y) { return y.KOD_GELANGGANG + ', RM' + y.JUMLAH + ', ' + y.TARIKH_BAYAR; }).join('; ') + '). Rekod juga?' };
   }
   tambah_('YURAN_TAHUNAN', { NO_KP: a.NO_KP, KOD_GELANGGANG: g.KOD, TAHUN: tahun, JUMLAH: String(p.jumlah || ''),
-    TARIKH_BAYAR: p.tarikh || hariIni_(), DIREKOD_OLEH: u.ID });
+    TARIKH_BAYAR: p.tarikh || hariIni_(), DIREKOD_OLEH: u.ID, CAWANGAN: cawAhli_(a.NO_KP, g.KOD) });
   log_(u.ID, 'REKOD_YURAN', a.NO_AHLI + ' ' + tahun);
   catatAktiviti_(g.KOD);
   return { ok: true, msg: 'Yuran tahunan ' + tahun + ' direkod untuk ' + a.NAMA + '.' };
@@ -949,7 +949,7 @@ API.yb_get = function (u, p) {
 API.kec_get = function (u) {
   var g = gelJur_(u);
   return { ok: true, senarai: baca_('PENGECUALIAN').filter(function (k) { return k.KOD_GELANGGANG === g.KOD; }).map(function (k) {
-    return { id: k.ID, jenis: k.JENIS, no_kp: k.NO_KP, mula: k.MULA, tamat: k.TAMAT, sebab: k.SEBAB };
+    return { id: k.ID, jenis: k.JENIS, no_kp: k.NO_KP, mula: k.MULA, tamat: k.TAMAT, sebab: k.SEBAB, cawangan: k.CAWANGAN };
   }) };
 };
 API.kec_simpan = function (u, p) {
@@ -958,10 +958,11 @@ API.kec_simpan = function (u, p) {
   if (!bln.test(String(p.mula || ''))) return { ok: false, msg: 'Bulan mula tidak sah.' };
   if (p.tamat && (!bln.test(p.tamat) || p.tamat < p.mula)) return { ok: false, msg: 'Bulan tamat tidak sah.' };
   if (p.jenis === 'AHLI' && !ahliGel_(g.KOD)[p.no_kp]) return { ok: false, msg: 'Pilih ahli gelanggang ini.' };
-  if (p.jenis === 'BULAN' && baca_('PENGECUALIAN').some(function (k) { return k.KOD_GELANGGANG === g.KOD && k.JENIS === 'BULAN' && k.MULA === p.mula; }))
+  var cwK = p.jenis === 'BULAN' ? cawSah_(g.KOD, p.cawangan) : '';
+  if (p.jenis === 'BULAN' && baca_('PENGECUALIAN').some(function (k) { return k.KOD_GELANGGANG === g.KOD && k.JENIS === 'BULAN' && k.MULA === p.mula && (k.CAWANGAN || '') === cwK; }))
     return { ok: false, msg: 'Bulan ini sudah dikecualikan.' };
   tambah_('PENGECUALIAN', { ID: 'E' + Date.now(), KOD_GELANGGANG: g.KOD, JENIS: p.jenis, NO_KP: p.jenis === 'AHLI' ? p.no_kp : '',
-    MULA: p.mula, TAMAT: p.jenis === 'BULAN' ? p.mula : (p.tamat || ''), SEBAB: p.sebab || '', DIREKOD_OLEH: u.ID });
+    MULA: p.mula, TAMAT: p.jenis === 'BULAN' ? p.mula : (p.tamat || ''), SEBAB: p.sebab || '', DIREKOD_OLEH: u.ID, CAWANGAN: cwK });
   return { ok: true, msg: 'Pengecualian disimpan.' };
 };
 API.kec_padam = function (u, p) {
@@ -975,7 +976,7 @@ API.yb_simpan = function (u, p) {
   var g = gelJur_(u), th = String(p.tahun), bl = String(Number(p.bulan));
   if (!/^\d{4}$/.test(th) || !(Number(bl) >= 1 && Number(bl) <= 12)) return { ok: false, msg: 'Bulan/tahun tidak sah.' };
   if (!ahliGel_(g.KOD)[p.no_kp]) return { ok: false, msg: 'Ahli bukan dari gelanggang ini.' };
-  var o = { NO_KP: p.no_kp, KOD_GELANGGANG: g.KOD, TAHUN: th, BULAN: bl, JUMLAH: String(nombor_(p.jumlah)), TARIKH_BAYAR: p.tarikh || hariIni_(), KAEDAH: p.kaedah || 'TUNAI', DIREKOD_OLEH: u.ID };
+  var o = { NO_KP: p.no_kp, KOD_GELANGGANG: g.KOD, TAHUN: th, BULAN: bl, JUMLAH: String(nombor_(p.jumlah)), TARIKH_BAYAR: p.tarikh || hariIni_(), KAEDAH: p.kaedah || 'TUNAI', DIREKOD_OLEH: u.ID, CAWANGAN: cawAhli_(p.no_kp, g.KOD) };
   var ada = baca_('YURAN_BULANAN').filter(function (y) { return y.KOD_GELANGGANG === g.KOD && y.NO_KP === p.no_kp && y.TAHUN === th && y.BULAN === bl; })[0];
   if (ada) kemaskini_('YURAN_BULANAN', ada._r, o); else tambah_('YURAN_BULANAN', o);
   catatAktiviti_(g.KOD);
@@ -991,16 +992,16 @@ API.yb_padam = function (u, p) {
 
 /* ---------- Kewangan ---------- */
 API.kew_get = function (u, p) {
-  var g = gelJur_(u), th = String(p.tahun);
-  var rekod = baca_('KEWANGAN').filter(function (k) { return k.KOD_GELANGGANG === g.KOD && k.TARIKH.indexOf(th) === 0; })
-    .map(function (k) { return { id: k.ID, tarikh: k.TARIKH, jenis: k.JENIS, kategori: k.KATEGORI, keterangan: k.KETERANGAN, jumlah: nombor_(k.JUMLAH) }; });
-  var yb = Array(13).fill(0), yt = 0;
-  baca_('YURAN_BULANAN').forEach(function (y) { if (y.KOD_GELANGGANG === g.KOD && y.TAHUN === th) yb[Number(y.BULAN)] += nombor_(y.JUMLAH); });
-  baca_('YURAN_TAHUNAN').forEach(function (y) { if (y.KOD_GELANGGANG === g.KOD && y.TAHUN === th) yt += nombor_(y.JUMLAH); });
-  var bakiLalu = 0;
-  baca_('KEWANGAN').forEach(function (k) { if (k.KOD_GELANGGANG === g.KOD && k.TARIKH < th) bakiLalu += (k.JENIS === 'KELUAR' ? -1 : 1) * nombor_(k.JUMLAH); });
-  baca_('YURAN_BULANAN').forEach(function (y) { if (y.KOD_GELANGGANG === g.KOD && y.TAHUN < th) bakiLalu += nombor_(y.JUMLAH); });
-  baca_('YURAN_TAHUNAN').forEach(function (y) { if (y.KOD_GELANGGANG === g.KOD && y.TAHUN < th) bakiLalu += nombor_(y.JUMLAH); });
+  // p.cawangan: '' = semua (gabungan), '__TIADA' = gelanggang induk / tanpa cawangan, atau ID cawangan
+  var g = gelJur_(u), th = String(p.tahun), cw = p.cawangan || '';
+  var padan = function (c) { return !cw || (cw === '__TIADA' ? !c : c === cw); };
+  var cwY = function (y) { return y.CAWANGAN || cawAhli_(y.NO_KP, g.KOD); };
+  var rekod = baca_('KEWANGAN').filter(function (k) { return k.KOD_GELANGGANG === g.KOD && k.TARIKH.indexOf(th) === 0 && padan(k.CAWANGAN); })
+    .map(function (k) { return { id: k.ID, tarikh: k.TARIKH, jenis: k.JENIS, kategori: k.KATEGORI, keterangan: k.KETERANGAN, jumlah: nombor_(k.JUMLAH), cawangan: k.CAWANGAN }; });
+  var yb = Array(13).fill(0), yt = 0, bakiLalu = 0;
+  baca_('YURAN_BULANAN').forEach(function (y) { if (y.KOD_GELANGGANG !== g.KOD || !padan(cwY(y))) return; if (y.TAHUN === th) yb[Number(y.BULAN)] += nombor_(y.JUMLAH); else if (y.TAHUN < th) bakiLalu += nombor_(y.JUMLAH); });
+  baca_('YURAN_TAHUNAN').forEach(function (y) { if (y.KOD_GELANGGANG !== g.KOD || !padan(cwY(y))) return; if (y.TAHUN === th) yt += nombor_(y.JUMLAH); else if (y.TAHUN < th) bakiLalu += nombor_(y.JUMLAH); });
+  baca_('KEWANGAN').forEach(function (k) { if (k.KOD_GELANGGANG === g.KOD && k.TARIKH < th && padan(k.CAWANGAN)) bakiLalu += (k.JENIS === 'KELUAR' ? -1 : 1) * nombor_(k.JUMLAH); });
   rekod.sort(function (a, b) { return b.tarikh.localeCompare(a.tarikh); });
   return { ok: true, rekod: rekod, yuranBulanan: yb, yuranTahunan: yt, bakiLalu: bakiLalu };
 };
@@ -1010,7 +1011,7 @@ API.kew_simpan = function (u, p) {
   if (['MASUK', 'KELUAR'].indexOf(p.jenis) < 0) return { ok: false, msg: 'Pilih Masuk atau Keluar.' };
   if (!(nombor_(p.jumlah) > 0)) return { ok: false, msg: 'Jumlah mesti lebih dari 0.' };
   tambah_('KEWANGAN', { ID: 'K' + Date.now(), KOD_GELANGGANG: g.KOD, TARIKH: p.tarikh, JENIS: p.jenis, KATEGORI: p.kategori || '',
-    KETERANGAN: p.keterangan || '', JUMLAH: String(nombor_(p.jumlah)), DIREKOD_OLEH: u.ID });
+    KETERANGAN: p.keterangan || '', JUMLAH: String(nombor_(p.jumlah)), DIREKOD_OLEH: u.ID, CAWANGAN: cawSah_(g.KOD, p.cawangan) });
   catatAktiviti_(g.KOD);
   return { ok: true, msg: 'Rekod kewangan disimpan.' };
 };
@@ -1076,7 +1077,7 @@ AWAM_FN.ibubapa = function (p) {
   });
   var yb = baca_('YURAN_BULANAN').filter(function (y) { return y.NO_KP === kp && y.TAHUN === th; })
     .map(function (y) { return { bulan: Number(y.BULAN), jumlah: y.JUMLAH, tarikh: y.TARIKH_BAYAR, kaedah: y.KAEDAH }; });
-  var kec = baca_('PENGECUALIAN').filter(function (k) { return k.KOD_GELANGGANG === g.KOD && (k.JENIS === 'BULAN' || k.NO_KP === kp); })
+  var kec = baca_('PENGECUALIAN').filter(function (k) { return k.KOD_GELANGGANG === g.KOD && ((k.JENIS === 'BULAN' && (!k.CAWANGAN || k.CAWANGAN === cwAnak)) || k.NO_KP === kp); })
     .map(function (k) { return { jenis: k.JENIS, mula: k.MULA, tamat: k.TAMAT, sebab: k.SEBAB }; });
   var yt = baca_('YURAN_TAHUNAN').filter(function (y) { return y.NO_KP === kp; }).map(function (y) { return { tahun: y.TAHUN, jumlah: y.JUMLAH, tarikh: y.TARIKH_BAYAR }; });
   var fiz = baca_('FIZIKAL').filter(function (f) { return f.NO_KP === kp; }).sort(function (x, y) { return y.TARIKH.localeCompare(x.TARIKH); })
@@ -1084,7 +1085,8 @@ AWAM_FN.ibubapa = function (p) {
   return { ok: true, anak: { nama: a.NAMA, no_ahli: a.NO_AHLI, no_kp: topengKP_(a.NO_KP), jantina: a.JANTINA, tarikh_lahir: a.TARIKH_LAHIR,
       bengkung: a.BENGKUNG, status: a.STATUS, tarikh_daftar: a.TARIKH_DAFTAR },
     gelanggang: { nama: g.NAMA || '', kod: g.KOD || '', logo: g.LOGO || '', cawangan: cwRec ? cwRec.NAMA : '', negeri: namaNegeri_(g.NEGERI), ketua: ketua ? ketua.NAMA : '', telKetua: ketua ? ketua.TELEFON : '' },
-    bayar: g.QR_BAYAR ? { qr: g.QR_BAYAR, info: infoBayar_(g), dikemaskini: g.QR_DIKEMASKINI || '' } : null,
+    bayar: cwRec && cwRec.QR_BAYAR ? { qr: cwRec.QR_BAYAR, info: infoBayar_(cwRec), dikemaskini: cwRec.QR_DIKEMASKINI || '' }
+      : g.QR_BAYAR ? { qr: g.QR_BAYAR, info: infoBayar_(g), dikemaskini: g.QR_DIKEMASKINI || '' } : null,
     notis: baca_('BAYARAN_NOTIS').filter(function (n) { return n.NO_KP === kp && n.KOD_GELANGGANG === g.KOD; }).slice(-5).reverse()
       .map(function (n) { return { tarikh: n.TARIKH_HANTAR, jenis: n.JENIS, tahun: n.TAHUN, bulan: n.BULAN, jumlah: n.JUMLAH, status: n.STATUS }; }),
     jadual: g.KOD ? jadualGel_(g.KOD).filter(function (j) { return !j.cawangan || j.cawangan === cwAnak; }) : [],
@@ -1321,9 +1323,12 @@ API.mohon_tolak = function (u, p) {
  * Ibu bapa hantar notis "sudah bayar" + resit; jurulatih sahkan → yuran direkod automatik. */
 function infoBayar_(g) { try { return JSON.parse(g.INFO_BAYAR || '{}'); } catch (e) { return {}; } }
 function gambarSah_(d, maks) { return !d || (/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=]+$/.test(d) && d.length <= (maks || 48000)); }
-API.qr_get = function (u) {
-  var g = gelJur_(u);
-  return { ok: true, qr: g.QR_BAYAR || '', info: infoBayar_(g), dikemaskini: g.QR_DIKEMASKINI || '', bolehUbah: u.KETUA === 'YA' };
+API.qr_get = function (u, p) {
+  var g = gelJur_(u), c = p && p.cawangan ? cariSatu_('CAWANGAN', 'ID', p.cawangan) : null;
+  if (c && c.KOD_GELANGGANG !== g.KOD) c = null;
+  var src = c || g;
+  return { ok: true, cawangan: c ? c.ID : '', qr: src.QR_BAYAR || '', info: infoBayar_(src), dikemaskini: src.QR_DIKEMASKINI || '', bolehUbah: u.KETUA === 'YA',
+    qrInduk: c ? !!g.QR_BAYAR : false };
 };
 API.qr_simpan = function (u, p) {
   var g = gelJur_(u);
@@ -1332,8 +1337,11 @@ API.qr_simpan = function (u, p) {
   var i = p.info || {}, pot = function (v, n) { return String(v || '').replace(/[<>]/g, '').trim().slice(0, n); };
   var info = { nama: pot(i.nama, 80), bank: pot(i.bank, 40), akaun: pot(i.akaun, 30), nota: pot(i.nota, 160) };
   if (p.qr && !info.nama) return { ok: false, msg: 'Nama penerima wajib diisi supaya ibu bapa boleh semak sebelum bayar.' };
-  kemaskini_('GELANGGANG', g._r, { QR_BAYAR: p.qr || '', INFO_BAYAR: JSON.stringify(info), QR_DIKEMASKINI: masa_() });
-  log_(u.ID, 'QR_BAYARAN', g.KOD + (p.qr ? ' dikemas kini → ' + info.nama + ' ' + info.bank : ' dibuang'));
+  var c = p.cawangan ? cariSatu_('CAWANGAN', 'ID', p.cawangan) : null;
+  if (p.cawangan && (!c || c.KOD_GELANGGANG !== g.KOD)) return { ok: false, msg: 'Cawangan tidak sah.' };
+  if (c) kemaskini_('CAWANGAN', c._r, { QR_BAYAR: p.qr || '', INFO_BAYAR: JSON.stringify(info), QR_DIKEMASKINI: masa_() });
+  else kemaskini_('GELANGGANG', g._r, { QR_BAYAR: p.qr || '', INFO_BAYAR: JSON.stringify(info), QR_DIKEMASKINI: masa_() });
+  log_(u.ID, 'QR_BAYARAN', g.KOD + (c ? ' [' + c.NAMA + ']' : '') + (p.qr ? ' dikemas kini → ' + info.nama + ' ' + info.bank : ' dibuang'));
   return { ok: true, msg: p.qr ? 'QR bayaran disimpan.' : 'QR bayaran dibuang.' };
 };
 AWAM_FN.ibubapa_bayar = function (p) {
@@ -1361,7 +1369,7 @@ API.notis_senarai = function (u) {
   return { ok: true, notis: baca_('BAYARAN_NOTIS').filter(function (n) { return n.KOD_GELANGGANG === g.KOD; }).map(function (n) {
     var a = nama[n.NO_KP] || {};
     return { id: n.ID, no_kp: n.NO_KP, nama: a.NAMA || n.NO_KP, no_ahli: a.NO_AHLI || '', tarikh: n.TARIKH_HANTAR, jenis: n.JENIS, tahun: n.TAHUN, bulan: n.BULAN,
-      jumlah: n.JUMLAH, resit: n.STATUS === 'MENUNGGU' ? n.RESIT : '', catatan: n.CATATAN, status: n.STATUS };
+      jumlah: n.JUMLAH, resit: n.STATUS === 'MENUNGGU' ? n.RESIT : '', catatan: n.CATATAN, status: n.STATUS, cawangan: cawAhli_(n.NO_KP, g.KOD) };
   }).sort(function (a, b) { return b.tarikh.localeCompare(a.tarikh); }).slice(0, 100) };
 };
 API.notis_resit = function (u, p) {
@@ -1413,3 +1421,14 @@ API.set_bertugas = function (u, p) {
   log_(u.ID, 'SET_BERTUGAS', x.ID + ' → ' + (kod || '(tiada)') + (p.ketua ? ' KETUA' : ''));
   return { ok: true, msg: kod ? x.NAMA + ' kini bertugas di ' + kod + (p.ketua ? ' sebagai ketua.' : '.') : 'Gelanggang bertugas dibuang.' };
 };
+
+/* ======================= CAWANGAN: pembantu rekod berasingan ======================= */
+function cawAhli_(kp, kod) {  // cawangan semasa ahli di gelanggang itu ('' = tiada)
+  var k = baca_('KEAHLIAN_GELANGGANG').filter(function (x) { return x.NO_KP === kp && x.KOD_GELANGGANG === kod && x.STATUS !== 'BERPINDAH'; })[0];
+  return k ? (k.CAWANGAN || '') : '';
+}
+function cawSah_(kod, id) {   // pastikan ID cawangan milik gelanggang ini
+  if (!id || id === '__TIADA') return '';
+  var c = cariSatu_('CAWANGAN', 'ID', id);
+  return c && c.KOD_GELANGGANG === kod && c.STATUS !== 'PADAM' ? c.ID : '';
+}
