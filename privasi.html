@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Notis Privasi — SilatApp Pusat</title>
+<link rel="icon" href="icon-192.png">
+<meta name="theme-color" content="#0F1115">
+<style>
+:root{--bg:#0F1115;--kad:#181B22;--garis:#2C313C;--teks:#E8E9EC;--pudar:#9097A3;--emas:#E2B55A}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--teks);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:16px 14px 50px}
+.kepala{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.kepala img{width:64px;height:64px;border-radius:50%;background:#fff;flex:none}
+.kepala b{color:var(--emas);font-size:18px;display:block}
+.kad{background:var(--kad);border:1px solid var(--garis);border-radius:16px;padding:18px;margin-bottom:14px}
+.kad h2{color:var(--emas);font-size:18px}
+.kad h3{color:var(--emas)}
+.alat{display:flex;gap:10px;margin-bottom:14px}
+button,a.btn{flex:1;text-align:center;text-decoration:none;background:#20242D;color:var(--teks);border:1px solid var(--garis);border-radius:12px;padding:12px 16px;font:inherit;font-size:15px;cursor:pointer;min-height:46px}
+button.utama{background:var(--emas);color:#1a1405;border-color:var(--emas);font-weight:700}
+@media print{
+  html,body{background:#fff;color:#000}
+  .alat{display:none}
+  .kad{background:#fff;border:1px solid #000;color:#000}
+  .kad h2,.kad h3,.kepala b{color:#000}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kepala"><img src="logo.png" alt=""><div><b>SilatApp Pusat</b><span id="namaPersatuan" style="color:var(--pudar);font-size:14px"></span></div></div>
+  <div class="alat"><button onclick="kembali()">← Kembali</button><button class="utama" onclick="window.print()">🖨️ Cetak</button></div>
+  <div class="kad" id="notis"></div>
+  <div class="kad" id="penafian"></div>
+</div>
+<script src="teks-pdpa.js"></script>
+<script>
+document.getElementById('namaPersatuan').textContent = PERSATUAN;
+document.getElementById('notis').innerHTML = htmlPdpaPenuh();
+document.getElementById('penafian').innerHTML = htmlPenafian(false);
+function kembali() { if (history.length > 1) history.back(); else location.href = 'index.html'; }
+</script>
+</body>
+</html>

@@ -37,11 +37,13 @@ button.utama{background:var(--emas);color:#1a1405;border-color:var(--emas);font-
 .lencana{display:inline-block;padding:3px 10px;border-radius:8px;font-size:13px;font-weight:700;background:#3a321f;color:var(--emas)}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#3a2020;border:1px solid var(--merah);padding:12px 16px;border-radius:12px;width:max-content;max-width:92%;display:none;z-index:60}
 .muat{opacity:.6;pointer-events:none}
+button:disabled{opacity:.45;cursor:not-allowed}
 </style>
 </head>
 <body>
 <div id="app"><div style="min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#9097A3"><img src="logo.png" alt="" style="width:110px;height:110px;border-radius:50%;background:#fff"><div>Memuatkan borang...</div></div></div>
 <div id="toast"></div>
+<script src="teks-pdpa.js"></script>
 <script src="bersama.js"></script>
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbwYLSghcfcLVKLg2plYc9Slj8E0KuNu8LX7HOugVTSIWxwCfv2hcBZB_l0uc5JArfxV/exec';
@@ -55,7 +57,6 @@ const AKUAN_ADAT = [
   'Menerima teguran dan tindakan tatatertib guru / jurulatih sekiranya melanggar adat dan adab perguruan.'
 ];
 const KEBENARAN_WARIS = nama => `Saya, <b>${nama || '(nama ibu bapa / penjaga)'}</b>, selaku ibu bapa / penjaga yang sah, <b>memberi kebenaran</b> kepada anak / jagaan saya untuk menyertai latihan Seni Silat Gayong di gelanggang ini. Saya faham silat ialah aktiviti fizikal yang mempunyai risiko kecederaan, dan saya membenarkan jurulatih mengambil tindakan pertolongan cemas / membawa ke klinik sekiranya perlu sementara saya dihubungi.`;
-const NOTIS_PDPA = 'Maklumat dalam borang ini digunakan hanya untuk urusan keahlian dan pentadbiran gelanggang, disimpan dengan selamat dan tidak didedahkan kepada pihak luar, selaras Akta Perlindungan Data Peribadi 2010.';
 /* ======================================================== */
 
 const $ = s => document.querySelector(s);
@@ -115,19 +116,23 @@ function lukis() {
     <div id="kotakKebenaran" style="display:none">
       <h3 style="margin-top:22px">3. Kebenaran Ibu Bapa / Penjaga</h3>
       <div class="akuan" id="teksKebenaran"></div>
-      <label class="cek"><input type="checkbox" id="kebenaran"> <span>Saya bersetuju dan memberi kebenaran seperti di atas.</span></label>
+      <label class="cek"><input type="checkbox" id="kebenaran" onchange="semakHantar()"> <span>Saya bersetuju dan memberi kebenaran seperti di atas.</span></label>
     </div>
 
     <h3 style="margin-top:22px"><span id="noAdat">3</span>. Akuan Adat & Adab Perguruan</h3>
     <div class="akuan">Saya / anak jagaan saya <b>bersetuju</b> untuk:<ol>${AKUAN_ADAT.map(a => `<li>${a}</li>`).join('')}</ol></div>
-    <label class="cek"><input type="checkbox" id="adat"> <span>Saya bersetuju mengikuti pembelajaran mengikut adat dan adab perguruan <b>Sri Gayong Panglima Ulung Malaysia</b>.</span></label>
+    <label class="cek"><input type="checkbox" id="adat" onchange="semakHantar()"> <span>Saya bersetuju mengikuti pembelajaran mengikut adat dan adab perguruan <b>Sri Gayong Panglima Ulung Malaysia</b>.</span></label>
 
-    <div class="akuan" style="margin-top:16px;font-size:13px"><b>Notis PDPA:</b> ${NOTIS_PDPA}</div>
-    <label class="cek"><input type="checkbox" id="pdpa"> <span>Saya bersetuju dengan notis PDPA.</span></label>
+    <h3 style="margin-top:22px"><span id="noPdpa">4</span>. Notis Privasi & Perlindungan Data Peribadi</h3>
+    <div class="akuan" style="font-size:14px">${htmlPdpaRingkas()}</div>
+    <label class="cek"><input type="checkbox" id="pdpa" onchange="semakHantar()"> <span>${esc(KOTAK_PDPA)} <span class="w">*</span></span></label>
+    <label class="cek" id="barisPenjaga" style="display:none"><input type="checkbox" id="penjaga" onchange="semakHantar()"> <span>${esc(KOTAK_PENJAGA)} <span class="w">*</span></span></label>
 
-    <button class="utama" style="margin-top:22px" onclick="hantar()">Hantar Permohonan</button>
+    <button class="utama" id="btnHantar" style="margin-top:22px" onclick="hantar()" disabled>Hantar Permohonan</button>
+    <p class="pudar" id="infoHantar" style="font-size:12px;text-align:center">Tandakan semua kotak persetujuan wajib untuk menghantar.</p>
     <p class="pudar" style="font-size:12px;text-align:center">Permohonan akan disemak dan diluluskan oleh jurulatih gelanggang.</p>
-  </div></div>`;
+  </div>
+  <div class="kad">${htmlPenafian(true)}${htmlKakiPrivasi()}</div></div>`;
   kemasWaris();
 }
 function pilihJan(j) { jantina = j; document.querySelectorAll('#jan button').forEach((b, i) => b.classList.toggle('on', (i === 0) === (j === 'L'))); }
@@ -144,21 +149,32 @@ function kemasWaris() {
   document.querySelectorAll('.wW').forEach(x => x.style.display = b18 ? 'inline' : 'none');
   $('#kotakKebenaran').style.display = b18 ? 'block' : 'none';
   $('#noAdat').textContent = b18 ? '4' : '3';
+  $('#noPdpa').textContent = b18 ? '5' : '4';
+  $('#barisPenjaga').style.display = b18 ? 'flex' : 'none';
   $('#teksKebenaran').innerHTML = KEBENARAN_WARIS(esc($('#namaW').value.toUpperCase()));
+  semakHantar();
+}
+/* Butang Hantar hanya aktif selepas semua kotak persetujuan wajib ditanda */
+function semakHantar() {
+  const u = umur(), b18 = u == null || u < 18, b = $('#btnHantar'); if (!b) return;
+  const ok = $('#adat').checked && $('#pdpa').checked && (!b18 || ($('#kebenaran').checked && $('#penjaga').checked));
+  b.disabled = !ok; $('#infoHantar').style.display = ok ? 'none' : 'block';
 }
 async function hantar() {
   const u = umur(), b18 = u == null || u < 18;
   const d = { no_kp: $('#kp').value, nama: $('#nama').value.trim(), tarikh_lahir: $('#lahir').value, jantina, cawangan: $('#caw') ? $('#caw').value : '',
     sekolah: $('#sekolah').value, alamat: $('#alamat').value, tel_pesilat: $('#telP').value, kesihatan: $('#sihat').value,
     nama_waris: $('#namaW').value.trim(), hubungan_waris: $('#hub').value, no_kp_waris: $('#kpW').value, tel_waris: $('#telW').value, emel_waris: $('#emelW').value,
-    kebenaran_waris: b18 ? $('#kebenaran').checked : false, akur_adat: $('#adat').checked, pdpa: $('#pdpa').checked };
+    kebenaran_waris: b18 ? $('#kebenaran').checked : false, akur_adat: $('#adat').checked, pdpa: $('#pdpa').checked,
+    penjaga_setuju: b18 ? $('#penjaga').checked : false, pdpa_versi: VERSI_PDPA };
   if (d.no_kp.replace(/\D/g, '').length !== 12) return toast('No. KP / MyKid mesti 12 digit.');
   if (!d.nama || !d.tarikh_lahir || !d.jantina) return toast('Sila lengkapkan nama, tarikh lahir dan jantina.');
   if (b18 && (!d.nama_waris || !d.hubungan_waris || !d.tel_waris)) return toast('Sila isi maklumat ibu bapa / penjaga.');
   if (!b18 && !d.tel_pesilat && !d.tel_waris) return toast('Sila isi no. telefon.');
   if (b18 && !d.kebenaran_waris) return toast('Sila tandakan kebenaran ibu bapa / penjaga.');
   if (!d.akur_adat) return toast('Sila tandakan akuan adat dan adab perguruan.');
-  if (!d.pdpa) return toast('Sila bersetuju dengan notis PDPA.');
+  if (!d.pdpa) return toast('Sila bersetuju dengan Notis Privasi.');
+  if (b18 && !d.penjaga_setuju) return toast('Ibu bapa / penjaga yang sah mesti memberi persetujuan.');
   $('#borang').classList.add('muat');
   const r = await api({ action: 'borang_hantar', g: G.gelanggang.kod, data: d });
   $('#borang').classList.remove('muat');

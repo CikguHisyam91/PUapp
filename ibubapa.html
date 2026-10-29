@@ -66,6 +66,7 @@ textarea{width:100%;background:var(--kad2);color:var(--teks);border:1px solid va
 <div>Memuatkan...</div></div></div>
 <div id="toast"></div>
 <div id="modal"><div class="isi" id="modalIsi"></div></div>
+<script src="teks-pdpa.js"></script>
 <script src="bersama.js"></script>
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbwYLSghcfcLVKLg2plYc9Slj8E0KuNu8LX7HOugVTSIWxwCfv2hcBZB_l0uc5JArfxV/exec';
@@ -99,6 +100,7 @@ function paparLogin(tambah) {
       ${tambah ? `<button class="penuh" style="margin-top:8px" onclick="papar()">Batal</button>` : ''}
     </div>
     <p class="pudar" style="font-size:12px;text-align:center">No. telefon tidak sepadan? Minta jurulatih kemas kini "Tel. Waris" dalam rekod anak anda.</p>
+    <div class="kad">${htmlPenafian(true)}${htmlKakiPrivasi()}</div>
   </div></div>`;
 }
 async function masuk() {
@@ -125,10 +127,29 @@ async function papar() {
   const pilihan = S.anak.length > 1 ? `<div class="cip">${S.anak.map((a, i) => `<button class="${i === S.pilih ? 'on' : ''}" onclick="S.pilih=${i};papar()">${esc(a.nama.split(' ')[0])}</button>`).join('')}</div>` : '';
   $('#app').innerHTML = `<header><img src="logo.png" alt=""><div class="t"><b>Portal Ibu Bapa</b><small>Sri Gayong Panglima Ulung</small></div><button class="kecil" onclick="keluar()">Keluar</button></header>
     <div class="wrap">${pilihan}<div id="isi"><p class="pudar" style="text-align:center;padding:30px 0">Memuatkan...</p></div>
-    <button class="penuh" onclick="paparLogin(true)">+ Tambah anak lain</button></div>`;
+    <button class="penuh" onclick="paparLogin(true)">+ Tambah anak lain</button>
+    <div class="kad" style="margin-top:14px">${htmlPenafian(true)}${htmlKakiPrivasi()}</div></div>`;
   let r = S.data[S.pilih];
   if (!r) { const a = S.anak[S.pilih]; r = await api({ no_kp: a.kp, telefon: a.tel }); if (!r.ok) { $('#isi').innerHTML = `<div class="kad">${esc(r.msg)}</div>`; return; } S.data[S.pilih] = r; }
   lukis(r);
+  if (!r.portal_pdpa) modalPdpaPortal();
+}
+/* Persetujuan Notis Privasi di portal — dipaparkan sekali sahaja bagi setiap anak */
+function modalPdpaPortal() {
+  const r = S.data[S.pilih];
+  modal(`<h3 style="color:#E2B55A;margin-top:0">🛡️ Notis Privasi</h3>
+    <p style="margin:0 0 8px;font-size:14px">Sebelum meneruskan, sila baca ringkasan Notis Privasi bagi <b>${esc(r.anak.nama)}</b>:</p>
+    <div style="background:#20242D;border-radius:12px;padding:12px;font-size:14px">${htmlPdpaRingkas()}</div>
+    <label class="cek"><input type="checkbox" id="ppSetuju" onchange="$('#ppYa').disabled=!this.checked"> <span>${esc(KOTAK_PDPA)}</span></label>
+    <button class="utama" id="ppYa" style="margin-top:14px" disabled onclick="setujuPdpaPortal()">Saya Setuju</button>
+    <button class="penuh" style="margin-top:8px" onclick="S.wajibModal=false;modal('');keluar()">Tidak Setuju (keluar)</button>`);
+  S.wajibModal = true;
+}
+async function setujuPdpaPortal() {
+  const a = S.anak[S.pilih], b = $('#ppYa'); b.disabled = true;
+  const x = await api({ action: 'ibubapa_setuju_pdpa', no_kp: a.kp, telefon: a.tel, versi: VERSI_PDPA, setuju: true });
+  if (!x.ok) { b.disabled = false; return toast(x.msg); }
+  S.data[S.pilih].portal_pdpa = true; S.wajibModal = false; modal(''); toast(x.msg);
 }
 function lukis(r) {
   const a = r.anak, g = r.gelanggang, th = Number(r.tahun), kini = new Date();
@@ -200,7 +221,7 @@ function lukis(r) {
 }
 pasangApp('Portal Ibu Bapa', 'pwa_ib');
 function modal(h) { $('#modalIsi').innerHTML = h; $('#modal').style.display = h ? 'flex' : 'none'; }
-document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') modal(''); });
+document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal' && !S.wajibModal) modal(''); });
 /* ====== Resit yuran (PNG, boleh dicetak / simpan) ====== */
 const BLN_PENUH = ['', 'Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
 function senaraiBayaran(r) {

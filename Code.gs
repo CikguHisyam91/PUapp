@@ -7,6 +7,11 @@
  *   2. Pilih fungsi "setup" → klik Run (Jalankan).
  *   3. Selepas berjaya, PADAM kata laluan di bawah (tukar jadi '').
  ****************************************************************/
+/* Versi teks persetujuan — MESTI sama dengan VERSI_PDPA & VERSI_TERMA dalam teks-pdpa.js.
+   Naikkan versi apabila teks berubah: semua pengguna akan diminta bersetuju semula. */
+var VERSI_PDPA = '1.0';
+var VERSI_TERMA = '1.0';
+
 var SETUP_ID = '';            // cth. 'superadmin'
 var SETUP_NAMA = '';          // cth. 'Cikgu Hisyam'
 var SETUP_TELEFON = '';       // cth. '0123456789'
@@ -33,9 +38,10 @@ var JADUAL = {
   NEGERI: ['KOD','NAMA'],
   GELANGGANG: ['KOD','NAMA','NEGERI','ALAMAT','KETUA_ID','TARIKH_DAFTAR','STATUS','AKTIVITI_TERAKHIR','LOGO','QR_BAYAR','INFO_BAYAR','QR_DIKEMASKINI'],
   BAYARAN_NOTIS: ['ID','KOD_GELANGGANG','NO_KP','TARIKH_HANTAR','JENIS','TAHUN','BULAN','JUMLAH','RESIT','CATATAN','STATUS','DIPROSES_OLEH','TARIKH_PROSES'],
-  PENGGUNA: ['ID','HASH','SALT','NAMA','TELEFON','PERANAN','NEGERI','KOD_GELANGGANG','KETUA','STATUS','TARIKH_DAFTAR','GAGAL','KUNCI_HINGGA','WAJIB_TUKAR'],
+  PENGGUNA: ['ID','HASH','SALT','NAMA','TELEFON','PERANAN','NEGERI','KOD_GELANGGANG','KETUA','STATUS','TARIKH_DAFTAR','GAGAL','KUNCI_HINGGA','WAJIB_TUKAR','TERMA_VERSI','TERMA_MASA'],
   SESI: ['TOKEN','ID','LUPUT'],
-  AHLI: ['NO_AHLI','NO_KP','NAMA','JANTINA','TARIKH_LAHIR','BENGKUNG','GELANGGANG_UTAMA','STATUS','TARIKH_DAFTAR','TEL_WARIS','ID_LAMA'],
+  AHLI: ['NO_AHLI','NO_KP','NAMA','JANTINA','TARIKH_LAHIR','BENGKUNG','GELANGGANG_UTAMA','STATUS','TARIKH_DAFTAR','TEL_WARIS','ID_LAMA',
+    'PDPA_VERSI','PDPA_MASA','PDPA_OLEH','PDPA_SALURAN','PORTAL_PDPA_MASA'],
   KEAHLIAN_GELANGGANG: ['NO_KP','KOD_GELANGGANG','JENIS','STATUS','TARIKH_MULA','TARIKH_TAMAT','CAWANGAN'],
   YURAN_TAHUNAN: ['NO_KP','KOD_GELANGGANG','TAHUN','JUMLAH','TARIKH_BAYAR','DIREKOD_OLEH','CAWANGAN'],
   LOG_AUDIT: ['MASA','ID','TINDAKAN','BUTIRAN'],
@@ -43,7 +49,8 @@ var JADUAL = {
   KEHADIRAN: ['TARIKH','KOD_GELANGGANG','HADIR','BIL_HADIR','CATATAN','DIREKOD_OLEH','CAWANGAN'],
   CAWANGAN: ['ID','KOD_GELANGGANG','NAMA','ALAMAT','STATUS','TARIKH_DAFTAR','QR_BAYAR','INFO_BAYAR','QR_DIKEMASKINI'],
   PERMOHONAN: ['ID','KOD_GELANGGANG','CAWANGAN','TARIKH_MOHON','NO_KP','NAMA','JANTINA','TARIKH_LAHIR','ALAMAT','TEL_PESILAT','SEKOLAH_KERJA',
-    'NAMA_WARIS','HUBUNGAN_WARIS','NO_KP_WARIS','TEL_WARIS','EMEL_WARIS','KESIHATAN','KEBENARAN_WARIS','AKUR_ADAT','PDPA','STATUS','SEBAB_TOLAK','DIPROSES_OLEH','TARIKH_PROSES','NO_AHLI'],
+    'NAMA_WARIS','HUBUNGAN_WARIS','NO_KP_WARIS','TEL_WARIS','EMEL_WARIS','KESIHATAN','KEBENARAN_WARIS','AKUR_ADAT','PDPA','STATUS','SEBAB_TOLAK','DIPROSES_OLEH','TARIKH_PROSES','NO_AHLI',
+    'PDPA_VERSI','PDPA_MASA','PDPA_OLEH','PDPA_SALURAN','PORTAL_PDPA_MASA'],
   JADUAL_LATIHAN: ['ID','KOD_GELANGGANG','CAWANGAN','HARI','MULA','TAMAT','LOKASI','CATATAN'],
   YURAN_BULANAN: ['NO_KP','KOD_GELANGGANG','TAHUN','BULAN','JUMLAH','TARIKH_BAYAR','KAEDAH','DIREKOD_OLEH','CAWANGAN'],
   KEWANGAN: ['ID','KOD_GELANGGANG','TARIKH','JENIS','KATEGORI','KETERANGAN','JUMLAH','DIREKOD_OLEH','CAWANGAN'],
@@ -125,8 +132,8 @@ function jawab_(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
 }
 
-var AWAM = { ibubapa_bayar: 1, borang_info: 1, borang_hantar: 1, ibubapa: 1, ping: 1, negeri: 1, daftar: 1, login: 1, status_awal: 1, cipta_super: 1 };
-var TULIS = { set_bertugas: 1, ubah_admin: 1, ibubapa_bayar: 1, qr_simpan: 1, notis_sahkan: 1, notis_tolak: 1, borang_hantar: 1, mohon_lulus: 1, mohon_tolak: 1, tukar_kod: 1, jad_simpan: 1, jad_padam: 1, reset_katalaluan: 1, caw_simpan: 1, caw_padam: 1, caw_tag: 1, logo_simpan: 1, kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, kemaskini_profil: 1, lulus_gelanggang: 1, status_gelanggang: 1,
+var AWAM = { ibubapa_setuju_pdpa: 1, ibubapa_bayar: 1, borang_info: 1, borang_hantar: 1, ibubapa: 1, ping: 1, negeri: 1, daftar: 1, login: 1, status_awal: 1, cipta_super: 1 };
+var TULIS = { setuju_terma: 1, ibubapa_setuju_pdpa: 1, set_bertugas: 1, ubah_admin: 1, ibubapa_bayar: 1, qr_simpan: 1, notis_sahkan: 1, notis_tolak: 1, borang_hantar: 1, mohon_lulus: 1, mohon_tolak: 1, tukar_kod: 1, jad_simpan: 1, jad_padam: 1, reset_katalaluan: 1, caw_simpan: 1, caw_padam: 1, caw_tag: 1, logo_simpan: 1, kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, kemaskini_profil: 1, lulus_gelanggang: 1, status_gelanggang: 1,
   status_pengguna: 1, set_ketua: 1, lantik_admin: 1, daftar_ahli: 1, kemaskini_ahli: 1, status_ahli: 1,
   rekod_yuran: 1, padam_yuran: 1, mohon_gelanggang: 1 };
 
@@ -134,7 +141,7 @@ function urus_(p) {
   var lock = null;
   try {
     var a = p.action;
-    var VERSI_SKEMA = '8';
+    var VERSI_SKEMA = '9';
     if (PropertiesService.getScriptProperties().getProperty('SKEMA') !== VERSI_SKEMA || !sh_('PENGGUNA')) {
       binaSheet_(); PropertiesService.getScriptProperties().setProperty('SKEMA', VERSI_SKEMA);
     }
@@ -145,6 +152,9 @@ function urus_(p) {
     if (AWAM[a]) return AWAM_FN[a](p);
     var u = sahkanToken_(p.token);
     if (!u) return { ok: false, msg: 'Sesi tamat. Sila log masuk semula.', logout: true };
+    // Wajib bersetuju Terma Penggunaan (versi semasa) sebelum guna fungsi lain
+    if (u.TERMA_VERSI !== VERSI_TERMA && ['setuju_terma', 'logout', 'saya'].indexOf(a) < 0)
+      return { ok: false, perlu_terma: true, msg: 'Sila setuju Terma Penggunaan' };
     var fn = API[a];
     if (!fn) return { ok: false, msg: 'Tindakan tidak dikenali: ' + a };
     var r = fn(u, p);
@@ -285,7 +295,7 @@ var AWAM_FN = {
     if (!/^[a-z0-9._]{4,30}$/.test(id)) return { ok: false, msg: 'ID pengguna 4–30 aksara (huruf kecil, nombor, titik, garis bawah).' };
     if (String(p.katalaluan || '').length < 8) return { ok: false, msg: 'Kata laluan sekurang-kurangnya 8 aksara.' };
     if (!p.nama || !p.telefon) return { ok: false, msg: 'Nama dan no. telefon wajib.' };
-    if (!p.pdpa) return { ok: false, msg: 'Sila bersetuju dengan notis PDPA.' };
+    if (!p.terma) return { ok: false, msg: 'Sila bersetuju dengan Terma Penggunaan & Akujanji Kerahsiaan.' };
     if (!NEGERI.some(function (n) { return n[0] === p.negeri; })) return { ok: false, msg: 'Sila pilih negeri.' };
     if (cariSatu_('PENGGUNA', 'ID', id)) return { ok: false, msg: 'ID pengguna sudah digunakan.' };
 
@@ -305,8 +315,9 @@ var AWAM_FN = {
     var salt = Utilities.getUuid();
     tambah_('PENGGUNA', { ID: id, HASH: hash_(p.katalaluan, salt), SALT: salt, NAMA: String(p.nama).trim(),
       TELEFON: String(p.telefon).trim(), PERANAN: 'JURULATIH', NEGERI: p.negeri, KOD_GELANGGANG: kodGel,
-      KETUA: ketua, STATUS: 'MENUNGGU', TARIKH_DAFTAR: hariIni_(), GAGAL: '0', KUNCI_HINGGA: '' });
+      KETUA: ketua, STATUS: 'MENUNGGU', TARIKH_DAFTAR: hariIni_(), GAGAL: '0', KUNCI_HINGGA: '', TERMA_VERSI: VERSI_TERMA, TERMA_MASA: masa_() });
     log_(id, 'DAFTAR', 'Jurulatih daftar: ' + kodGel);
+    log_(id, 'SETUJU_TERMA', 'Versi ' + VERSI_TERMA + ' (semasa daftar akaun)');
     return { ok: true, msg: 'Pendaftaran diterima. Tunggu kelulusan Admin Negeri ' + namaNegeri_(p.negeri) + '.' };
   },
 
@@ -352,7 +363,8 @@ function profil_(u) {
   var g = u.KOD_GELANGGANG ? cariSatu_('GELANGGANG', 'KOD', u.KOD_GELANGGANG) : null;
   return { id: u.ID, nama: u.NAMA, telefon: u.TELEFON, peranan: u.PERANAN, negeri: u.NEGERI,
     namaNegeri: namaNegeri_(u.NEGERI), kod_gelanggang: u.KOD_GELANGGANG, nama_gelanggang: g ? g.NAMA : '', logo: g ? g.LOGO : '',
-    ketua: u.KETUA === 'YA', wajib_tukar: u.WAJIB_TUKAR === 'YA' };
+    ketua: u.KETUA === 'YA', wajib_tukar: u.WAJIB_TUKAR === 'YA',
+    terma_versi: u.TERMA_VERSI || '', terma_ok: u.TERMA_VERSI === VERSI_TERMA, versi_terma: VERSI_TERMA };
 }
 
 /* ======================= TINDAKAN BERTOKEN ======================= */
@@ -591,11 +603,15 @@ function daftarAhliTeras_(g, d, mod, oleh) {
     var no = siriBaru_(g.KOD);
     tambah_('AHLI', { NO_AHLI: no, NO_KP: kp, NAMA: String(d.nama).trim().toUpperCase(), JANTINA: d.jantina || '',
       TARIKH_LAHIR: d.tarikh_lahir || '', BENGKUNG: d.bengkung || '', GELANGGANG_UTAMA: g.KOD, STATUS: d.status || 'AKTIF',
-      TARIKH_DAFTAR: d.tarikh_daftar || kini, TEL_WARIS: d.tel_waris || '', ID_LAMA: d.id_lama || '' });
+      TARIKH_DAFTAR: d.tarikh_daftar || kini, TEL_WARIS: d.tel_waris || '', ID_LAMA: d.id_lama || '',
+      PDPA_VERSI: d.pdpa ? d.pdpa.versi : '', PDPA_MASA: d.pdpa ? d.pdpa.masa : '', PDPA_OLEH: d.pdpa ? d.pdpa.oleh : '', PDPA_SALURAN: d.pdpa ? d.pdpa.saluran : '' });
     tambah_('KEAHLIAN_GELANGGANG', { NO_KP: kp, KOD_GELANGGANG: g.KOD, JENIS: 'UTAMA', STATUS: 'AKTIF', TARIKH_MULA: kini, TARIKH_TAMAT: '', CAWANGAN: d.cawangan || '' });
     log_(oleh, 'DAFTAR_AHLI', no);
     return { ok: true, msg: 'Ahli didaftar: ' + no, no_ahli: no, baru: true };
   }
+  // Ahli sedia ada: kemas kini rekod persetujuan dengan yang terbaru (jika diberi)
+  if (d.pdpa && (mod === 'pindah' || mod === 'bersama'))
+    kemaskini_('AHLI', a._r, { PDPA_VERSI: d.pdpa.versi, PDPA_MASA: d.pdpa.masa, PDPA_OLEH: d.pdpa.oleh, PDPA_SALURAN: d.pdpa.saluran });
   var ks = baca_('KEAHLIAN_GELANGGANG').filter(function (k) { return k.NO_KP === kp; });
   var diSini = ks.filter(function (k) { return k.KOD_GELANGGANG === g.KOD && k.STATUS !== 'BERPINDAH'; })[0];
   if (mod === 'pindah') {
@@ -621,9 +637,13 @@ function daftarAhliTeras_(g, d, mod, oleh) {
 API.daftar_ahli = function (u, p) {
   var g = gelAhli_(u, p.kod);
   if (g.STATUS !== 'AKTIF') return { ok: false, msg: 'Gelanggang tidak aktif.' };
-  if (!p.pdpa) return { ok: false, msg: 'Sila sahkan persetujuan PDPA.' };
-  var r = daftarAhliTeras_(g, p.data || {}, p.mod, u.ID);
-  if (r.ok) catatAktiviti_(g.KOD);
+  if (!p.pdpa) return { ok: false, msg: 'Sila tandakan pengesahan persetujuan.' };
+  var oleh = String(p.pdpa_oleh || '').replace(/[<>]/g, '').trim().slice(0, 120);
+  if (oleh.length < 3) return { ok: false, msg: 'Sila isi nama pemberi persetujuan.' };
+  var d = p.data || {};
+  d.pdpa = { versi: VERSI_PDPA, masa: masa_(), oleh: oleh.toUpperCase(), saluran: 'JURULATIH' };
+  var r = daftarAhliTeras_(g, d, p.mod, u.ID);
+  if (r.ok) { catatAktiviti_(g.KOD); log_(u.ID, 'PDPA_JURULATIH', (r.no_ahli || '') + ' · disahkan oleh ' + u.ID + ' · pemberi: ' + d.pdpa.oleh + ' · v' + VERSI_PDPA); }
   return r;
 };
 
@@ -1082,7 +1102,7 @@ AWAM_FN.ibubapa = function (p) {
   var yt = baca_('YURAN_TAHUNAN').filter(function (y) { return y.NO_KP === kp; }).map(function (y) { return { tahun: y.TAHUN, jumlah: y.JUMLAH, tarikh: y.TARIKH_BAYAR }; });
   var fiz = baca_('FIZIKAL').filter(function (f) { return f.NO_KP === kp; }).sort(function (x, y) { return y.TARIKH.localeCompare(x.TARIKH); })
     .slice(0, 6).map(function (f) { return { tarikh: f.TARIKH, berat: f.BERAT, tinggi: f.TINGGI, bmi: f.BMI }; });
-  return { ok: true, anak: { nama: a.NAMA, no_ahli: a.NO_AHLI, no_kp: topengKP_(a.NO_KP), jantina: a.JANTINA, tarikh_lahir: a.TARIKH_LAHIR,
+  return { ok: true, portal_pdpa: !!a.PORTAL_PDPA_MASA, versi_pdpa: VERSI_PDPA, anak: { nama: a.NAMA, no_ahli: a.NO_AHLI, no_kp: topengKP_(a.NO_KP), jantina: a.JANTINA, tarikh_lahir: a.TARIKH_LAHIR,
       bengkung: a.BENGKUNG, status: a.STATUS, tarikh_daftar: a.TARIKH_DAFTAR },
     gelanggang: { nama: g.NAMA || '', kod: g.KOD || '', logo: g.LOGO || '', cawangan: cwRec ? cwRec.NAMA : '', negeri: namaNegeri_(g.NEGERI), ketua: ketua ? ketua.NAMA : '', telKetua: ketua ? ketua.TELEFON : '' },
     bayar: cwRec && cwRec.QR_BAYAR ? { qr: cwRec.QR_BAYAR, info: infoBayar_(cwRec), dikemaskini: cwRec.QR_DIKEMASKINI || '' }
@@ -1259,8 +1279,10 @@ AWAM_FN.borang_hantar = function (p) {
   if (String(kp).replace(/\D/g, '').length !== 12) return { ok: false, msg: 'No. KP / MyKid mesti 12 digit.' };
   if (!d.nama || !d.jantina || !d.tarikh_lahir) return { ok: false, msg: 'Sila lengkapkan nama, jantina dan tarikh lahir.' };
   if (!d.akur_adat) return { ok: false, msg: 'Sila tandakan akuan adat dan adab perguruan.' };
-  if (!d.pdpa) return { ok: false, msg: 'Sila bersetuju dengan notis PDPA.' };
+  if (!d.pdpa) return { ok: false, msg: 'Sila bersetuju dengan Notis Privasi.' };
+  if (String(d.pdpa_versi || '') !== VERSI_PDPA) return { ok: false, msg: 'Notis Privasi telah dikemas kini. Sila muat semula halaman dan baca semula.' };
   var umur = umurDari_(d.tarikh_lahir, kp), bawah18 = umur == null || umur < 18;
+  if (bawah18 && !d.penjaga_setuju) return { ok: false, msg: 'Pesilat bawah 18 tahun: ibu bapa / penjaga yang sah mesti memberi persetujuan.' };
   if (bawah18) {
     if (!d.nama_waris || !d.hubungan_waris || !d.tel_waris) return { ok: false, msg: 'Pemohon bawah 18 tahun: maklumat ibu bapa / penjaga wajib diisi.' };
     if (!d.kebenaran_waris) return { ok: false, msg: 'Pemohon bawah 18 tahun: kebenaran ibu bapa / penjaga wajib ditandakan.' };
@@ -1278,7 +1300,9 @@ AWAM_FN.borang_hantar = function (p) {
     SEKOLAH_KERJA: pot(d.sekolah), NAMA_WARIS: pot(d.nama_waris, 120).toUpperCase(), HUBUNGAN_WARIS: pot(d.hubungan_waris, 30),
     NO_KP_WARIS: pot(d.no_kp_waris, 20), TEL_WARIS: pot(d.tel_waris, 20), EMEL_WARIS: pot(d.emel_waris, 120), KESIHATAN: pot(d.kesihatan, 300),
     KEBENARAN_WARIS: d.kebenaran_waris ? 'YA ' + t : (bawah18 ? '' : 'DEWASA'), AKUR_ADAT: 'YA ' + t, PDPA: 'YA ' + t,
-    STATUS: 'MENUNGGU', SEBAB_TOLAK: '', DIPROSES_OLEH: '', TARIKH_PROSES: '', NO_AHLI: '' });
+    STATUS: 'MENUNGGU', SEBAB_TOLAK: '', DIPROSES_OLEH: '', TARIKH_PROSES: '', NO_AHLI: '',
+    PDPA_VERSI: VERSI_PDPA, PDPA_MASA: t, PDPA_OLEH: (bawah18 ? pot(d.nama_waris, 120) : pot(d.nama, 120)).toUpperCase(), PDPA_SALURAN: 'BORANG_ONLINE', PORTAL_PDPA_MASA: '' });
+  log_('AWAM', 'PDPA_BORANG', id + ' · ' + g.KOD + ' · v' + VERSI_PDPA + (bawah18 ? ' · penjaga' : ' · dewasa'));
   c.put(kunci, '1', 120);
   log_('AWAM', 'PERMOHONAN_BARU', g.KOD + ' ' + id);
   return { ok: true, id: id, msg: 'Permohonan dihantar! Jurulatih ' + g.NAMA + ' akan menyemak dan meluluskannya.' };
@@ -1303,7 +1327,9 @@ API.mohon_lulus = function (u, p) {
   if (!x || x.KOD_GELANGGANG !== g.KOD) return { ok: false, msg: 'Permohonan tiada.' };
   if (x.STATUS !== 'MENUNGGU') return { ok: false, msg: 'Permohonan ini sudah diproses.' };
   var r = daftarAhliTeras_(g, { no_kp: x.NO_KP, nama: x.NAMA, jantina: x.JANTINA, tarikh_lahir: x.TARIKH_LAHIR, bengkung: p.bengkung || 'Hitam Kosong (Ahli Baharu)',
-    tel_waris: x.TEL_WARIS || x.TEL_PESILAT, cawangan: p.cawangan != null ? p.cawangan : x.CAWANGAN }, p.mod || '', u.ID);
+    tel_waris: x.TEL_WARIS || x.TEL_PESILAT, cawangan: p.cawangan != null ? p.cawangan : x.CAWANGAN,
+    pdpa: x.PDPA_MASA ? { versi: x.PDPA_VERSI, masa: x.PDPA_MASA, oleh: x.PDPA_OLEH, saluran: x.PDPA_SALURAN || 'BORANG_ONLINE' }
+      : /^YA /.test(x.PDPA || '') ? { versi: 'lama', masa: x.PDPA.slice(3), oleh: x.NAMA_WARIS || x.NAMA, saluran: 'BORANG_ONLINE' } : null }, p.mod || '', u.ID);
   if (!r.ok) return r;
   kemaskini_('PERMOHONAN', x._r, { STATUS: 'LULUS', DIPROSES_OLEH: u.ID, TARIKH_PROSES: masa_(), NO_AHLI: r.no_ahli || '' });
   catatAktiviti_(g.KOD);
@@ -1432,3 +1458,48 @@ function cawSah_(kod, id) {   // pastikan ID cawangan milik gelanggang ini
   var c = cariSatu_('CAWANGAN', 'ID', id);
   return c && c.KOD_GELANGGANG === kod && c.STATUS !== 'PADAM' ? c.ID : '';
 }
+
+/* ======================= PDPA & TERMA PENGGUNAAN =======================
+ * Masa persetujuan SENTIASA diisi oleh pelayan (masa_()), bukan dari peranti pengguna. */
+API.setuju_terma = function (u, p) {
+  if (String(p.versi || '') !== VERSI_TERMA) return { ok: false, msg: 'Versi Terma telah dikemas kini. Sila muat semula halaman.' };
+  if (!p.setuju) return { ok: false, msg: 'Sila tandakan kotak persetujuan.' };
+  kemaskini_('PENGGUNA', u._r, { TERMA_VERSI: VERSI_TERMA, TERMA_MASA: masa_() });
+  log_(u.ID, 'SETUJU_TERMA', 'Versi ' + VERSI_TERMA + ' (' + u.PERANAN + ')');
+  var x = cariSatu_('PENGGUNA', 'ID', u.ID);
+  return { ok: true, msg: 'Terima kasih. Terma Penggunaan dipersetujui.', pengguna: profil_(x) };
+};
+AWAM_FN.ibubapa_setuju_pdpa = function (p) {
+  var kp = bersihKP_(p.no_kp), c = CacheService.getScriptCache(), kunci = 'ib_' + kp.replace(/\D/g, '');
+  if (Number(c.get(kunci) || 0) >= 5) return { ok: false, msg: 'Terlalu banyak cubaan. Cuba lagi selepas 15 minit.' };
+  var a = cariSatu_('AHLI', 'NO_KP', kp), t = digitTel_(p.telefon);
+  if (!a || t.length < 8 || digitTel_(a.TEL_WARIS) !== t) { c.put(kunci, String(Number(c.get(kunci) || 0) + 1), 900); return { ok: false, msg: 'Pengesahan gagal.' }; }
+  if (String(p.versi || '') !== VERSI_PDPA) return { ok: false, msg: 'Notis Privasi telah dikemas kini. Sila muat semula halaman.' };
+  if (!p.setuju) return { ok: false, msg: 'Sila tandakan kotak persetujuan.' };
+  var t2 = masa_(), upd = { PORTAL_PDPA_MASA: t2 };
+  if (!a.PDPA_MASA) { upd.PDPA_VERSI = VERSI_PDPA; upd.PDPA_MASA = t2; upd.PDPA_OLEH = 'IBU BAPA / PENJAGA (PORTAL)'; upd.PDPA_SALURAN = 'PORTAL'; }
+  kemaskini_('AHLI', a._r, upd);
+  log_('PORTAL', 'PDPA_PORTAL', a.NO_AHLI + ' · v' + VERSI_PDPA);
+  return { ok: true, msg: 'Terima kasih. Persetujuan direkodkan.' };
+};
+API.pdpa_ringkasan = function (u) {
+  wajib_(u, ['SUPER_ADMIN']);
+  var gel = {}; baca_('GELANGGANG').forEach(function (g) { gel[g.KOD] = g; });
+  var r = { ada: 0, tiada: 0, saluran: {}, portal: 0, tanpa: [] };
+  baca_('AHLI').forEach(function (a) {
+    if (a.STATUS !== 'AKTIF') return;
+    if (a.PORTAL_PDPA_MASA) r.portal++;
+    if (a.PDPA_MASA) { r.ada++; var sl = a.PDPA_SALURAN || 'LAIN'; r.saluran[sl] = (r.saluran[sl] || 0) + 1; return; }
+    r.tiada++;
+    var g = gel[a.GELANGGANG_UTAMA] || {};
+    r.tanpa.push({ no_ahli: a.NO_AHLI, nama: a.NAMA, kod: a.GELANGGANG_UTAMA, gelanggang: g.NAMA || a.GELANGGANG_UTAMA, negeri: namaNegeri_(g.NEGERI || ''), tarikh_daftar: a.TARIKH_DAFTAR });
+  });
+  r.tanpa.sort(function (x, y) { return (x.gelanggang + x.nama).localeCompare(y.gelanggang + y.nama); });
+  r.penggunaBelum = baca_('PENGGUNA').filter(function (x) { return x.STATUS === 'AKTIF' && x.TERMA_VERSI !== VERSI_TERMA; }).map(function (x) {
+    var g = gel[x.KOD_GELANGGANG] || {};
+    return { id: x.ID, nama: x.NAMA, peranan: x.PERANAN, negeri: namaNegeri_(x.NEGERI || g.NEGERI || ''), gelanggang: g.NAMA || '', versi: x.TERMA_VERSI || '' };
+  });
+  r.penggunaSudah = baca_('PENGGUNA').filter(function (x) { return x.STATUS === 'AKTIF' && x.TERMA_VERSI === VERSI_TERMA; }).length;
+  r.versi_pdpa = VERSI_PDPA; r.versi_terma = VERSI_TERMA;
+  return { ok: true, data: r };
+};

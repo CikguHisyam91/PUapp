@@ -34,7 +34,7 @@ button.aktif{border-color:var(--emas);color:var(--emas)}
 button.kecil{padding:6px 12px;font-size:14px;min-height:36px}
 button.bahaya{border-color:var(--merah);color:var(--merah);background:transparent}
 button.penuh{width:100%}
-button:disabled{opacity:.5}
+button:disabled{opacity:.45;cursor:not-allowed}
 input,select,textarea{width:100%;background:var(--kad2);color:var(--teks);border:1px solid var(--garis);border-radius:12px;padding:12px 14px;font:inherit;font-size:16px;min-height:48px}
 select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--teks) 50%),linear-gradient(135deg,var(--teks) 50%,transparent 50%);background-position:calc(100% - 20px) 21px,calc(100% - 15px) 21px;background-size:5px 5px;background-repeat:no-repeat;padding-right:36px}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--emas)}
@@ -147,6 +147,7 @@ table.kp td.c,table.kp th.c{text-align:center}
 <div id="modal"><div class="isi" id="modalIsi"></div></div>
 <div id="toast"></div>
 <div id="cetak"></div>
+<script src="teks-pdpa.js"></script>
 <script src="bersama.js"></script>
 <script src="qrcode.js"></script>
 <script src="poster.js"></script>
@@ -181,6 +182,7 @@ async function api(action, data) {
     } catch (e2) { r = { ok: false, msg: 'Tiada sambungan ke pelayan. Semak internet.' }; }
   }
   if (r.logout) keluar(true);
+  else if (r.perlu_terma && action !== 'setuju_terma') { if (S.u) S.u.terma_ok = false; paparTerma(); }
   return r;
 }
 const memuat = () => { const i = $('#isi'); if (i) i.innerHTML = '<p class="pudar" style="text-align:center;padding:30px 0">Memuatkan...</p>'; };
@@ -197,7 +199,8 @@ async function paparLogin() {
       <label>Kata Laluan</label><input id="lPw" type="password" autocomplete="current-password">
       <button class="utama penuh" style="margin-top:16px" onclick="logMasuk()">Log Masuk</button>
       <p class="pudar" style="text-align:center;margin-bottom:0">Jurulatih baharu? <a href="#" onclick="paparDaftar();return false">Daftar di sini</a></p>
-    </div></div></div>`;
+    </div>
+    <div class="kad">${htmlPenafian(true)}${htmlKakiPrivasi()}</div></div></div>`;
   $('#lPw').addEventListener('keydown', e => { if (e.key === 'Enter') logMasuk(); });
 }
 function paparCiptaSuper() {
@@ -245,8 +248,9 @@ async function paparDaftar() {
       <label>Alamat Gelanggang</label><textarea id="dGAlamat" rows="2"></textarea>
       <p class="pudar" style="font-size:13px">Anda akan ditanda sebagai KETUA gelanggang ini.</p>
     </div>
-    <div class="pdpa"><b>Notis PDPA:</b> Maklumat peribadi anda (nama, telefon) dikumpul hanya untuk urusan pentadbiran persatuan silat, disimpan secara selamat dan tidak didedahkan kepada pihak luar, selaras Akta Perlindungan Data Peribadi 2010.</div>
-    <label class="cek"><input type="checkbox" id="dPdpa"> Saya faham dan bersetuju dengan notis PDPA di atas.</label>
+    <div class="pdpa"><b>Terma Penggunaan & Akujanji Kerahsiaan</b> (ringkasan)<div style="margin-top:6px">${htmlTermaRingkas()}</div>
+      <a href="#" onclick="lihatTerma();return false" style="display:inline-block;margin-top:8px;font-weight:600">Baca terma penuh ›</a> · <a href="privasi.html" target="_blank" rel="noopener">Notis Privasi</a></div>
+    <label class="cek"><input type="checkbox" id="dPdpa"> <span>${esc(KOTAK_TERMA)}</span></label>
     <div style="margin-top:16px" class="baris"><button onclick="paparLogin()">Kembali</button><button class="utama" onclick="hantarDaftar()">Hantar</button></div>`;
 }
 function isiGelDaftar() {
@@ -270,7 +274,8 @@ async function hantarDaftar() {
   if (!$('#dNeg').value) return toast('Sila pilih negeri.');
   if (!gel) return toast('Sila pilih gelanggang, atau pilih "+ Mohon gelanggang baharu" jika gelanggang anda belum ada dalam senarai.', 6000);
   if (gel === '__BARU' && !$('#dGNama').value.trim()) return toast('Sila isi Nama Gelanggang Baharu.');
-  const d = { id: $('#dId').value, katalaluan: $('#dPw').value, nama: $('#dNama').value, telefon: $('#dTel').value, negeri: $('#dNeg').value, pdpa: $('#dPdpa').checked };
+  const d = { id: $('#dId').value, katalaluan: $('#dPw').value, nama: $('#dNama').value, telefon: $('#dTel').value, negeri: $('#dNeg').value, terma: $('#dPdpa').checked, terma_versi: VERSI_TERMA };
+  if (!d.terma) return toast('Sila bersetuju dengan Terma Penggunaan & Akujanji Kerahsiaan.');
   if (gel === '__BARU') d.gelanggang_baru = { nama: $('#dGNama').value, alamat: $('#dGAlamat').value };
   else d.kod_gelanggang = gel;
   const k = $('#kotakDaftar'); k.classList.add('muat');
@@ -296,7 +301,7 @@ const MENU_JUR = [
   ['gelang', '🏟️', 'Gelanggang', 'Jadual, cawangan & logo'],
   ['akaun', '⚙️', 'Akaun', 'Kata laluan']
 ];
-const FN = () => ({ papan: tabPapan, lulus: tabLulus, gel: tabGel, jur: tabJur, ahli: tabAhli, daftar: tabDaftar, akaun: tabAkaun, hadir: tabHadir, gelang: tabGelang, mohon: tabMohon, poster: tabPoster, yb: tabYB, kew: tabKew, fiz: tabFiz, menu: tabMenu });
+const FN = () => ({ pdpa: tabPdpa, papan: tabPapan, lulus: tabLulus, gel: tabGel, jur: tabJur, ahli: tabAhli, daftar: tabDaftar, akaun: tabAkaun, hadir: tabHadir, gelang: tabGelang, mohon: tabMohon, poster: tabPoster, yb: tabYB, kew: tabKew, fiz: tabFiz, menu: tabMenu });
 function pergi(t) { S.tab = t; window.scrollTo(0, 0); mula(); }
 
 async function mula() {
@@ -307,6 +312,7 @@ async function mula() {
     if (!r.ok) { if (r.logout) return; $('#app').innerHTML = `<div class="wrap" style="text-align:center;padding-top:60px"><img src="logo.png" style="width:90px;border-radius:50%;background:#fff"><p>${esc(r.msg || 'Tidak dapat sambung ke pelayan.')}</p><button class="utama" onclick="mula()">Cuba lagi</button></div>`; return; }
     S.u = r.pengguna; S.negeri = r.negeri;
   }
+  if (!S.u.terma_ok) return paparTerma();
   if (S.u.wajib_tukar) return paparTukarWajib();
   if (!S.negeri.length) { const r = await api('negeri'); S.negeri = r.negeri || []; }
   if (S.mod == null) { try { S.mod = localStorage.getItem('sp_mod') || 'admin'; } catch (e) { S.mod = 'admin'; } }
@@ -324,7 +330,7 @@ async function mula() {
     $('#app').innerHTML = head + (m ? `<div class="tajuk"><button class="ikon" onclick="pergi('menu')">←</button><h2>${m[2]}</h2><button class="ikon" onclick="mula()">⟳</button></div>` : '') + `<div class="wrap" id="isi"></div>`;
   } else {
     const tabs = u.peranan === 'ADMIN_NEGERI' ? [['papan','Ringkasan'],['lulus','Kelulusan'],['gel','Gelanggang'],['jur','Jurulatih'],['ahli','Ahli'],['akaun','Akaun']]
-      : [['papan','Ringkasan'],['lulus','Kelulusan'],['gel','Gelanggang'],['jur','Pengguna'],['ahli','Ahli'],['akaun','Akaun']];
+      : [['papan','Ringkasan'],['lulus','Kelulusan'],['gel','Gelanggang'],['jur','Pengguna'],['ahli','Ahli'],['pdpa','🛡️ PDPA'],['akaun','Akaun']];
     if (!tabs.some(t => t[0] === S.tab)) S.tab = tabs[0][0];
     $('#app').innerHTML = head + `<div class="tabs">${tabs.map(t => `<button class="${S.tab === t[0] ? 'aktif' : ''}" onclick="pergi('${t[0]}')">${t[1]}</button>`).join('')}</div><div class="wrap" id="isi"></div>`;
   }
@@ -709,7 +715,11 @@ async function rekodYuran(no, paksa) {
 /* ================= DAFTAR AHLI ================= */
 async function tabDaftar() {
   if (modJur() && !S.cawList) { const c = await api('caw_get'); S.cawList = c.ok ? c.cawangan : []; }
-  $('#isi').innerHTML = `<div class="kad" id="kotakAhli"><h3>Daftar Ahli Baharu</h3>
+  const pautan = S.u.kod_gelanggang ? linkBorang(cawTertentu() ? S.cawPilih : '') : '';
+  $('#isi').innerHTML = `${pautan ? `<div class="kad" style="border-color:var(--emas)"><b style="color:var(--emas)">💡 Lebih selamat: kongsi pautan borang supaya ibu bapa setuju sendiri</b>
+      <p class="pudar" style="font-size:13px;margin:6px 0 10px">Melalui borang online, ibu bapa / penjaga membaca Notis Privasi dan memberi persetujuan sendiri — rekod persetujuan lebih kukuh.</p>
+      <button class="penuh" onclick="salinPautanBorang()">📋 Salin pautan borang</button></div>` : ''}
+    <div class="kad" id="kotakAhli"><h3>Daftar Ahli Baharu (manual)</h3>
     <label>No. Kad Pengenalan / MyKid</label><input id="aKP" placeholder="cth. 150512-08-1234" inputmode="numeric">
     <button class="utama penuh" style="margin-top:10px" onclick="semakKP()">Semak No. KP</button>
     <div id="hasilKP"></div></div>`;
@@ -741,8 +751,14 @@ async function semakKP() {
   }
 }
 function pdpaAhli() {
-  return `<div class="pdpa"><b>Notis PDPA:</b> Maklumat ahli digunakan hanya untuk pentadbiran keahlian silat. No. KP dipaparkan separa kepada pihak lain.</div>
-    <label class="cek"><input type="checkbox" id="aPdpa"> Ahli / ibu bapa / penjaga telah bersetuju maklumat ini disimpan.</label>`;
+  return `<div class="pdpa"><b>Pengesahan Persetujuan</b> · <a href="privasi.html" target="_blank" rel="noopener">Notis Privasi v${esc(VERSI_PDPA)}</a></div>
+    <label>Nama pemberi persetujuan (ahli, atau ibu bapa / penjaga jika bawah 18 tahun) *</label><input id="aPdpaOleh" placeholder="cth. RAZAK BIN ALI" style="text-transform:uppercase">
+    <label class="cek"><input type="checkbox" id="aPdpa"> <span>${esc(KOTAK_JURULATIH)}</span></label>`;
+}
+function salinPautanBorang() {
+  const l = linkBorang(cawTertentu() ? S.cawPilih : '');
+  if (navigator.clipboard) navigator.clipboard.writeText(l).then(() => toast('Pautan borang disalin.'), () => prompt('Salin pautan ini:', l));
+  else prompt('Salin pautan ini:', l);
 }
 function tarikhDariKP(kp) {
   const d = String(kp).replace(/\D/g, ''); if (d.length < 6) return '';
@@ -753,8 +769,11 @@ async function hantarAhli(mod) {
   const d = { no_kp: $('#aKP').value };
   if (!mod) Object.assign(d, { nama: $('#aNama').value, jantina: $('#aJan').value, tarikh_lahir: $('#aLahir').value, bengkung: $('#aBeng').value, tel_waris: $('#aWaris').value });
   if ($('#aCaw')) d.cawangan = $('#aCaw').value; else if (S.cawPilih && S.cawPilih !== '__TIADA') d.cawangan = S.cawPilih;
+  const oleh = ($('#aPdpaOleh').value || '').trim();
+  if (oleh.length < 3) return toast('Sila isi nama pemberi persetujuan.');
+  if (!$('#aPdpa').checked) return toast('Sila tandakan pengesahan persetujuan.');
   const k = $('#kotakAhli'); k.classList.add('muat');
-  const r = await api('daftar_ahli', { data: d, mod, kod: S.gelPilih, pdpa: $('#aPdpa').checked });
+  const r = await api('daftar_ahli', { data: d, mod, kod: S.gelPilih, pdpa: $('#aPdpa').checked, pdpa_oleh: oleh });
   k.classList.remove('muat'); toast(r.msg, 5000);
   if (r.ok) tabDaftar();
 }
@@ -1382,6 +1401,51 @@ async function simpanBertugas(id) {
   if (!r.ok) return;
   modal(''); if (id === S.u.id) { const x = await api('saya'); if (x.ok) S.u = x.pengguna; }
   mula();
+}
+
+/* ================= TERMA PENGGUNAAN (wajib selepas log masuk) ================= */
+function paparTerma() {
+  $('#app').innerHTML = `<div style="position:fixed;inset:0;background:var(--bg);z-index:90;overflow:auto"><div class="wrap" style="max-width:640px">
+    <div style="text-align:center;margin:10px 0 14px"><img src="logo.png" alt="" style="width:80px;height:80px;border-radius:50%;background:#fff"></div>
+    <div class="kad">${htmlTerma()}</div>
+    <div class="kad"><label class="cek" style="margin-top:0"><input type="checkbox" id="tSetuju" onchange="$('#tYa').disabled=!this.checked"> <span>${esc(KOTAK_TERMA)}</span></label>
+      <button class="utama penuh" id="tYa" style="margin-top:14px" disabled onclick="setujuTerma()">Saya Setuju</button>
+      <button class="bahaya penuh" style="margin-top:8px" onclick="tolakTerma()">Tidak Setuju</button>
+      <p class="pudar" style="font-size:12px;text-align:center;margin-bottom:0">${S.u ? esc(S.u.nama) + ' · ' + esc(NAMA_PERANAN[S.u.peranan] || '') : ''}</p></div>
+    <div class="kad">${htmlPenafian(true)}${htmlKakiPrivasi()}</div></div></div>`;
+}
+async function setujuTerma() {
+  if (!$('#tSetuju').checked) return toast('Sila tandakan kotak persetujuan.');
+  const b = $('#tYa'); b.disabled = true;
+  const r = await api('setuju_terma', { versi: VERSI_TERMA, setuju: true });
+  if (!r.ok) { b.disabled = false; return toast(r.msg, 5000); }
+  S.u = r.pengguna; toast(r.msg); S.tab = ''; mula();
+}
+function tolakTerma() { toast('Anda perlu bersetuju dengan Terma Penggunaan untuk menggunakan sistem.', 5000); keluar(); }
+function lihatTerma() { modal(`<div>${htmlTerma()}</div><button class="penuh" style="margin-top:14px" onclick="modal('')">Tutup</button>`); }
+
+/* ================= 🛡️ PDPA (Super Admin) ================= */
+async function tabPdpa() {
+  const r = await api('pdpa_ringkasan'); if (!r.ok) return $('#isi').innerHTML = `<p>${esc(r.msg)}</p>`;
+  const d = S.pdpa = r.data, jum = d.ada + d.tiada, pc = jum ? Math.round(d.ada / jum * 100) : 0;
+  const sl = { BORANG_ONLINE: 'Borang Online', JURULATIH: 'Jurulatih (manual)', PORTAL: 'Portal Ibu Bapa', LAIN: 'Lain-lain' };
+  const ikutGel = {}; d.tanpa.forEach(a => (ikutGel[a.gelanggang] = ikutGel[a.gelanggang] || []).push(a));
+  $('#isi').innerHTML = `<div class="kad"><h3>Versi Semasa</h3><div class="baris"><div class="stat"><b>v${esc(d.versi_pdpa)}</b><small>Notis Privasi</small></div><div class="stat"><b>v${esc(d.versi_terma)}</b><small>Terma Penggunaan</small></div></div>
+      <p class="pudar" style="font-size:12px;margin-bottom:0">Versi mesti sama dalam <b>teks-pdpa.js</b> dan <b>Code.gs</b>. <a href="privasi.html" target="_blank" rel="noopener">Lihat Notis Privasi ›</a></p></div>
+    <div class="ring"><div class="pudar" style="font-size:14px">Ahli aktif dengan rekod persetujuan</div><div class="besar">${d.ada} <span class="pudar" style="font-size:16px">/ ${jum}</span></div>
+      <div class="sub"><span>${pc}% ada persetujuan</span><span style="color:var(--merah);font-weight:700">${d.tiada} tiada (data lama)</span></div><div class="bar"><i style="width:${pc}%"></i></div></div>
+    <div class="grid" style="margin-bottom:12px">${Object.keys(sl).map(k => `<div class="stat"><b>${d.saluran[k] || 0}</b><small>${sl[k]}</small></div>`).join('')}
+      <div class="stat"><b>${d.portal}</b><small>Setuju di Portal Ibu Bapa</small></div><div class="stat"><b>${d.penggunaSudah}</b><small>Pengguna setuju terma</small></div></div>
+    <div class="kad"><h3>Jurulatih & Admin Belum Setuju Terma (${d.penggunaBelum.length})</h3>
+      ${d.penggunaBelum.map(x => `<div class="baris" style="padding:6px 0;border-bottom:1px solid var(--garis)"><span style="font-size:14px">${esc(x.nama)} <small class="pudar">${esc(x.id)} · ${esc(NAMA_PERANAN[x.peranan] || x.peranan)}${x.gelanggang ? ' · ' + esc(x.gelanggang) : ''}${x.negeri ? ' · ' + esc(x.negeri) : ''}</small></span>${x.versi ? tag('v' + x.versi + ' lama', 'KUNING') : tag('Belum', 'MERAH')}</div>`).join('') || '<p class="pudar" style="margin:0">Semua pengguna aktif sudah bersetuju. ✅</p>'}
+      <p class="pudar" style="font-size:12px;margin-bottom:0">Mereka akan diminta bersetuju secara automatik semasa log masuk seterusnya.</p></div>
+    <div class="kad"><div class="baris" style="margin-bottom:8px"><h3 style="margin:0">Ahli Tanpa Rekod Persetujuan (${d.tanpa.length})</h3><button class="kecil" style="flex:none" onclick="eksportPdpa()">Eksport CSV</button></div>
+      <p class="pudar" style="font-size:12px;margin-top:0">Biasanya data lama / import. Minta jurulatih kongsi pautan borang atau minta ibu bapa log masuk Portal Ibu Bapa untuk bersetuju.</p>
+      ${Object.keys(ikutGel).map(g => `<details style="border-top:1px solid var(--garis);padding:8px 0"><summary style="cursor:pointer"><b>${esc(g)}</b> <span class="pudar">(${ikutGel[g].length})</span></summary>
+        ${ikutGel[g].map(a => `<div style="font-size:13px;padding:4px 0 4px 10px">${esc(a.nama)} <span class="pudar">${esc(a.no_ahli)}</span></div>`).join('')}</details>`).join('') || '<p class="pudar" style="margin:0">Tiada. ✅</p>'}</div>`;
+}
+function eksportPdpa() {
+  csv('ahli_tanpa_persetujuan_pdpa', [['No Ahli', 'Nama', 'Kod Gelanggang', 'Gelanggang', 'Negeri', 'Tarikh Daftar']].concat(S.pdpa.tanpa.map(a => [a.no_ahli, a.nama, a.kod, a.gelanggang, a.negeri, a.tarikh_daftar])));
 }
 
 /* ================= AKAUN ================= */
