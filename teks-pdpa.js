@@ -10,9 +10,9 @@ const PERSATUAN = 'Persatuan Pencak Silat Sri Gayong Panglima Ulung Malaysia (20
 const NO_ROS = 'PPM-005-08-27052020';
 const PEGAWAI_DATA = 'Muhammad Norhisyam bin Shamsudin';
 const EMEL_DATA = 'panglimaulung@gmail.com';
-const TEL_DATA = '[NO. TELEFON]';
+const TEL_DATA = '';   // kosong = tidak dipaparkan
 const TEMPOH_SIMPAN = '3';
-const TARIKH_KUATKUASA = '[TARIKH]';
+const TARIKH_KUATKUASA = '29 September 2026';
 const VERSI_PDPA = '1.0';
 const VERSI_TERMA = '1.0';
 /* ===================================================================== */
@@ -26,7 +26,7 @@ const TEKS_A = [
   ['3. TUJUAN', 'Pendaftaran dan pengurusan keahlian, kehadiran latihan, kutipan yuran, penyertaan kejohanan, keselamatan semasa latihan, dan perhubungan dengan ibu bapa/penjaga. Data tidak akan digunakan untuk tujuan lain.'],
   ['4. PENDEDAHAN', 'Data hanya boleh dilihat oleh jurulatih gelanggang berkenaan dan pegawai Persatuan yang diberi kuasa mengikut peranan. Data tidak dijual atau didedahkan kepada pihak luar kecuali dikehendaki oleh undang-undang.'],
   ['5. PENYIMPANAN & KESELAMATAN', `Data disimpan dalam perkhidmatan Google milik Persatuan dengan kawalan akses, kata laluan tersulit dan log audit. Data ahli tidak aktif akan dipadam atau diarkib selepas ${TEMPOH_SIMPAN} tahun.`],
-  ['6. HAK ANDA', `Anda berhak meminta akses, membetulkan, atau menarik balik persetujuan dengan menghubungi: ${PEGAWAI_DATA}, ${EMEL_DATA}, ${TEL_DATA}. Menarik balik persetujuan boleh menyebabkan keahlian tidak dapat diteruskan.`],
+  ['6. HAK ANDA', `Anda berhak meminta akses, membetulkan, atau menarik balik persetujuan dengan menghubungi: ${[PEGAWAI_DATA, EMEL_DATA, TEL_DATA].filter(Boolean).join(', ')}. Menarik balik persetujuan boleh menyebabkan keahlian tidak dapat diteruskan.`],
   ['7. KETEPATAN MAKLUMAT', 'Anda bertanggungjawab memastikan maklumat yang diberikan adalah benar dan terkini.']
 ];
 function htmlPdpaPenuh() {
