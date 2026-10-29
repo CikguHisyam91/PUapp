@@ -79,3 +79,29 @@ Log masuk Super Admin / Admin Negeri → tab **Ringkasan**: jumlah ahli aktif (L
 - Semua semakan peranan dibuat di pelayan (Apps Script).
 - Admin Negeri hanya nampak No. KP separa (`150512-08-****`); hanya jurulatih gelanggang itu & Super Admin nampak penuh.
 - Jangan kongsi Google Sheet pangkalan data dengan sesiapa.
+
+---
+## PDPA, Persetujuan & Penafian (Naik Taraf)
+
+### 1. Isi maklumat rasmi (WAJIB sebelum digunakan)
+Buka fail **`teks-pdpa.js`** di GitHub → ikon pensel → ganti teks dalam `[kurungan]`:
+
+| Pemalar | Isi dengan |
+|---|---|
+| `PERSATUAN` | Nama rasmi persatuan |
+| `NO_ROS` | No. pendaftaran ROS |
+| `PEGAWAI_DATA` | Nama pegawai yang mengurus data |
+| `EMEL_DATA` | E-mel untuk pertanyaan data |
+| `TEL_DATA` | No. telefon untuk pertanyaan data |
+| `TARIKH_KUATKUASA` | Tarikh notis berkuat kuasa (cth. 1 November 2026) |
+| `TEMPOH_SIMPAN` | Tempoh simpan data ahli tidak aktif (lalai: 3 tahun) |
+
+### 2. Versi
+`VERSI_PDPA` dan `VERSI_TERMA` mesti **sama** dalam `teks-pdpa.js` **dan** `Code.gs`.
+Jika teks diubah, naikkan versi (cth. 1.0 → 1.1) di **kedua-dua** fail — semua pengguna akan diminta bersetuju semula.
+
+### 3. Apa berlaku selepas kemas kini
+- Semua jurulatih, Admin Negeri & Super Admin **wajib bersetuju Terma Penggunaan** sekali semasa log masuk seterusnya.
+- Ibu bapa diminta bersetuju Notis Privasi sekali di Portal Ibu Bapa.
+- Ahli lama tanpa rekod persetujuan disenaraikan dalam tab **🛡️ PDPA** (Super Admin).
+- Notis penuh: `privasi.html`.
