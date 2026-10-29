@@ -6,10 +6,10 @@
  * PENTING: VERSI_PDPA & VERSI_TERMA mesti SAMA dengan nilai dalam Code.gs.
  * Naikkan versi apabila teks berubah — semua pengguna akan diminta bersetuju semula.
  * ===================================================================== */
-const PERSATUAN = '[NAMA RASMI PERSATUAN]';
-const NO_ROS = '[NO. ROS]';
-const PEGAWAI_DATA = '[NAMA PEGAWAI]';
-const EMEL_DATA = '[EMEL]';
+const PERSATUAN = 'Persatuan Pencak Silat Sri Gayong Panglima Ulung Malaysia (2020)';
+const NO_ROS = 'PPM-005-08-27052020';
+const PEGAWAI_DATA = 'Muhammad Norhisyam bin Shamsudin';
+const EMEL_DATA = 'panglimaulung@gmail.com';
 const TEL_DATA = '[NO. TELEFON]';
 const TEMPOH_SIMPAN = '3';
 const TARIKH_KUATKUASA = '[TARIKH]';
