@@ -93,12 +93,13 @@ function paparLogin(tambah) {
     <div class="kad" id="kotak">
       <p class="pudar" style="margin-top:0;font-size:14px">Semak kehadiran, yuran dan prestasi anak anda.</p>
       <label>No. Kad Pengenalan / MyKid anak</label><input id="kp" inputmode="numeric" placeholder="cth. 150512081234">
-      <label>No. telefon waris (seperti didaftarkan di gelanggang)</label><input id="tel" inputmode="tel" placeholder="cth. 0123456789">
+      <label>No. telefon waris (seperti didaftarkan di gelanggang)</label><input id="tel" inputmode="tel" placeholder="cth. 0123456789" value="${tambah && S.anak.length ? esc(S.anak[S.anak.length - 1].tel) : ''}">
+      ${tambah ? '<p class="pudar" style="font-size:12px;margin:6px 0 0">No. telefon diisi daripada anak sebelumnya. Jika anak ini didaftarkan dengan no. telefon ibu / bapa yang lain, tukar nombor di atas.</p>' : ''}
       <label class="cek"><input type="checkbox" id="ingat" checked> Ingat di telefon ini</label>
       <button class="utama penuh" style="margin-top:16px" onclick="masuk()">${tambah ? 'Tambah Anak' : 'Semak'}</button>
       ${tambah ? `<button class="penuh" style="margin-top:8px" onclick="papar()">Batal</button>` : ''}
     </div>
-    <p class="pudar" style="font-size:12px;text-align:center">No. telefon tidak sepadan? Minta jurulatih kemas kini "Tel. Waris" dalam rekod anak anda.</p>
+    <p class="pudar" style="font-size:12px;text-align:center">No. telefon tidak sepadan? Setiap anak disemak dengan no. telefon waris yang didaftarkan untuk anak itu. Cuba no. telefon ibu / bapa yang lain, atau minta jurulatih kemas kini "Tel. Waris" anak tersebut.</p>
   </div></div>`;
 }
 async function masuk() {
@@ -109,9 +110,10 @@ async function masuk() {
   $('#kotak').classList.remove('muat');
   if (!r.ok) return toast(r.msg);
   const kunci = kp.replace(/\D/g, '');
+  // Simpan semula senarai anak; data paparan dikosongkan supaya indeks tidak tertukar antara anak
   S.anak = S.anak.filter(a => a.kp.replace(/\D/g, '') !== kunci);
   S.anak.push({ kp, tel, nama: r.anak.nama });
-  S.pilih = S.anak.length - 1; S.data[S.pilih] = r;
+  S.data = {}; S.pilih = S.anak.length - 1; S.data[S.pilih] = r;
   if ($('#ingat').checked) simpan.tulis(S.anak);
   papar();
 }
