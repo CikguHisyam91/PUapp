@@ -223,7 +223,7 @@ function kecilkanGambar(fail, maxPx, maxPanjang) {
     document.addEventListener('keydown', e => {
       const el = e.target;
       if ((e.key === 'Enter' || e.key === ' ') && el.getAttribute && el.getAttribute('role') === 'button' && !/^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) { e.preventDefault(); el.click(); }
-      if (e.key === 'Escape') { const m = document.getElementById('modal'); if (m && m.style.display === 'flex' && !(window.S && S.wajibModal) && typeof modal === 'function') modal(''); }
+      if (e.key === 'Escape') { const m = document.getElementById('modal'); if (m && m.style.display === 'flex' && !m.querySelector('#ppSetuju,#tSetuju,[data-wajib]') && typeof modal === 'function') modal(''); }
     });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mulaA11y); else mulaA11y();
