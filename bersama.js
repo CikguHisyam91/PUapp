@@ -73,7 +73,7 @@ function pasangApp(namaApp, kunci) {
     d.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:flex-end;justify-content:center';
     d.innerHTML = `<div style="background:#181B22;color:#E8E9EC;border:1px solid #2C313C;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));width:100%;max-width:520px;font:15px/1.5 system-ui,sans-serif">
       <div style="display:flex;gap:14px;align-items:center;margin-bottom:12px"><img src="icon-192.png" style="width:60px;height:60px;border-radius:14px;background:#fff">
-      <div><b style="font-size:17px">Pasang ${namaApp}</b><div style="color:#9097A3;font-size:13px">Buka terus dari skrin utama telefon, macam app.</div></div></div>
+      <div><b style="font-size:17px">Pasang ${namaApp}</b><div style="color:var(--pudar,#9097A3);font-size:13px">Buka terus dari skrin utama telefon, macam app.</div></div></div>
       ${isi}<div style="display:flex;gap:10px;margin-top:16px">
       <button id="pwaTidak" style="flex:1;min-height:46px;border-radius:12px;border:1px solid #2C313C;background:#20242D;color:#E8E9EC;font:inherit">Nanti</button>
       ${butang ? `<button id="pwaYa" style="flex:1;min-height:46px;border-radius:12px;border:0;background:#E2B55A;color:#1a1405;font:inherit;font-weight:700">📲 Pasang</button>` : ''}</div></div>`;
@@ -84,7 +84,7 @@ function pasangApp(namaApp, kunci) {
   };
   if (ios) {
     setTimeout(() => papar(`<ol style="margin:0;padding-left:20px;color:#E8E9EC">
-      <li>Tekan butang <b>Kongsi</b> <span style="display:inline-block;border:1px solid #9097A3;border-radius:4px;padding:0 5px">⬆︎</span> di bawah skrin Safari</li>
+      <li>Tekan butang <b>Kongsi</b> <span style="display:inline-block;border:1px solid var(--pudar,#9097A3);border-radius:4px;padding:0 5px">⬆︎</span> di bawah skrin Safari</li>
       <li>Pilih <b>Add to Home Screen</b> / <b>Tambah ke Skrin Utama</b></li><li>Tekan <b>Add</b></li></ol>`, false), 2500);
     return;
   }
@@ -127,18 +127,18 @@ function slotSeterusnya(list) {
   return null;
 }
 function htmlJadual(list, edit) {
-  if (!list.length) return '<p style="color:#9097A3;margin:0">Belum ada jadual latihan.</p>';
+  if (!list.length) return '<p style="color:var(--pudar,#9097A3);margin:0">Belum ada jadual latihan.</p>';
   const hi = hariIni(), nx = slotSeterusnya(list);
   const tajukNx = nx ? (nx.sedang ? '🟢 Sedang berlangsung' : nx.hariLagi === 0 ? 'Latihan hari ini' : nx.hariLagi === 1 ? 'Latihan esok' : `Latihan seterusnya · ${nx.slot.hari}`) : '';
   return (nx ? `<div style="background:#2a2513;border:1px solid #E2B55A;border-radius:12px;padding:12px;margin-bottom:12px">
       <div style="font-size:12px;color:#E2B55A;font-weight:700">${tajukNx}</div>
       <div style="font-size:20px;font-weight:800">${jam12(nx.slot.mula)} – ${jam12(nx.slot.tamat)}</div>
-      <div style="font-size:13px;color:#9097A3">${esc(nx.slot.hari)}${nx.slot.nama_cawangan ? ' · 📍 ' + esc(nx.slot.nama_cawangan) : ''}${nx.slot.lokasi ? ' · ' + esc(nx.slot.lokasi) : ''}</div></div>` : '') +
+      <div style="font-size:13px;color:var(--pudar,#9097A3)">${esc(nx.slot.hari)}${nx.slot.nama_cawangan ? ' · 📍 ' + esc(nx.slot.nama_cawangan) : ''}${nx.slot.lokasi ? ' · ' + esc(nx.slot.lokasi) : ''}</div></div>` : '') +
     HARI_JADUAL.filter(h => list.some(j => j.hari === h)).map(h => `<div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #2C313C">
       <b style="width:74px;flex:none;font-size:13px;${h === hi ? 'color:#E2B55A' : ''}">${h}${h === hi ? ' •' : ''}</b>
       <div style="flex:1;min-width:0">${list.filter(j => j.hari === h).map(j => `<div style="display:flex;gap:8px;align-items:center;margin-bottom:4px${edit ? ';cursor:pointer' : ''}" ${edit ? `onclick="borangJadual('${esc(j.id)}')"` : ''}>
         <span style="font-weight:700;font-size:14px;white-space:nowrap">${jam12(j.mula)} – ${jam12(j.tamat)}</span>
-        <span style="font-size:12px;color:#9097A3;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${[j.nama_cawangan ? '📍 ' + esc(j.nama_cawangan) : '', esc(j.lokasi || ''), esc(j.catatan || '')].filter(Boolean).join(' · ')}</span>${edit ? '<span style="margin-left:auto;color:#9097A3">✎</span>' : ''}</div>`).join('')}</div></div>`).join('');
+        <span style="font-size:12px;color:var(--pudar,#9097A3);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${[j.nama_cawangan ? '📍 ' + esc(j.nama_cawangan) : '', esc(j.lokasi || ''), esc(j.catatan || '')].filter(Boolean).join(' · ')}</span>${edit ? '<span style="margin-left:auto;color:var(--pudar,#9097A3)">✎</span>' : ''}</div>`).join('')}</div></div>`).join('');
 }
 
 /* ====== Kecilkan gambar di telefon sebelum dihantar (QR / resit) ====== */
@@ -165,3 +165,67 @@ function kecilkanGambar(fail, maxPx, maxPanjang) {
     img.src = url;
   });
 }
+
+/* ====== Kebolehcapaian (WCAG 2.2 AA) — dijalankan automatik pada setiap paparan ======
+ * Borang dibina secara dinamik, jadi modul ini menyambung label dengan medan, memberi peranan
+ * & akses papan kekunci kepada kad yang boleh ditekan, nama kepada butang ikon, dan alt kepada imej. */
+(function () {
+  const NAMA_IKON = { '←': 'Kembali', '⟳': 'Muat semula', '✕': 'Padam', '✎': 'Ubah', '×': 'Tutup', '⎋': 'Keluar' };
+  let bil = 0;
+  const idBaru = () => 'a11y-' + (++bil);
+  function baiki(akar) {
+    if (!akar || !akar.querySelectorAll) return;
+    // 1. Label ↔ medan (WCAG 1.3.1 / 4.1.2)
+    akar.querySelectorAll('label:not([for])').forEach(l => {
+      if (l.querySelector('input,select,textarea')) return;
+      let m = l.nextElementSibling;
+      while (m && !/^(INPUT|SELECT|TEXTAREA)$/.test(m.tagName) && !m.querySelector?.('input,select,textarea') && m.tagName !== 'LABEL') m = m.nextElementSibling;
+      if (m && m.tagName !== 'LABEL' && !/^(INPUT|SELECT|TEXTAREA)$/.test(m.tagName)) m = m.querySelector('input,select,textarea');
+      if (!m || m.tagName === 'LABEL') return;
+      if (!m.id) m.id = idBaru();
+      l.htmlFor = m.id;
+    });
+    akar.querySelectorAll('input:not([type=hidden]):not([aria-label]),select:not([aria-label]),textarea:not([aria-label])').forEach(m => {
+      if (m.id && document.querySelector('label[for="' + m.id + '"]')) return;
+      if (m.closest('label')) return;
+      let t = m.getAttribute('placeholder') || m.getAttribute('title');
+      if (!t && m.tagName === 'SELECT') {
+        const oc = m.getAttribute('onchange') || '';
+        t = /Bulan/i.test(oc) ? 'Pilih bulan' : /Tahun/i.test(oc) ? 'Pilih tahun' : /caw/i.test(oc) ? 'Pilih cawangan' : /gel/i.test(oc) ? 'Pilih gelanggang' : /tahun/i.test(oc) ? 'Pilih tahun' : 'Pilihan';
+      }
+      if (t) m.setAttribute('aria-label', t);
+    });
+    // 2. Kad / elemen boleh ditekan (WCAG 2.1.1 / 4.1.2)
+    akar.querySelectorAll('[onclick]:not(button):not(a):not(input):not(select):not(label):not([role])').forEach(e => {
+      if (e.id === 'modal') return;
+      if (e.tagName === 'TR') { if (!e.hasAttribute('tabindex')) e.tabIndex = 0; return; }  // kekalkan peranan baris jadual
+      e.setAttribute('role', 'button'); if (!e.hasAttribute('tabindex')) e.tabIndex = 0;
+      // Butang hiasan di dalam kad (cth. "+ Rekod") — kad itu sendiri yang ditekan; elak butang bersarang
+      e.querySelectorAll('button,a[href],input,select,[tabindex]').forEach(d => { if (d !== e) { d.tabIndex = -1; d.setAttribute('aria-hidden', 'true'); } });
+    });
+    // 3. Butang ikon tanpa nama (WCAG 4.1.2)
+    akar.querySelectorAll('button:not([aria-label])').forEach(b => {
+      const t = b.textContent.trim(); if (NAMA_IKON[t]) b.setAttribute('aria-label', NAMA_IKON[t]);
+    });
+    // 4. Imej tanpa alt: logo/hiasan diberi alt kosong (WCAG 1.1.1)
+    akar.querySelectorAll('img:not([alt])').forEach(i => i.setAttribute('alt', ''));
+  }
+  function mulaA11y() {
+    const t = document.getElementById('toast'); if (t) { t.setAttribute('role', 'status'); t.setAttribute('aria-live', 'polite'); }
+    const mi = document.getElementById('modalIsi');
+    if (mi) { mi.setAttribute('role', 'dialog'); mi.setAttribute('aria-modal', 'true'); mi.tabIndex = -1; }
+    baiki(document.body);
+    new MutationObserver(ms => {
+      ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1) baiki(n.parentElement || n); }));
+      if (mi && mi.childElementCount && mi.dataset.dibuka !== '1' && mi.offsetParent !== null) { mi.dataset.dibuka = '1'; mi.focus({ preventScroll: true }); }
+      if (mi && !mi.childElementCount) mi.dataset.dibuka = '';
+    }).observe(document.body, { childList: true, subtree: true });
+    // Enter / Space menekan kad berperanan butang; Escape menutup lembaran (kecuali persetujuan wajib)
+    document.addEventListener('keydown', e => {
+      const el = e.target;
+      if ((e.key === 'Enter' || e.key === ' ') && el.getAttribute && (el.getAttribute('role') === 'button' || (el.tagName === 'TR' && el.hasAttribute('onclick'))) && !/^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) { e.preventDefault(); el.click(); }
+      if (e.key === 'Escape') { const m = document.getElementById('modal'); if (m && m.style.display === 'flex' && !m.querySelector('#ppSetuju,#tSetuju,[data-wajib]') && typeof modal === 'function') modal(''); }
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mulaA11y); else mulaA11y();
+})();
