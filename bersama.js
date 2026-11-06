@@ -198,6 +198,7 @@ function kecilkanGambar(fail, maxPx, maxPanjang) {
     // 2. Kad / elemen boleh ditekan (WCAG 2.1.1 / 4.1.2)
     akar.querySelectorAll('[onclick]:not(button):not(a):not(input):not(select):not(label):not([role])').forEach(e => {
       if (e.id === 'modal') return;
+      if (e.tagName === 'TR') { if (!e.hasAttribute('tabindex')) e.tabIndex = 0; return; }  // kekalkan peranan baris jadual
       e.setAttribute('role', 'button'); if (!e.hasAttribute('tabindex')) e.tabIndex = 0;
       // Butang hiasan di dalam kad (cth. "+ Rekod") — kad itu sendiri yang ditekan; elak butang bersarang
       e.querySelectorAll('button,a[href],input,select,[tabindex]').forEach(d => { if (d !== e) { d.tabIndex = -1; d.setAttribute('aria-hidden', 'true'); } });
@@ -222,7 +223,7 @@ function kecilkanGambar(fail, maxPx, maxPanjang) {
     // Enter / Space menekan kad berperanan butang; Escape menutup lembaran (kecuali persetujuan wajib)
     document.addEventListener('keydown', e => {
       const el = e.target;
-      if ((e.key === 'Enter' || e.key === ' ') && el.getAttribute && el.getAttribute('role') === 'button' && !/^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) { e.preventDefault(); el.click(); }
+      if ((e.key === 'Enter' || e.key === ' ') && el.getAttribute && (el.getAttribute('role') === 'button' || (el.tagName === 'TR' && el.hasAttribute('onclick'))) && !/^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) { e.preventDefault(); el.click(); }
       if (e.key === 'Escape') { const m = document.getElementById('modal'); if (m && m.style.display === 'flex' && !m.querySelector('#ppSetuju,#tSetuju,[data-wajib]') && typeof modal === 'function') modal(''); }
     });
   }

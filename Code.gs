@@ -509,11 +509,15 @@ API.lantik_admin = function (u, p) {
   return { ok: true, msg: 'Admin Negeri ' + id + ' dicipta. Beri ID & kata laluan kepadanya.' + gantiAdmin_(u, p.ganti, id) };
 };
 /* Gantikan admin lama: akaun lama digantung & semua sesinya dibatalkan */
+/* Lepaskan seseorang daripada jawatan ketua gelanggang (jika dia ketua) */
+function lepasKetua_(x) {
+  baca_('GELANGGANG').forEach(function (g) { if (g.KETUA_ID === x.ID) kemaskini_('GELANGGANG', g._r, { KETUA_ID: '' }); });
+}
 function gantiAdmin_(u, idLama, idBaru) {
   if (!idLama || idLama === idBaru) return '';
   var x = cariSatu_('PENGGUNA', 'ID', idLama);
   if (!x || x.PERANAN !== 'ADMIN_NEGERI') return '';
-  kemaskini_('PENGGUNA', x._r, { STATUS: 'DIGANTUNG' });
+  kemaskini_('PENGGUNA', x._r, { STATUS: 'DIGANTUNG', KOD_GELANGGANG: '', KETUA: 'TIDAK' }); lepasKetua_(x);
   var sh = sh_('SESI'), rs = baca_('SESI'), c = CacheService.getScriptCache();
   for (var k = rs.length - 1; k >= 0; k--) if (rs[k].ID === x.ID) { c.remove('t_' + rs[k].TOKEN); sh.deleteRow(rs[k]._r); }
   delete _tbl.SESI;
@@ -527,7 +531,12 @@ API.ubah_admin = function (u, p) {
   if (!x || x.PERANAN !== 'ADMIN_NEGERI') return { ok: false, msg: 'Admin Negeri tidak dijumpai.' };
   if (!NEGERI.some(function (n) { return n[0] === p.negeri; })) return { ok: false, msg: 'Pilih negeri.' };
   var nama = String(p.nama || '').trim(); if (!nama) return { ok: false, msg: 'Nama wajib.' };
-  kemaskini_('PENGGUNA', x._r, { NAMA: nama.slice(0, 100), TELEFON: String(p.telefon || '').trim().slice(0, 20), NEGERI: p.negeri });
+  var upd = { NAMA: nama.slice(0, 100), TELEFON: String(p.telefon || '').trim().slice(0, 20), NEGERI: p.negeri };
+  if (x.NEGERI !== p.negeri && x.KOD_GELANGGANG) {
+    var gb = cariSatu_('GELANGGANG', 'KOD', x.KOD_GELANGGANG);
+    if (!gb || gb.NEGERI !== p.negeri) { upd.KOD_GELANGGANG = ''; upd.KETUA = 'TIDAK'; lepasKetua_(x); }
+  }
+  kemaskini_('PENGGUNA', x._r, upd);
   log_(u.ID, 'UBAH_ADMIN', x.ID + (x.NEGERI !== p.negeri ? ' ' + x.NEGERI + ' → ' + p.negeri : ''));
   return { ok: true, msg: 'Maklumat ' + nama + ' dikemas kini.' };
 };
@@ -902,6 +911,7 @@ function gelJur_(u) {
   if (!u.KOD_GELANGGANG) throw new Error('Modul ini untuk jurulatih gelanggang sahaja.');
   var g = cariSatu_('GELANGGANG', 'KOD', u.KOD_GELANGGANG);
   if (!g || g.STATUS !== 'AKTIF') throw new Error('Gelanggang tidak aktif.');
+  if (u.PERANAN === 'ADMIN_NEGERI' && g.NEGERI !== u.NEGERI) throw new Error('Gelanggang bertugas di luar negeri anda.');
   return g;
 }
 function ahliGel_(kod) {
@@ -1055,7 +1065,12 @@ function digitTel_(t) { var d = String(t || '').replace(/\D/g, ''); return d.sli
    (cth. "012-345 6789 / 019-888 7777" atau "0123456789, 0198887777" — bapa & ibu). */
 function senaraiTel_(medan) {
   var keping = String(medan || '').split(/[\/,;&|\n]+|\s+(?:dan|atau|or|and)\s+/i), out = [];
-  keping.forEach(function (k) { var d = k.replace(/\D/g, ''); if (d.length >= 8) out.push(d.slice(-9)); });
+  keping.forEach(function (k) {
+    var d = k.replace(/\D/g, '');
+    if (d.length > 13) {  // cth. "0123456789 0198887777" — pecah ikut jarak
+      k.split(/\s{1,}(?=\+?6?0)/).forEach(function (q) { var e = q.replace(/\D/g, ''); if (e.length >= 8) out.push(e.slice(-9)); });
+    } else if (d.length >= 8) out.push(d.slice(-9));
+  });
   return out;
 }
 /* Semak no. telefon yang ditaip ibu bapa dengan SEMUA nombor waris yang direkodkan untuk anak itu */
@@ -1068,7 +1083,7 @@ AWAM_FN.ibubapa = function (p) {
   var kp = bersihKP_(p.no_kp), c = CacheService.getScriptCache(), kunci = 'ib_' + kp.replace(/\D/g, '');
   var gagal = Number(c.get(kunci) || 0);
   if (gagal >= 5) return { ok: false, msg: 'Terlalu banyak cubaan. Cuba lagi selepas 15 minit.' };
-  var a = cariSatu_('AHLI', 'NO_KP', kp), t = digitTel_(p.telefon);
+  var a = cariSatu_('AHLI', 'NO_KP', kp);
   if (!a || !telSepadan_(a, p.telefon)) {
     c.put(kunci, String(gagal + 1), 900);
     return { ok: false, msg: 'No. KP atau no. telefon waris tidak sepadan dengan rekod anak ini. Setiap anak disemak dengan no. telefon waris yang didaftarkan untuknya (mungkin no. ibu atau bapa yang lain). Jika masih gagal, minta jurulatih semak "Tel. Waris" anak ini.' };
@@ -1360,7 +1375,7 @@ API.qr_simpan = function (u, p) {
 AWAM_FN.ibubapa_bayar = function (p) {
   var kp = bersihKP_(p.no_kp), c = CacheService.getScriptCache(), kunci = 'ib_' + kp.replace(/\D/g, '');
   if (Number(c.get(kunci) || 0) >= 5) return { ok: false, msg: 'Terlalu banyak cubaan. Cuba lagi selepas 15 minit.' };
-  var a = cariSatu_('AHLI', 'NO_KP', kp), t = digitTel_(p.telefon);
+  var a = cariSatu_('AHLI', 'NO_KP', kp);
   if (!a || !telSepadan_(a, p.telefon)) { c.put(kunci, String(Number(c.get(kunci) || 0) + 1), 900); return { ok: false, msg: 'Pengesahan gagal.' }; }
   if (c.get('ibn_' + kunci)) return { ok: false, msg: 'Notis baru sahaja dihantar. Tunggu sebentar.' };
   var g = cariSatu_('GELANGGANG', 'KOD', a.GELANGGANG_UTAMA); if (!g) return { ok: false, msg: 'Gelanggang tiada.' };
@@ -1428,9 +1443,14 @@ API.set_bertugas = function (u, p) {
     var g = cariSatu_('GELANGGANG', 'KOD', kod);
     if (!g || g.STATUS !== 'AKTIF') return { ok: false, msg: 'Gelanggang tidak aktif.' };
     if (x.PERANAN === 'ADMIN_NEGERI' && g.NEGERI !== x.NEGERI) return { ok: false, msg: 'Gelanggang mesti dalam negeri admin itu.' };
+    baca_('GELANGGANG').forEach(function (gl) { if (gl.KETUA_ID === x.ID && (gl.KOD !== kod || !p.ketua)) kemaskini_('GELANGGANG', gl._r, { KETUA_ID: '' }); });
+    if (p.ketua) {
+      var lama = g.KETUA_ID && g.KETUA_ID !== x.ID ? cariSatu_('PENGGUNA', 'ID', g.KETUA_ID) : null;
+      if (lama && lama.KOD_GELANGGANG === kod) kemaskini_('PENGGUNA', lama._r, { KETUA: 'TIDAK' });
+      kemaskini_('GELANGGANG', g._r, { KETUA_ID: x.ID });
+    }
     kemaskini_('PENGGUNA', x._r, { KOD_GELANGGANG: kod, KETUA: p.ketua ? 'YA' : 'TIDAK' });
-    if (p.ketua) kemaskini_('GELANGGANG', g._r, { KETUA_ID: x.ID });
-  } else kemaskini_('PENGGUNA', x._r, { KOD_GELANGGANG: '', KETUA: 'TIDAK' });
+  } else { kemaskini_('PENGGUNA', x._r, { KOD_GELANGGANG: '', KETUA: 'TIDAK' }); lepasKetua_(x); }
   log_(u.ID, 'SET_BERTUGAS', x.ID + ' → ' + (kod || '(tiada)') + (p.ketua ? ' KETUA' : ''));
   return { ok: true, msg: kod ? x.NAMA + ' kini bertugas di ' + kod + (p.ketua ? ' sebagai ketua.' : '.') : 'Gelanggang bertugas dibuang.' };
 };
