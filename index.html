@@ -682,7 +682,7 @@ async function bukaAhli(no) {
       <div><label>Jantina</label><select id="mJan" ${dis}><option value="L" ${a.jantina === 'L' ? 'selected' : ''}>Lelaki</option><option value="P" ${a.jantina === 'P' ? 'selected' : ''}>Perempuan</option></select></div></div>
     <label>Tarikh Lahir</label><input type="date" id="mLahir" value="${esc(a.tarikh_lahir)}" ${dis}>
     <label>Bengkung</label>${pilihBengkung('mBeng', a.bengkung, dis)}
-    <label>Tel. Waris</label><input id="mWaris" value="${esc(a.tel_waris)}" inputmode="tel" ${dis}>
+    <label>Tel. Waris <small class="pudar">(boleh 2 nombor, cth. 0123456789 / 0198887777)</small></label><input id="mWaris" value="${esc(a.tel_waris)}" inputmode="tel" ${dis}>
     ${(S.cawList || []).length && modJur() ? `<label>Cawangan</label><select id="mCaw" onchange="tagSatu('${esc(a.no_kp)}',this.value)"><option value="">— Tiada —</option>${S.cawList.map(c => `<option value="${esc(c.id)}" ${c.id === a.cawangan ? 'selected' : ''}>${esc(c.nama)}</option>`).join('')}</select>` : ''}
     <p class="pudar" style="font-size:13px">Gelanggang utama: ${esc(a.gelanggang_utama)} · Daftar: ${esc(tarikhMY(a.tarikh_daftar))}${bolehUbah ? '' : '<br>Maklumat hanya boleh diubah oleh gelanggang utama.'}</p>
     ${bolehUbah ? `<button class="utama penuh" onclick="simpanAhli('${esc(no)}')">Simpan Maklumat</button>` : ''}
@@ -734,7 +734,7 @@ async function semakKP() {
       <div class="baris"><div><label>Jantina</label><select id="aJan"><option value="L">Lelaki</option><option value="P">Perempuan</option></select></div>
       <div><label>Tarikh Lahir</label><input type="date" id="aLahir" value="${tarikhDariKP(r.no_kp)}"></div></div>
       <label>Bengkung Semasa</label>${pilihBengkung('aBeng', BENGKUNG[0])}
-      <label>No. Tel. Waris</label><input id="aWaris" inputmode="tel">
+      <label>No. Tel. Waris <small class="pudar">(boleh 2 nombor: bapa / ibu)</small></label><input id="aWaris" inputmode="tel" placeholder="cth. 0123456789 / 0198887777">
       ${(S.cawList || []).length ? `<label>Cawangan</label><select id="aCaw"><option value="">— Tiada —</option>${S.cawList.map(c => `<option value="${esc(c.id)}" ${c.id === S.cawPilih ? 'selected' : ''}>${esc(c.nama)}</option>`).join('')}</select>` : ''}
       ${pdpaAhli()}<button class="utama penuh" style="margin-top:14px" onclick="hantarAhli('')">Daftar Ahli</button>`;
     const j = Number(String(r.no_kp).slice(-1)); if (!isNaN(j)) $('#aJan').value = j % 2 ? 'L' : 'P';

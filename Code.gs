@@ -1071,14 +1071,27 @@ API.fiz_padam = function (u, p) {
  * Log masuk tanpa akaun: No. KP anak + No. telefon waris (seperti dalam rekod ahli).
  * Dihadkan 5 cubaan gagal / 15 minit bagi setiap No. KP. Hanya data anak itu dipulangkan. */
 function digitTel_(t) { var d = String(t || '').replace(/\D/g, ''); return d.slice(-9); }
+/* Senarai nombor telefon dalam satu medan. Satu medan boleh ada lebih dari satu nombor
+   (cth. "012-345 6789 / 019-888 7777" atau "0123456789, 0198887777" — bapa & ibu). */
+function senaraiTel_(medan) {
+  var keping = String(medan || '').split(/[\/,;&|\n]+|\s+(?:dan|atau|or|and)\s+/i), out = [];
+  keping.forEach(function (k) { var d = k.replace(/\D/g, ''); if (d.length >= 8) out.push(d.slice(-9)); });
+  return out;
+}
+/* Semak no. telefon yang ditaip ibu bapa dengan SEMUA nombor waris yang direkodkan untuk anak itu */
+function telSepadan_(a, telefon) {
+  var t = digitTel_(telefon);
+  if (t.length < 8 || String(telefon || '').replace(/\D/g, '').length > 13) return false;
+  return senaraiTel_(a.TEL_WARIS).indexOf(t) >= 0;
+}
 AWAM_FN.ibubapa = function (p) {
   var kp = bersihKP_(p.no_kp), c = CacheService.getScriptCache(), kunci = 'ib_' + kp.replace(/\D/g, '');
   var gagal = Number(c.get(kunci) || 0);
   if (gagal >= 5) return { ok: false, msg: 'Terlalu banyak cubaan. Cuba lagi selepas 15 minit.' };
   var a = cariSatu_('AHLI', 'NO_KP', kp), t = digitTel_(p.telefon);
-  if (!a || t.length < 8 || digitTel_(a.TEL_WARIS) !== t) {
+  if (!a || !telSepadan_(a, p.telefon)) {
     c.put(kunci, String(gagal + 1), 900);
-    return { ok: false, msg: 'No. KP atau no. telefon waris tidak sepadan dengan rekod gelanggang.' };
+    return { ok: false, msg: 'No. KP atau no. telefon waris tidak sepadan dengan rekod anak ini. Setiap anak disemak dengan no. telefon waris yang didaftarkan untuknya (mungkin no. ibu atau bapa yang lain). Jika masih gagal, minta jurulatih semak "Tel. Waris" anak ini.' };
   }
   c.remove(kunci);
   var g = cariSatu_('GELANGGANG', 'KOD', a.GELANGGANG_UTAMA) || {};
@@ -1374,7 +1387,7 @@ AWAM_FN.ibubapa_bayar = function (p) {
   var kp = bersihKP_(p.no_kp), c = CacheService.getScriptCache(), kunci = 'ib_' + kp.replace(/\D/g, '');
   if (Number(c.get(kunci) || 0) >= 5) return { ok: false, msg: 'Terlalu banyak cubaan. Cuba lagi selepas 15 minit.' };
   var a = cariSatu_('AHLI', 'NO_KP', kp), t = digitTel_(p.telefon);
-  if (!a || t.length < 8 || digitTel_(a.TEL_WARIS) !== t) { c.put(kunci, String(Number(c.get(kunci) || 0) + 1), 900); return { ok: false, msg: 'Pengesahan gagal.' }; }
+  if (!a || !telSepadan_(a, p.telefon)) { c.put(kunci, String(Number(c.get(kunci) || 0) + 1), 900); return { ok: false, msg: 'Pengesahan gagal.' }; }
   if (c.get('ibn_' + kunci)) return { ok: false, msg: 'Notis baru sahaja dihantar. Tunggu sebentar.' };
   var g = cariSatu_('GELANGGANG', 'KOD', a.GELANGGANG_UTAMA); if (!g) return { ok: false, msg: 'Gelanggang tiada.' };
   var d = p.data || {}, jenis = d.jenis === 'TAHUNAN' ? 'TAHUNAN' : 'BULANAN', th = String(d.tahun || ''), bln = (d.bulan || []).map(Number).filter(function (m) { return m >= 1 && m <= 12; });
@@ -1473,7 +1486,7 @@ AWAM_FN.ibubapa_setuju_pdpa = function (p) {
   var kp = bersihKP_(p.no_kp), c = CacheService.getScriptCache(), kunci = 'ib_' + kp.replace(/\D/g, '');
   if (Number(c.get(kunci) || 0) >= 5) return { ok: false, msg: 'Terlalu banyak cubaan. Cuba lagi selepas 15 minit.' };
   var a = cariSatu_('AHLI', 'NO_KP', kp), t = digitTel_(p.telefon);
-  if (!a || t.length < 8 || digitTel_(a.TEL_WARIS) !== t) { c.put(kunci, String(Number(c.get(kunci) || 0) + 1), 900); return { ok: false, msg: 'Pengesahan gagal.' }; }
+  if (!a || !telSepadan_(a, p.telefon)) { c.put(kunci, String(Number(c.get(kunci) || 0) + 1), 900); return { ok: false, msg: 'Pengesahan gagal.' }; }
   if (String(p.versi || '') !== VERSI_PDPA) return { ok: false, msg: 'Notis Privasi telah dikemas kini. Sila muat semula halaman.' };
   if (!p.setuju) return { ok: false, msg: 'Sila tandakan kotak persetujuan.' };
   var t2 = masa_(), upd = { PORTAL_PDPA_MASA: t2 };
