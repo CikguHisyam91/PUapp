@@ -100,6 +100,7 @@ function paparLogin(tambah) {
       <button class="utama penuh" style="margin-top:16px" onclick="masuk()">${tambah ? 'Tambah Anak' : 'Semak'}</button>
       ${tambah ? `<button class="penuh" style="margin-top:8px" onclick="papar()">Batal</button>` : ''}
     </div>
+    <a href="panduan-ibubapa.html" style="display:block;text-align:center;margin:4px 0 12px;color:#E2B55A;font-weight:700;text-decoration:none">📖 Panduan bergambar (cara log masuk & tambah anak)</a>
     <p class="pudar" style="font-size:12px;text-align:center">No. telefon tidak sepadan? Setiap anak disemak dengan no. telefon waris yang didaftarkan untuk anak itu. Cuba no. telefon ibu / bapa yang lain, atau minta jurulatih kemas kini "Tel. Waris" anak tersebut.</p>
     <div class="kad">${htmlPenafian(true)}${htmlKakiPrivasi()}</div>
   </div></div>`;
@@ -127,9 +128,10 @@ async function papar() {
   if (!S.anak.length) return paparLogin();
   if (S.pilih >= S.anak.length) S.pilih = 0;
   const pilihan = S.anak.length > 1 ? `<div class="cip">${S.anak.map((a, i) => `<button class="${i === S.pilih ? 'on' : ''}" onclick="S.pilih=${i};papar()">${esc(a.nama.split(' ')[0])}</button>`).join('')}</div>` : '';
-  $('#app').innerHTML = `<header><img src="logo.png" alt=""><div class="t"><b>Portal Ibu Bapa</b><small>Sri Gayong Panglima Ulung</small></div><button class="kecil" onclick="keluar()">Keluar</button></header>
+  $('#app').innerHTML = `<header><img src="logo.png" alt=""><div class="t"><b>Portal Ibu Bapa</b><small>Sri Gayong Panglima Ulung</small></div><a href="panduan-ibubapa.html" class="kecil" style="color:#E2B55A;text-decoration:none;font-size:14px;font-weight:700;padding:6px 8px">📖 Panduan</a><button class="kecil" onclick="keluar()">Keluar</button></header>
     <div class="wrap">${pilihan}<div id="isi"><p class="pudar" style="text-align:center;padding:30px 0">Memuatkan...</p></div>
     <button class="penuh" onclick="paparLogin(true)">+ Tambah anak lain</button>
+    <a href="panduan-ibubapa.html#l3" style="display:block;text-align:center;margin-top:8px;font-size:13px;color:#E2B55A">📖 Cara tambah anak (panduan bergambar)</a>
     <div class="kad" style="margin-top:14px">${htmlPenafian(true)}${htmlKakiPrivasi()}</div></div>`;
   let r = S.data[S.pilih];
   if (!r) { const a = S.anak[S.pilih]; r = await api({ no_kp: a.kp, telefon: a.tel }); if (!r.ok) { $('#isi').innerHTML = `<div class="kad">${esc(r.msg)}</div>`; return; } S.data[S.pilih] = r; }
