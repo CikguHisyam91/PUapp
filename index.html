@@ -138,6 +138,7 @@ table.kp td.c,table.kp th.c{text-align:center}
   #cetak .kertas{max-width:none;padding:0}
   .kp-usia.baru{page-break-before:always}
 }
+.lencanaRekod{display:inline-flex;align-items:center;min-height:40px;padding:8px 16px;border-radius:12px;background:linear-gradient(135deg,#F3CF7E,#E2B55A 45%,#C8963A);color:#1a1405;font-weight:700;font-size:14px;white-space:nowrap}
 </style>
 <link rel="stylesheet" href="glass.css">
 </head>
@@ -904,7 +905,7 @@ function lukisYB() {
     const kanan = b ? `${tag('RM' + Number(b.jumlah || 0).toFixed(0), 'HIJAU')}<span class="pudar">✎</span>`
       : ke ? `<span class="tag" style="background:#2a2140;color:#B9A4FF">DIKECUALIKAN</span>`
       : cuti.includes(a) ? `<span class="tag t-TIDAK">CUTI</span>`
-      : `<button class="utama kecil" style="min-height:42px;padding:8px 16px">+ Rekod</button>`;
+      : `<span class="lencanaRekod">+ Rekod</span>`;
     return `<div class="item" onclick="bukaYB(${i})"><div class="k"><b>${esc(a.nama)}</b><small>${esc(namaBengkung(a.bengkung) || a.no_ahli)}${b ? ' · ' + tarikhMY(b.tarikh) : ke && ke.sebab ? ' · ' + esc(ke.sebab) : ''}</small></div><div class="r">${kanan}</div></div>`; }).join('') || '<p class="pudar">Tiada.</p>';
 }
 async function togolBulanKec(el) {
@@ -1036,7 +1037,7 @@ function lukisFiz() {
       : a.kat.length ? a.kat.map(k => `<span class="tag" style="background:#3a321f;color:var(--emas)">${a.kat.length > 1 ? esc(k.nama.split(' ')[0]) + ': ' : ''}${esc(kelasBerat(k, brt).replace('Kelas ', ''))}</span>`).join(' ') : '<span class="pudar" style="font-size:13px">—</span>';
     return `<div class="item" style="display:block" onclick="bukaFiz(${i})">
       <div class="baris" style="align-items:flex-start"><div class="k" style="flex:1"><b>${esc(a.nama)}</b><small>${a.umur != null ? a.umur + ' tahun' : 'Umur tidak diketahui'}${brt ? ` · ${esc(f.berat)} kg${f.tinggi ? ' · ' + esc(f.tinggi) + ' cm' : ''}` : ''}</small></div>
-        ${f ? '<span class="pudar" style="flex:none">✎</span>' : '<button class="utama kecil" style="flex:none;min-height:38px">+ Rekod</button>'}</div>
+        ${f ? '<span class="pudar" style="flex:none">✎</span>' : '<span class="lencanaRekod" style="flex:none">+ Rekod</span>'}</div>
       <div class="fizgrid">
         <div>${lbl('KELAS USIA')}${usia}</div>
         <div>${lbl('KELAS BERAT')}${berat}</div>
