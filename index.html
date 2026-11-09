@@ -343,7 +343,7 @@ async function mula() {
 function modJur() { return !!S.u && (S.u.peranan === 'JURULATIH' || (S.mod === 'gel' && !!S.u.kod_gelanggang)); }
 function tukarMod(m) {
   S.mod = m; try { localStorage.setItem('sp_mod', m); } catch (e) {}
-  S.tab = ''; S.cawList = null; S.cawPilih = null; S.ahli = null; S.gelPilih = m === 'gel' ? S.u.kod_gelanggang : '';
+  S.tab = ''; S.cawList = null; S.cawPilih = null; S.ahli = null; S.jadual = null; S.hSesi = null; S.gelPilih = m === 'gel' ? S.u.kod_gelanggang : '';
   window.scrollTo(0, 0); mula();
 }
 async function tabMenu() {
@@ -826,20 +826,45 @@ async function tabHadir() {
   const ahli = await muatAhliJur(); if (!ahli) return;
   if (wajibCaw('tabHadir', 'kehadiran')) return;
   S.hTarikh = S.hTarikh || hariIniStr();
-  const h = await api('hadir_get', { tarikh: S.hTarikh, cawangan: S.cawPilih });
+  if (!S.jadual) { const jd = await api('jad_get'); S.jadual = (jd.ok && jd.jadual) || []; }
+  // Sesi hari ini = sesi dalam jadual (hari & cawangan sama) + sesi yang sudah direkod + sesi tambahan yang ditaip
+  const hariNama = HARI_JADUAL[(new Date(S.hTarikh + 'T00:00').getDay() + 6) % 7];
+  const dariJadual = S.jadual.filter(j => j.hari === hariNama && (!j.cawangan || !cawTertentu() || j.cawangan === S.cawPilih));
+  let h = await api('hadir_get', { tarikh: S.hTarikh, cawangan: S.cawPilih, sesi: S.hSesi || '' });
+  const pilihan = []; const tambah = (k, l) => { if (!pilihan.some(x => x.k === k)) pilihan.push({ k, l }); };
+  dariJadual.forEach(j => tambah(labelSesi(j), `${esc(labelSesi(j))}${j.sesi ? ` <small>${jam12(j.mula)}</small>` : ''}`));
+  (h.sesiDirekod || []).forEach(x => tambah(x.sesi, esc(x.sesi || 'Latihan')));
+  (S.hSesiTambah || []).forEach(n => tambah(n, esc(n)));
+  if (!pilihan.length) tambah('', 'Latihan');
+  if (S.hSesi == null || !pilihan.some(x => x.k === S.hSesi)) {
+    S.hSesi = pilihan[0].k; h = await api('hadir_get', { tarikh: S.hTarikh, cawangan: S.cawPilih, sesi: S.hSesi });
+  }
+  const direkod = new Map((h.sesiDirekod || []).map(x => [x.sesi, x.bil]));
   S.hSet = new Set(h.hadir || []); S.hAhli = ahli; S.hTapis = S.hTapis || 'semua'; S.hAda = h.ada;
-  $('#isi').innerHTML = `${pilihCaw('tabHadir')}<input type="date" value="${esc(S.hTarikh)}" onchange="S.hTarikh=this.value;tabHadir()" style="margin-bottom:12px">
+  $('#isi').innerHTML = `${pilihCaw('tabHadir')}<input type="date" value="${esc(S.hTarikh)}" onchange="S.hTarikh=this.value;S.hSesi=null;S.hSesiTambah=[];tabHadir()" style="margin-bottom:10px">
+    <div class="pudar" style="font-size:13px;margin-bottom:6px">Sesi latihan (${esc(hariNama.slice(0, 1) + hariNama.slice(1).toLowerCase())})</div>
+    <div class="cip" style="flex-wrap:wrap" id="cipSesi">${pilihan.map((x, i) => `<button class="${x.k === S.hSesi ? 'on' : ''}" onclick="S.hSesi=S.hPilihan[${i}];tabHadir()">${x.l}${direkod.has(x.k) ? ` ✓${direkod.get(x.k)}` : ''}</button>`).join('')}
+      <button onclick="sesiLain()">+ Sesi lain</button></div>
     <div id="ringH"></div>
     <div class="baris" style="margin-bottom:6px"><button class="kecil" onclick="S.hAhli.forEach(a=>S.hSet.add(a.no_kp));lukisHadir()">✓ Tanda semua</button><button class="kecil" onclick="S.hSet.clear();lukisHadir()">Kosongkan</button></div>
     ${cariBox('cariH', 'lukisHadir')}<div id="cipH"></div><div id="senH"></div>
     <input id="hCat" placeholder="Catatan latihan (pilihan)" value="${esc(h.catatan || '')}" style="margin-top:6px">
-    <button class="kecil" style="margin-top:14px" onclick="laporanHadir()">📊 Laporan bulanan</button>${nota}
+    <div class="baris balut" style="margin-top:14px"><button class="kecil" style="flex:none" onclick="laporanHadir()">📊 Laporan bulanan</button>${S.hAda ? `<button class="kecil bahaya" style="flex:none" onclick="padamHadir()">Padam rekod sesi ini</button>` : ''}</div>${nota}
     <div class="terapung"><div><button class="utama penuh" onclick="simpanHadir()">Simpan Kehadiran</button></div></div>`;
+  S.hPilihan = pilihan.map(x => x.k);
   lukisHadir();
+}
+function sesiLain() {
+  const n = (prompt('Nama sesi tambahan (cth. Sesi Tanding, Latihan Khas):') || '').replace(/[<>,]/g, '').trim().slice(0, 30);
+  if (!n) return; S.hSesiTambah = [...new Set([...(S.hSesiTambah || []), n])]; S.hSesi = n; tabHadir();
+}
+async function padamHadir() {
+  if (!confirm(`Padam rekod kehadiran sesi "${S.hSesi || 'Latihan'}" pada ${tarikhMY(S.hTarikh)}?`)) return;
+  const r = await api('hadir_padam', { tarikh: S.hTarikh, cawangan: S.cawPilih, sesi: S.hSesi }); toast(r.msg); if (r.ok) tabHadir();
 }
 function lukisHadir() {
   const n = S.hAhli.filter(a => S.hSet.has(a.no_kp)).length, t = S.hAhli.length;
-  $('#ringH').innerHTML = ringkasan(`${n} <span style="font-size:16px" class="pudar">/ ${t} hadir</span>`, `${tarikhMY(S.hTarikh)} · ${S.hAda ? 'sudah direkod' : 'belum direkod'}`, `${t - n} tidak hadir`, t ? n / t * 100 : 0);
+  $('#ringH').innerHTML = ringkasan(`${n} <span style="font-size:16px" class="pudar">/ ${t} hadir</span>`, `${tarikhMY(S.hTarikh)} · ${esc(S.hSesi || 'Latihan')} · ${S.hAda ? 'sudah direkod' : 'belum direkod'}`, `${t - n} tidak hadir`, t ? n / t * 100 : 0);
   $('#cipH').innerHTML = cip('hTapis', [['semua', `Semua (${t})`], ['hadir', `Hadir (${n})`], ['tidak', `Tidak (${t - n})`]], S.hTapis, 'lukisHadir');
   const q = ($('#cariH').value || '').toLowerCase();
   const l = S.hAhli.filter(a => a.nama.toLowerCase().includes(q) && (S.hTapis === 'semua' || (S.hTapis === 'hadir') === S.hSet.has(a.no_kp)));
@@ -847,7 +872,7 @@ function lukisHadir() {
 }
 function togolH(kp) { S.hSet.has(kp) ? S.hSet.delete(kp) : S.hSet.add(kp); lukisHadir(); }
 async function simpanHadir() {
-  const r = await api('hadir_simpan', { tarikh: S.hTarikh, cawangan: S.cawPilih, hadir: [...S.hSet].filter(kp => S.hAhli.some(a => a.no_kp === kp)), catatan: $('#hCat').value }); toast(r.msg); if (r.ok) tabHadir();
+  const r = await api('hadir_simpan', { tarikh: S.hTarikh, cawangan: S.cawPilih, sesi: S.hSesi || '', hadir: [...S.hSet].filter(kp => S.hAhli.some(a => a.no_kp === kp)), catatan: $('#hCat').value }); toast(r.msg); if (r.ok) tabHadir();
 }
 async function laporanHadir() {
   const d = new Date(); S.lBulan = S.lBulan || d.getMonth() + 1; S.lTahun = S.lTahun || d.getFullYear();
@@ -856,7 +881,7 @@ async function laporanHadir() {
   const bs = (lap.sesi || []).length;
   modal(`<h3 style="color:var(--emas);margin-top:0">Laporan Kehadiran</h3>
     <div class="baris"><div>${pilihBulan('laporanHadir', S.lBulan, 'lBulan')}</div><div style="flex:none;width:110px">${pilihTahun('laporanHadir', S.lTahun, 'lTahun')}</div></div>
-    <p class="pudar" style="font-size:14px">${bs} sesi latihan${bs ? ': ' + lap.sesi.map(x => `${x.tarikh.slice(8)}hb (${x.bil})`).join(', ') : ''}</p>
+    <p class="pudar" style="font-size:14px">${bs} sesi latihan${bs ? ': ' + lap.sesi.map(x => `${x.tarikh.slice(8)}hb${x.sesi ? ' ' + esc(x.sesi) : ''} (${x.bil})`).join(', ') : ''}</p>
     ${S.hAhli.map(a => { const n = (lap.bil || {})[a.no_kp] || 0, pc = bs ? Math.round(n / bs * 100) : 0, w = pc >= 75 ? 'HIJAU' : pc >= 50 ? 'KUNING' : 'MERAH';
       return `<div class="item" style="cursor:default"><div class="k"><b>${esc(a.nama)}</b><small>${n} / ${bs} sesi</small></div>${tag(pc + '%', w)}</div>`; }).join('')}
     <button class="penuh" onclick="modal('')">Tutup</button>`);
@@ -1242,22 +1267,31 @@ async function simpanKod() {
 }
 function borangJadual(id) {
   const j = (S.jadual || []).find(x => x.id === id) || {};
-  modal(`<h3 style="color:var(--emas);margin-top:0">${id ? 'Kemas Kini' : 'Tambah'} Slot Latihan</h3>
-    <label>Hari</label><div class="cip" id="jHari" style="flex-wrap:wrap">${HARI_JADUAL.map(h => `<button class="${h === (j.hari || '') ? 'on' : ''}" onclick="document.querySelectorAll('#jHari button').forEach(x=>x.classList.remove('on'));this.classList.add('on')">${h.slice(0, 1) + h.slice(1).toLowerCase()}</button>`).join('')}</div>
+  const satu = id ? `document.querySelectorAll('#jHari button').forEach(x=>x.classList.remove('on'));this.classList.add('on')` : `this.classList.toggle('on')`;
+  modal(`<h3 style="color:var(--emas);margin-top:0">${id ? 'Kemas Kini' : 'Tambah'} Sesi Latihan</h3>
+    <label>Nama sesi <small class="pudar">(bebas — boleh tambah seberapa banyak sesi sehari)</small></label>
+    <input id="jSesi" maxlength="30" value="${esc(j.sesi || '')}" placeholder="cth. Pagi / Petang / Malam / Sesi Tanding">
+    <div class="cip" style="flex-wrap:wrap;margin-top:8px">${CADANGAN_SESI.map(n => `<button type="button" onclick="pilihSesiJ(this,'${n}')">${n}</button>`).join('')}</div>
+    <label>Hari ${id ? '' : '<small class="pudar">(boleh pilih lebih dari satu)</small>'}</label><div class="cip" id="jHari" style="flex-wrap:wrap">${HARI_JADUAL.map(h => `<button class="${h === (j.hari || '') ? 'on' : ''}" data-h="${h}" onclick="${satu}">${h.slice(0, 1) + h.slice(1).toLowerCase()}</button>`).join('')}</div>
     <div class="baris"><div><label>Mula</label><input type="time" id="jMula" value="${esc(j.mula || '20:30')}"></div><div><label>Tamat</label><input type="time" id="jTamat" value="${esc(j.tamat || '22:30')}"></div></div>
     ${(S.cawList || []).length ? `<label>Cawangan</label><select id="jCaw"><option value="">Semua / gelanggang induk</option>${S.cawList.map(c => `<option value="${esc(c.id)}" ${c.id === j.cawangan ? 'selected' : ''}>${esc(c.nama)}</option>`).join('')}</select>` : ''}
     <label>Lokasi (pilihan)</label><input id="jLok" value="${esc(j.lokasi || '')}" placeholder="cth. Dewan SK Taman Panglima">
     <label>Catatan (pilihan)</label><input id="jCat" value="${esc(j.catatan || '')}" placeholder="cth. Latihan tanding / Bengkung hitam sahaja">
     <button class="utama penuh" style="margin-top:14px" onclick="simpanJadual('${esc(id || '')}')">Simpan</button>
-    ${id ? `<button class="bahaya penuh" style="margin-top:8px" onclick="padamJadual('${esc(id)}')">Padam slot</button>` : ''}
+    ${id ? `<button class="bahaya penuh" style="margin-top:8px" onclick="padamJadual('${esc(id)}')">Padam sesi</button>` : ''}
     <button class="penuh" style="margin-top:8px" onclick="modal('')">Batal</button>`);
 }
+const MASA_SESI = { 'Pagi': ['08:00', '10:00'], 'Tengah Hari': ['12:00', '14:00'], 'Petang': ['16:30', '18:30'], 'Malam': ['20:30', '22:30'] };
+function pilihSesiJ(b, n) {
+  $('#jSesi').value = n; b.parentNode.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  if (MASA_SESI[n]) { $('#jMula').value = MASA_SESI[n][0]; $('#jTamat').value = MASA_SESI[n][1]; }
+}
 async function simpanJadual(id) {
-  const on = $('#jHari .on'); if (!on) return toast('Pilih hari.');
-  const r = await api('jad_simpan', { id, hari: on.textContent.toUpperCase(), mula: $('#jMula').value, tamat: $('#jTamat').value, cawangan: $('#jCaw') ? $('#jCaw').value : '', lokasi: $('#jLok').value, catatan: $('#jCat').value });
+  const hari = [...document.querySelectorAll('#jHari .on')].map(b => b.dataset.h); if (!hari.length) return toast('Pilih hari.');
+  const r = await api('jad_simpan', { id, hari: id ? hari[0] : hari, sesi: $('#jSesi').value, mula: $('#jMula').value, tamat: $('#jTamat').value, cawangan: $('#jCaw') ? $('#jCaw').value : '', lokasi: $('#jLok').value, catatan: $('#jCat').value });
   toast(r.msg); if (r.ok) { modal(''); tabGelang(); }
 }
-async function padamJadual(id) { if (!confirm('Padam slot latihan ini?')) return; const r = await api('jad_padam', { id }); toast(r.msg); if (r.ok) { modal(''); tabGelang(); } }
+async function padamJadual(id) { if (!confirm('Padam sesi latihan ini?')) return; const r = await api('jad_padam', { id }); toast(r.msg); if (r.ok) { modal(''); tabGelang(); } }
 
 /* ---- Permohonan (borang pendaftaran online) ---- */
 const linkBorang = caw => new URL('daftar.html', location.href).href.split('?')[0] + '?g=' + encodeURIComponent(S.u.kod_gelanggang) + (caw ? '&c=' + encodeURIComponent(caw) : '');

@@ -46,12 +46,12 @@ var JADUAL = {
   YURAN_TAHUNAN: ['NO_KP','KOD_GELANGGANG','TAHUN','JUMLAH','TARIKH_BAYAR','DIREKOD_OLEH','CAWANGAN'],
   LOG_AUDIT: ['MASA','ID','TINDAKAN','BUTIRAN'],
   // Data dalaman gelanggang (HANYA jurulatih gelanggang itu nampak)
-  KEHADIRAN: ['TARIKH','KOD_GELANGGANG','HADIR','BIL_HADIR','CATATAN','DIREKOD_OLEH','CAWANGAN'],
+  KEHADIRAN: ['TARIKH','KOD_GELANGGANG','HADIR','BIL_HADIR','CATATAN','DIREKOD_OLEH','CAWANGAN','SESI'],
   CAWANGAN: ['ID','KOD_GELANGGANG','NAMA','ALAMAT','STATUS','TARIKH_DAFTAR','QR_BAYAR','INFO_BAYAR','QR_DIKEMASKINI'],
   PERMOHONAN: ['ID','KOD_GELANGGANG','CAWANGAN','TARIKH_MOHON','NO_KP','NAMA','JANTINA','TARIKH_LAHIR','ALAMAT','TEL_PESILAT','SEKOLAH_KERJA',
     'NAMA_WARIS','HUBUNGAN_WARIS','NO_KP_WARIS','TEL_WARIS','EMEL_WARIS','KESIHATAN','KEBENARAN_WARIS','AKUR_ADAT','PDPA','STATUS','SEBAB_TOLAK','DIPROSES_OLEH','TARIKH_PROSES','NO_AHLI',
     'PDPA_VERSI','PDPA_MASA','PDPA_OLEH','PDPA_SALURAN','PORTAL_PDPA_MASA'],
-  JADUAL_LATIHAN: ['ID','KOD_GELANGGANG','CAWANGAN','HARI','MULA','TAMAT','LOKASI','CATATAN'],
+  JADUAL_LATIHAN: ['ID','KOD_GELANGGANG','CAWANGAN','HARI','MULA','TAMAT','LOKASI','CATATAN','SESI'],
   YURAN_BULANAN: ['NO_KP','KOD_GELANGGANG','TAHUN','BULAN','JUMLAH','TARIKH_BAYAR','KAEDAH','DIREKOD_OLEH','CAWANGAN'],
   KEWANGAN: ['ID','KOD_GELANGGANG','TARIKH','JENIS','KATEGORI','KETERANGAN','JUMLAH','DIREKOD_OLEH','CAWANGAN'],
   PENGECUALIAN: ['ID','KOD_GELANGGANG','JENIS','NO_KP','MULA','TAMAT','SEBAB','DIREKOD_OLEH','CAWANGAN'],
@@ -133,7 +133,7 @@ function jawab_(o) {
 }
 
 var AWAM = { ibubapa_setuju_pdpa: 1, ibubapa_bayar: 1, borang_info: 1, borang_hantar: 1, ibubapa: 1, ping: 1, negeri: 1, daftar: 1, login: 1, status_awal: 1, cipta_super: 1 };
-var TULIS = { setuju_terma: 1, ibubapa_setuju_pdpa: 1, set_bertugas: 1, ubah_admin: 1, ibubapa_bayar: 1, qr_simpan: 1, notis_sahkan: 1, notis_tolak: 1, borang_hantar: 1, mohon_lulus: 1, mohon_tolak: 1, tukar_kod: 1, jad_simpan: 1, jad_padam: 1, reset_katalaluan: 1, caw_simpan: 1, caw_padam: 1, caw_tag: 1, logo_simpan: 1, kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, kemaskini_profil: 1, lulus_gelanggang: 1, status_gelanggang: 1,
+var TULIS = { setuju_terma: 1, ibubapa_setuju_pdpa: 1, set_bertugas: 1, ubah_admin: 1, ibubapa_bayar: 1, qr_simpan: 1, notis_sahkan: 1, notis_tolak: 1, borang_hantar: 1, mohon_lulus: 1, mohon_tolak: 1, tukar_kod: 1, jad_simpan: 1, jad_padam: 1, reset_katalaluan: 1, caw_simpan: 1, caw_padam: 1, caw_tag: 1, logo_simpan: 1, kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, hadir_padam: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, kemaskini_profil: 1, lulus_gelanggang: 1, status_gelanggang: 1,
   status_pengguna: 1, set_ketua: 1, lantik_admin: 1, daftar_ahli: 1, kemaskini_ahli: 1, status_ahli: 1,
   rekod_yuran: 1, padam_yuran: 1, mohon_gelanggang: 1 };
 
@@ -141,7 +141,7 @@ function urus_(p) {
   var lock = null;
   try {
     var a = p.action;
-    var VERSI_SKEMA = '9';
+    var VERSI_SKEMA = '10';
     if (PropertiesService.getScriptProperties().getProperty('SKEMA') !== VERSI_SKEMA || !sh_('PENGGUNA')) {
       binaSheet_(); PropertiesService.getScriptProperties().setProperty('SKEMA', VERSI_SKEMA);
     }
@@ -944,28 +944,41 @@ function nombor_(v) { var n = parseFloat(String(v || '').replace(/[^\d.\-]/g, ''
 function padamBaris_(n, r) { sh_(n).deleteRow(r); delete _tbl[n]; }
 
 /* ---------- Kehadiran ---------- */
+/* Nama sesi latihan bebas (cth. Pagi, Petang, Malam, Sesi 4) — '' = sesi lalai (rekod lama) */
+function namaSesi_(v) { return String(v || '').replace(/[<>,]/g, '').replace(/\s+/g, ' ').trim().slice(0, 30); }
 API.hadir_get = function (u, p) {
-  var g = gelJur_(u), t = p.tarikh || hariIni_(), cw = p.cawangan || '';
-  var rec = baca_('KEHADIRAN').filter(function (x) { return x.KOD_GELANGGANG === g.KOD && x.TARIKH === t && (x.CAWANGAN || '') === cw; })[0];
-  return { ok: true, tarikh: t, ada: !!rec, hadir: rec && rec.HADIR ? rec.HADIR.split(',') : [], catatan: rec ? rec.CATATAN : '' };
+  var g = gelJur_(u), t = p.tarikh || hariIni_(), cw = p.cawangan || '', ss = namaSesi_(p.sesi);
+  var hariIni = baca_('KEHADIRAN').filter(function (x) { return x.KOD_GELANGGANG === g.KOD && x.TARIKH === t && (x.CAWANGAN || '') === cw; });
+  var rec = hariIni.filter(function (x) { return (x.SESI || '') === ss; })[0];
+  return { ok: true, tarikh: t, sesi: ss, ada: !!rec, hadir: rec && rec.HADIR ? rec.HADIR.split(',') : [], catatan: rec ? rec.CATATAN : '',
+    sesiDirekod: hariIni.map(function (x) { return { sesi: x.SESI || '', bil: Number(x.BIL_HADIR || 0) }; }) };
 };
 API.hadir_simpan = function (u, p) {
   var g = gelJur_(u), t = String(p.tarikh || '');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return { ok: false, msg: 'Tarikh tidak sah.' };
   var sah = ahliGel_(g.KOD), senarai = (p.hadir || []).filter(function (kp) { return sah[kp]; });
   var cw = p.cawangan || '';
-  var o = { TARIKH: t, KOD_GELANGGANG: g.KOD, HADIR: senarai.join(','), BIL_HADIR: String(senarai.length), CATATAN: p.catatan || '', DIREKOD_OLEH: u.ID, CAWANGAN: cw };
-  var rec = baca_('KEHADIRAN').filter(function (x) { return x.KOD_GELANGGANG === g.KOD && x.TARIKH === t && (x.CAWANGAN || '') === cw; })[0];
+  var ss = namaSesi_(p.sesi);
+  var o = { TARIKH: t, KOD_GELANGGANG: g.KOD, HADIR: senarai.join(','), BIL_HADIR: String(senarai.length), CATATAN: p.catatan || '', DIREKOD_OLEH: u.ID, CAWANGAN: cw, SESI: ss };
+  var rec = baca_('KEHADIRAN').filter(function (x) { return x.KOD_GELANGGANG === g.KOD && x.TARIKH === t && (x.CAWANGAN || '') === cw && (x.SESI || '') === ss; })[0];
   if (rec) kemaskini_('KEHADIRAN', rec._r, o); else tambah_('KEHADIRAN', o);
   catatAktiviti_(g.KOD);
-  return { ok: true, msg: 'Kehadiran ' + t + ' disimpan: ' + senarai.length + ' hadir.' };
+  return { ok: true, msg: 'Kehadiran ' + t + (ss ? ' (' + ss + ')' : '') + ' disimpan: ' + senarai.length + ' hadir.' };
+};
+API.hadir_padam = function (u, p) {
+  var g = gelJur_(u), t = String(p.tarikh || ''), cw = p.cawangan || '', ss = namaSesi_(p.sesi);
+  var rec = baca_('KEHADIRAN').filter(function (x) { return x.KOD_GELANGGANG === g.KOD && x.TARIKH === t && (x.CAWANGAN || '') === cw && (x.SESI || '') === ss; })[0];
+  if (!rec) return { ok: false, msg: 'Rekod kehadiran tiada.' };
+  padamBaris_('KEHADIRAN', rec._r);
+  return { ok: true, msg: 'Rekod kehadiran sesi ini dipadam.' };
 };
 API.hadir_laporan = function (u, p) {
   var g = gelJur_(u), pre = String(p.tahun) + '-' + ('0' + p.bulan).slice(-2);
   var sesi = baca_('KEHADIRAN').filter(function (x) { return x.KOD_GELANGGANG === g.KOD && x.TARIKH.indexOf(pre) === 0 && (!p.cawangan || (x.CAWANGAN || '') === p.cawangan); });
   var bil = {};
   sesi.forEach(function (x) { (x.HADIR ? x.HADIR.split(',') : []).forEach(function (kp) { bil[kp] = (bil[kp] || 0) + 1; }); });
-  return { ok: true, sesi: sesi.map(function (x) { return { tarikh: x.TARIKH, bil: Number(x.BIL_HADIR || 0) }; }).sort(function (a, b) { return a.tarikh.localeCompare(b.tarikh); }), bil: bil };
+  return { ok: true, sesi: sesi.map(function (x) { return { tarikh: x.TARIKH, sesi: x.SESI || '', bil: Number(x.BIL_HADIR || 0) }; })
+    .sort(function (a, b) { return a.tarikh.localeCompare(b.tarikh) || a.sesi.localeCompare(b.sesi); }), bil: bil };
 };
 
 /* ---------- Yuran bulanan ---------- */
@@ -1255,22 +1268,35 @@ var HARI_ = ['ISNIN', 'SELASA', 'RABU', 'KHAMIS', 'JUMAAT', 'SABTU', 'AHAD'];
 function jadualGel_(kod) {
   var caw = {}; baca_('CAWANGAN').forEach(function (c) { caw[c.ID] = c.NAMA; });
   return baca_('JADUAL_LATIHAN').filter(function (j) { return j.KOD_GELANGGANG === kod; }).map(function (j) {
-    return { id: j.ID, cawangan: j.CAWANGAN, nama_cawangan: caw[j.CAWANGAN] || '', hari: j.HARI, mula: j.MULA, tamat: j.TAMAT, lokasi: j.LOKASI, catatan: j.CATATAN };
+    return { id: j.ID, cawangan: j.CAWANGAN, nama_cawangan: caw[j.CAWANGAN] || '', hari: j.HARI, mula: j.MULA, tamat: j.TAMAT, lokasi: j.LOKASI, catatan: j.CATATAN, sesi: j.SESI || '' };
   }).sort(function (a, b) { return (HARI_.indexOf(a.hari) - HARI_.indexOf(b.hari)) || a.mula.localeCompare(b.mula); });
 }
 API.jad_get = function (u) { var g = gelJur_(u); return { ok: true, jadual: jadualGel_(g.KOD) }; };
 API.jad_simpan = function (u, p) {
-  var g = gelJur_(u), hari = String(p.hari || '').toUpperCase(), jm = /^\d{2}:\d{2}$/;
-  if (HARI_.indexOf(hari) < 0) return { ok: false, msg: 'Pilih hari.' };
+  var g = gelJur_(u), jm = /^\d{2}:\d{2}$/;
+  // p.hari boleh satu hari ('RABU') atau senarai (['ISNIN','RABU']) — slot baharu boleh dicipta untuk banyak hari sekali gus
+  var senaraiHari = (Array.isArray(p.hari) ? p.hari : [p.hari]).map(function (h) { return String(h || '').toUpperCase(); })
+    .filter(function (h, i, a) { return HARI_.indexOf(h) >= 0 && a.indexOf(h) === i; });
+  if (!senaraiHari.length) return { ok: false, msg: 'Pilih sekurang-kurangnya satu hari.' };
+  if (p.id && senaraiHari.length > 1) return { ok: false, msg: 'Kemas kini satu slot untuk satu hari sahaja.' };
   if (!jm.test(p.mula || '') || !jm.test(p.tamat || '')) return { ok: false, msg: 'Isi masa mula & tamat.' };
   if (p.tamat <= p.mula) return { ok: false, msg: 'Masa tamat mesti selepas masa mula.' };
-  var o = { KOD_GELANGGANG: g.KOD, CAWANGAN: p.cawangan || '', HARI: hari, MULA: p.mula, TAMAT: p.tamat, LOKASI: p.lokasi || '', CATATAN: p.catatan || '' };
+  var cw = cawSah_(g.KOD, p.cawangan), sesi = namaSesi_(p.sesi);
+  var semua = baca_('JADUAL_LATIHAN').filter(function (j) { return j.KOD_GELANGGANG === g.KOD && j.ID !== (p.id || '') && (j.CAWANGAN || '') === cw; });
+  for (var i = 0; i < senaraiHari.length; i++) {
+    var lg = semua.filter(function (j) { return j.HARI === senaraiHari[i] && j.MULA < p.tamat && p.mula < j.TAMAT; })[0];
+    if (lg) return { ok: false, msg: 'Masa bertindih dengan slot ' + (lg.SESI ? lg.SESI + ' ' : '') + lg.HARI + ' ' + lg.MULA + '–' + lg.TAMAT + '. Ubah masa atau kemas kini slot itu.' };
+  }
+  var asas = { KOD_GELANGGANG: g.KOD, CAWANGAN: cw, MULA: p.mula, TAMAT: p.tamat, LOKASI: String(p.lokasi || '').slice(0, 100), CATATAN: String(p.catatan || '').slice(0, 150), SESI: sesi };
   if (p.id) {
     var j = cariSatu_('JADUAL_LATIHAN', 'ID', p.id);
     if (!j || j.KOD_GELANGGANG !== g.KOD) return { ok: false, msg: 'Jadual tiada.' };
-    kemaskini_('JADUAL_LATIHAN', j._r, o);
-  } else { o.ID = 'J' + Date.now(); tambah_('JADUAL_LATIHAN', o); }
-  return { ok: true, msg: 'Jadual latihan disimpan.' };
+    asas.HARI = senaraiHari[0]; kemaskini_('JADUAL_LATIHAN', j._r, asas);
+    return { ok: true, msg: 'Slot latihan dikemas kini.' };
+  }
+  var t0 = Date.now();
+  senaraiHari.forEach(function (h, i) { var o = JSON.parse(JSON.stringify(asas)); o.ID = 'J' + (t0 + i); o.HARI = h; tambah_('JADUAL_LATIHAN', o); });
+  return { ok: true, msg: senaraiHari.length > 1 ? senaraiHari.length + ' slot latihan disimpan (' + senaraiHari.join(', ') + ').' : 'Slot latihan disimpan.' };
 };
 API.jad_padam = function (u, p) {
   var g = gelJur_(u), j = cariSatu_('JADUAL_LATIHAN', 'ID', p.id);

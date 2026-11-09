@@ -156,3 +156,4 @@ html{scroll-padding-top:76px}
   .kad,.ring,.item,.stat,.isi,.langkah{background:#fff !important;color:#000 !important;border:1px solid #000 !important;box-shadow:none !important}
 }
 .lencana{background:var(--tKuning) !important;color:var(--emasT) !important;border-color:var(--emas) !important}
+.cip button.on small{color:inherit !important;opacity:.85}
