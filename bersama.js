@@ -132,12 +132,12 @@ function htmlJadual(list, edit) {
   const tajukNx = nx ? (nx.sedang ? '🟢 Sedang berlangsung' : nx.hariLagi === 0 ? 'Latihan hari ini' : nx.hariLagi === 1 ? 'Latihan esok' : `Latihan seterusnya · ${nx.slot.hari}`) : '';
   return (nx ? `<div style="background:#2a2513;border:1px solid #E2B55A;border-radius:12px;padding:12px;margin-bottom:12px">
       <div style="font-size:12px;color:#E2B55A;font-weight:700">${tajukNx}</div>
-      <div style="font-size:20px;font-weight:800">${jam12(nx.slot.mula)} – ${jam12(nx.slot.tamat)}</div>
+      <div style="font-size:20px;font-weight:800">${nx.slot.sesi ? `<span style="font-size:14px;color:var(--emasT,#E2B55A)">${esc(nx.slot.sesi)} · </span>` : ''}${jam12(nx.slot.mula)} – ${jam12(nx.slot.tamat)}</div>
       <div style="font-size:13px;color:var(--pudar,#9097A3)">${esc(nx.slot.hari)}${nx.slot.nama_cawangan ? ' · 📍 ' + esc(nx.slot.nama_cawangan) : ''}${nx.slot.lokasi ? ' · ' + esc(nx.slot.lokasi) : ''}</div></div>` : '') +
     HARI_JADUAL.filter(h => list.some(j => j.hari === h)).map(h => `<div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #2C313C">
       <b style="width:74px;flex:none;font-size:13px;${h === hi ? 'color:#E2B55A' : ''}">${h}${h === hi ? ' •' : ''}</b>
       <div style="flex:1;min-width:0">${list.filter(j => j.hari === h).map(j => `<div style="display:flex;gap:8px;align-items:center;margin-bottom:4px${edit ? ';cursor:pointer' : ''}" ${edit ? `onclick="borangJadual('${esc(j.id)}')"` : ''}>
-        <span style="font-weight:700;font-size:14px;white-space:nowrap">${jam12(j.mula)} – ${jam12(j.tamat)}</span>
+        ${j.sesi ? `<span class="tag t-KUNING" style="font-size:11px;padding:2px 8px">${esc(j.sesi)}</span>` : ''}<span style="font-weight:700;font-size:14px;white-space:nowrap">${jam12(j.mula)} – ${jam12(j.tamat)}</span>
         <span style="font-size:12px;color:var(--pudar,#9097A3);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${[j.nama_cawangan ? '📍 ' + esc(j.nama_cawangan) : '', esc(j.lokasi || ''), esc(j.catatan || '')].filter(Boolean).join(' · ')}</span>${edit ? '<span style="margin-left:auto;color:var(--pudar,#9097A3)">✎</span>' : ''}</div>`).join('')}</div></div>`).join('');
 }
 
@@ -229,3 +229,7 @@ function kecilkanGambar(fail, maxPx, maxPanjang) {
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mulaA11y); else mulaA11y();
 })();
+
+/* ====== Sesi latihan (bebas: Pagi, Petang, Malam, Sesi 4 ...) ====== */
+const CADANGAN_SESI = ['Pagi', 'Tengah Hari', 'Petang', 'Malam'];
+function labelSesi(j) { return j.sesi || `${jam12(j.mula)}–${jam12(j.tamat)}`; }

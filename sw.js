@@ -2,7 +2,7 @@
    Strategi "stale-while-revalidate": halaman dibuka serta-merta dari simpanan telefon,
    kemudian versi terkini diambil di belakang untuk kali seterusnya.
    Naikkan nombor CACHE setiap kali fail dikemas kini supaya semua telefon dapat versi baharu. */
-const CACHE = 'silatapp-v11';
+const CACHE = 'silatapp-v12';
 const ASAS = ['./', './index.html', './ibubapa.html', './daftar.html', './panduan-ibubapa.html', './glass.css', './tema.js', './bersama.js', './qrcode.js', './poster.js', './logo.png', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASAS)).catch(() => {})); self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(k => Promise.all(k.filter(x => x !== CACHE).map(x => caches.delete(x))))); self.clients.claim(); });
