@@ -70,7 +70,7 @@ let G = null, jantina = '';
 async function api(data) {
   const body = JSON.stringify(data);
   try { const r = await fetchMasa(API_URL, { method: 'POST', credentials: 'omit', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body }); return await r.json(); }
-  catch (e) { try { const r = await fetchMasa(API_URL + '?p=' + encodeURIComponent(body), { credentials: 'omit' }); return await r.json(); } catch (e2) { return { ok: false, msg: 'Tiada sambungan internet. Cuba lagi.' }; } }
+  catch (e) { try { if (!['ping', 'negeri', 'status_awal', 'borang_info'].includes(JSON.parse(body).action)) throw e; const r = await fetchMasa(API_URL + '?p=' + encodeURIComponent(body), { credentials: 'omit' }); return await r.json(); } catch (e2) { return { ok: false, msg: 'Tiada sambungan internet. Cuba lagi.' }; } }
 }
 function tarikhDariKP(kp) {
   const d = String(kp).replace(/\D/g, ''); if (d.length < 6) return '';
@@ -130,6 +130,7 @@ function lukis() {
     <label class="cek"><input type="checkbox" id="pdpa" onchange="semakHantar()"> <span>${esc(KOTAK_PDPA)} <span class="w">*</span></span></label>
     <label class="cek" id="barisPenjaga" style="display:none"><input type="checkbox" id="penjaga" onchange="semakHantar()"> <span>${esc(KOTAK_PENJAGA)} <span class="w">*</span></span></label>
 
+    <input id="laman" name="laman" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
     <button class="utama" id="btnHantar" style="margin-top:22px" onclick="hantar()" disabled>Hantar Permohonan</button>
     <p class="pudar" id="infoHantar" style="font-size:12px;text-align:center">Tandakan semua kotak persetujuan wajib untuk menghantar.</p>
     <p class="pudar" style="font-size:12px;text-align:center">Permohonan akan disemak dan diluluskan oleh jurulatih gelanggang.</p>
@@ -164,7 +165,7 @@ function semakHantar() {
 }
 async function hantar() {
   const u = umur(), b18 = u == null || u < 18;
-  const d = { no_kp: $('#kp').value, nama: $('#nama').value.trim(), tarikh_lahir: $('#lahir').value, jantina, cawangan: $('#caw') ? $('#caw').value : '',
+  const d = { laman: $('#laman') ? $('#laman').value : '', no_kp: $('#kp').value, nama: $('#nama').value.trim(), tarikh_lahir: $('#lahir').value, jantina, cawangan: $('#caw') ? $('#caw').value : '',
     sekolah: $('#sekolah').value, alamat: $('#alamat').value, tel_pesilat: $('#telP').value, kesihatan: $('#sihat').value,
     nama_waris: $('#namaW').value.trim(), hubungan_waris: $('#hub').value, no_kp_waris: $('#kpW').value, tel_waris: $('#telW').value, emel_waris: $('#emelW').value,
     kebenaran_waris: b18 ? $('#kebenaran').checked : false, akur_adat: $('#adat').checked, pdpa: $('#pdpa').checked,
