@@ -84,7 +84,7 @@ let S = { anak: simpan.baca(), pilih: 0, data: {} };
 async function api(data) {
   const body = JSON.stringify(Object.assign({ action: 'ibubapa' }, data));
   try { const r = await fetchMasa(API_URL, { method: 'POST', credentials: 'omit', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body }); return await r.json(); }
-  catch (e) { try { const r = await fetchMasa(API_URL + '?p=' + encodeURIComponent(body), { credentials: 'omit' }); return await r.json(); }
+  catch (e) { try { if (!['ping', 'negeri', 'status_awal', 'borang_info'].includes(JSON.parse(body).action)) throw e; const r = await fetchMasa(API_URL + '?p=' + encodeURIComponent(body), { credentials: 'omit' }); return await r.json(); }
     catch (e2) { return { ok: false, msg: 'Tiada sambungan internet.' }; } }
 }
 
@@ -98,6 +98,7 @@ function paparLogin(tambah) {
       <label>No. telefon waris (seperti didaftarkan di gelanggang)</label><input id="tel" inputmode="tel" placeholder="cth. 0123456789" value="${tambah && S.anak.length ? esc(S.anak[S.anak.length - 1].tel) : ''}">
       ${tambah ? '<p class="pudar" style="font-size:12px;margin:6px 0 0">No. telefon diisi daripada anak sebelumnya. Jika anak ini didaftarkan dengan no. telefon ibu / bapa yang lain, tukar nombor di atas.</p>' : ''}
       <label class="cek"><input type="checkbox" id="ingat" checked> Ingat di telefon ini</label>
+      <p class="pudar" style="font-size:12px;margin:4px 0 0">Jangan tanda jika guna telefon orang lain atau telefon awam.</p>
       <button class="utama penuh" style="margin-top:16px" onclick="masuk()">${tambah ? 'Tambah Anak' : 'Semak'}</button>
       ${tambah ? `<button class="penuh" style="margin-top:8px" onclick="papar()">Batal</button>` : ''}
     </div>

@@ -171,6 +171,7 @@ function toast(m, ms) { const t = $('#toast'); t.textContent = m; t.style.displa
 function modal(html) { $('#modalIsi').innerHTML = html; $('#modal').style.display = html ? 'flex' : 'none'; document.body.style.overflow = html ? 'hidden' : ''; }
 $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') modal(''); });
 
+const GET_AWAM = ['ping', 'negeri', 'status_awal', 'borang_info'];
 async function api(action, data) {
   const body = JSON.stringify(Object.assign({ action, token: S.token }, data || {}));
   let r;
@@ -179,11 +180,13 @@ async function api(action, data) {
     r = await res.json();
   } catch (e) {
     try {
+      if (!GET_AWAM.includes(action)) throw e;  // data sulit tidak dihantar melalui pautan (URL)
       const res = await fetchMasa(API_URL + '?p=' + encodeURIComponent(body), { credentials: 'omit' });
       r = await res.json();
     } catch (e2) { r = { ok: false, msg: 'Tiada sambungan ke pelayan. Semak internet.' }; }
   }
   if (r.logout) keluar(true);
+  else if (r.wajib_tukar && action !== 'tukar_katalaluan' && S.u) { S.u.wajib_tukar = true; paparTukarWajib(); }
   return r;
 }
 const memuat = () => { const i = $('#isi'); if (i) i.innerHTML = '<p class="pudar" style="text-align:center;padding:30px 0">Memuatkan...</p>'; };
@@ -399,7 +402,9 @@ function cip(nama, pilihan, aktif, fn) {
 }
 function cariBox(id, fn, ph) { return `<input id="${id}" placeholder="${ph || 'Cari nama...'}" oninput="${fn}()" style="margin-bottom:8px">`; }
 function csv(nama, baris) {
-  const t = baris.map(r => r.map(v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+  // Nilai bermula = + - @ diletak ' di depan supaya Excel tidak menjalankannya sebagai formula
+  const sel = v => { let x = String(v == null ? '' : v); if (/^[=+\-@\t\r]/.test(x) && !/^-?\d+(\.\d+)?$/.test(x)) x = "'" + x; return `"${x.replace(/"/g, '""')}"`; };
+  const t = baris.map(r => r.map(sel).join(',')).join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['﻿' + t], { type: 'text/csv' })); a.download = nama + '.csv'; a.click();
 }
@@ -1429,7 +1434,10 @@ function tabAkaun() {
     <label>No. Telefon</label><input id="aTel" inputmode="tel" value="${esc(u.telefon)}" placeholder="cth. 0123456789">
     <button class="utama penuh" style="margin-top:14px" onclick="simpanProfil()">Simpan</button></div>
     <div class="kad"><h3>Tukar Kata Laluan</h3><label>Kata laluan lama</label><input type="password" id="pLama"><label>Kata laluan baharu (min 8)</label><input type="password" id="pBaru">
-    <button class="utama penuh" style="margin-top:14px" onclick="tukarPw()">Tukar</button></div>
+    <button class="utama penuh" style="margin-top:14px" onclick="tukarPw()">Tukar</button>
+    <p class="pudar" style="font-size:12px;margin:8px 0 0">Selepas tukar, telefon / komputer lain yang log masuk dengan akaun ini akan dilog keluar.</p></div>
+    <div class="kad"><h3>🔒 Keselamatan</h3><p class="pudar" style="font-size:13px;margin-top:0">Telefon hilang atau pernah log masuk di telefon orang lain? Log keluar semua peranti lain sekarang.</p>
+    <button class="penuh" onclick="logKeluarSemua()">Log keluar semua peranti lain</button></div>
     ${u.peranan === 'SUPER_ADMIN' ? `<div class="kad"><h3>🏟️ Gelanggang Bertugas</h3><p class="pudar" style="font-size:13px;margin-top:0">${u.kod_gelanggang ? `Anda juga bertugas di <b style="color:var(--teks)">${esc(u.nama_gelanggang)} (${esc(u.kod_gelanggang)})</b>${u.ketua ? ' sebagai ketua' : ''}.` : 'Jika anda juga jurulatih di sebuah gelanggang, tetapkan di sini untuk mendapat menu Gelanggang Saya.'}</p>
       <button class="penuh" onclick="borangBertugas('${esc(u.id)}')">Tetapkan gelanggang bertugas</button></div>` : ''}
     <button class="bahaya penuh" onclick="keluar()">Log Keluar</button>`;
@@ -1442,6 +1450,7 @@ async function simpanProfil() {
   toast(r.msg);
   if (r.ok) { S.u.nama = r.nama; S.u.telefon = r.telefon; mula(); }
 }
+async function logKeluarSemua() { if (!confirm('Log keluar akaun ini daripada semua peranti lain?')) return; const r = await api('logout_semua'); toast(r.msg, 5000); }
 async function tukarPw() { const r = await api('tukar_katalaluan', { lama: $('#pLama').value, baru: $('#pBaru').value }); toast(r.msg); }
 
 pasangApp('SilatApp', 'pwa_jur');

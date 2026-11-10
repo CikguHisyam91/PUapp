@@ -114,8 +114,11 @@ function doGet(e) {
   var p = {};
   try { if (e && e.parameter && e.parameter.p) p = JSON.parse(e.parameter.p); } catch (x) {}
   if (!p.action) p.action = 'ping';
+  // Kata laluan, token & No. KP tidak boleh dihantar melalui pautan (URL) — guna POST
+  if (!GET_DIBENAR[p.action]) return jawab_({ ok: false, msg: 'Tindakan ini mesti dihantar melalui POST.' });
   return jawab_(urus_(p));
 }
+var GET_DIBENAR = { ping: 1, negeri: 1, status_awal: 1, borang_info: 1 };
 function doPost(e) {
   var p = {};
   try { p = JSON.parse(e.postData.contents); } catch (x) { return jawab_({ ok: false, msg: 'Data tidak sah' }); }
@@ -126,7 +129,7 @@ function jawab_(o) {
 }
 
 var AWAM = { ibubapa_bayar: 1, borang_info: 1, borang_hantar: 1, ibubapa: 1, ping: 1, negeri: 1, daftar: 1, login: 1, status_awal: 1, cipta_super: 1 };
-var TULIS = { set_bertugas: 1, ubah_admin: 1, ibubapa_bayar: 1, qr_simpan: 1, notis_sahkan: 1, notis_tolak: 1, borang_hantar: 1, mohon_lulus: 1, mohon_tolak: 1, tukar_kod: 1, jad_simpan: 1, jad_padam: 1, reset_katalaluan: 1, caw_simpan: 1, caw_padam: 1, caw_tag: 1, logo_simpan: 1, kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, hadir_padam: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, kemaskini_profil: 1, lulus_gelanggang: 1, status_gelanggang: 1,
+var TULIS = { set_bertugas: 1, ubah_admin: 1, ibubapa_bayar: 1, qr_simpan: 1, notis_sahkan: 1, notis_tolak: 1, borang_hantar: 1, mohon_lulus: 1, mohon_tolak: 1, tukar_kod: 1, jad_simpan: 1, jad_padam: 1, reset_katalaluan: 1, caw_simpan: 1, caw_padam: 1, caw_tag: 1, logo_simpan: 1, kec_simpan: 1, kec_padam: 1, hadir_simpan: 1, hadir_padam: 1, logout_semua: 1, yb_simpan: 1, yb_padam: 1, kew_simpan: 1, kew_padam: 1, fiz_simpan: 1, fiz_padam: 1, cipta_super: 1, daftar: 1, login: 1, logout: 1, tukar_katalaluan: 1, kemaskini_profil: 1, lulus_gelanggang: 1, status_gelanggang: 1,
   status_pengguna: 1, set_ketua: 1, lantik_admin: 1, daftar_ahli: 1, kemaskini_ahli: 1, status_ahli: 1,
   rekod_yuran: 1, padam_yuran: 1, mohon_gelanggang: 1 };
 
@@ -145,6 +148,9 @@ function urus_(p) {
     if (AWAM[a]) return AWAM_FN[a](p);
     var u = sahkanToken_(p.token);
     if (!u) return { ok: false, msg: 'Sesi tamat. Sila log masuk semula.', logout: true };
+    // Kata laluan sementara (selepas reset): hanya boleh tukar kata laluan dahulu
+    if (u.WAJIB_TUKAR === 'YA' && ['tukar_katalaluan', 'logout', 'saya', 'setuju_terma'].indexOf(a) < 0)
+      return { ok: false, wajib_tukar: true, msg: 'Sila tukar kata laluan sementara dahulu.' };
     var fn = API[a];
     if (!fn) return { ok: false, msg: 'Tindakan tidak dikenali: ' + a };
     var r = fn(u, p);
@@ -197,9 +203,31 @@ function cariSatu_(n, k, v) {
 }
 function hariIni_() { return Utilities.formatDate(new Date(), 'Asia/Kuala_Lumpur', 'yyyy-MM-dd'); }
 function masa_() { return Utilities.formatDate(new Date(), 'Asia/Kuala_Lumpur', 'yyyy-MM-dd HH:mm:ss'); }
+function hex_(b) { return b.map(function (x) { return ('0' + (x & 255).toString(16)).slice(-2); }).join(''); }
+/* Format lama: satu pusingan SHA-256 (hanya untuk menyemak kata laluan lama) */
+function hashLama_(pw, salt) {
+  return hex_(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, salt + '|' + pw, Utilities.Charset.UTF_8));
+}
+/* Format baharu "v2$": SHA-256 berulang 2000 kali — jauh lebih sukar diteka jika data bocor */
+var PUSINGAN_HASH = 2000;
 function hash_(pw, salt) {
   var b = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, salt + '|' + pw, Utilities.Charset.UTF_8);
-  return b.map(function (x) { return ('0' + (x & 255).toString(16)).slice(-2); }).join('');
+  for (var i = 0; i < PUSINGAN_HASH; i++) b = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, b.concat(b.slice(0, 8)));
+  return 'v2$' + hex_(b);
+}
+/* Semak kata laluan; kata laluan format lama dinaik taraf secara automatik */
+function semakPw_(u, pw) {
+  pw = String(pw || '');
+  if (String(u.HASH).indexOf('v2$') === 0) return hash_(pw, u.SALT) === u.HASH;
+  if (hashLama_(pw, u.SALT) !== u.HASH) return false;
+  var salt = Utilities.getUuid(); kemaskini_('PENGGUNA', u._r, { HASH: hash_(pw, salt), SALT: salt }); u.SALT = salt;
+  return true;
+}
+/* Batalkan semua sesi seseorang (kecuali token semasa jika diberi) */
+function batalSesi_(id, kecuali) {
+  var sh = sh_('SESI'), rs = baca_('SESI'), c = CacheService.getScriptCache(), n = 0;
+  for (var k = rs.length - 1; k >= 0; k--) if (rs[k].ID === id && rs[k].TOKEN !== kecuali) { c.remove('t_' + rs[k].TOKEN); sh.deleteRow(rs[k]._r); n++; }
+  delete _tbl.SESI; return n;
 }
 function log_(id, t, b) { tambah_('LOG_AUDIT', { MASA: masa_(), ID: id, TINDAKAN: t, BUTIRAN: b || '' }); }
 function naikVersi_() { CacheService.getScriptCache().put('versi', Utilities.getUuid(), 21600); }
@@ -318,7 +346,7 @@ var AWAM_FN = {
       var m = Math.ceil((Number(u.KUNCI_HINGGA) - Date.now()) / 60000);
       return { ok: false, msg: 'Akaun dikunci. Cuba lagi dalam ' + m + ' minit.' };
     }
-    if (hash_(p.katalaluan || '', u.SALT) !== u.HASH) {
+    if (!semakPw_(u, p.katalaluan)) {
       var gagal = Number(u.GAGAL || 0) + 1, upd = { GAGAL: String(gagal) };
       if (gagal >= MAX_GAGAL) { upd.GAGAL = '0'; upd.KUNCI_HINGGA = String(Date.now() + KUNCI_MINIT * 60000); }
       kemaskini_('PENGGUNA', u._r, upd);
@@ -368,12 +396,18 @@ API.logout = function (u, p) {
 };
 
 API.tukar_katalaluan = function (u, p) {
-  if (hash_(p.lama || '', u.SALT) !== u.HASH) return { ok: false, msg: 'Kata laluan lama salah.' };
+  if (!semakPw_(u, p.lama)) return { ok: false, msg: 'Kata laluan lama salah.' };
   if (String(p.baru || '').length < 8) return { ok: false, msg: 'Kata laluan baharu sekurang-kurangnya 8 aksara.' };
   var salt = Utilities.getUuid();
   kemaskini_('PENGGUNA', u._r, { HASH: hash_(p.baru, salt), SALT: salt, WAJIB_TUKAR: '' });
-  log_(u.ID, 'TUKAR_KATALALUAN', '');
-  return { ok: true, msg: 'Kata laluan ditukar.' };
+  var n = batalSesi_(u.ID, p.token);
+  log_(u.ID, 'TUKAR_KATALALUAN', n ? n + ' sesi lain dilog keluar' : '');
+  return { ok: true, msg: 'Kata laluan ditukar.' + (n ? ' ' + n + ' peranti lain telah dilog keluar.' : '') };
+};
+API.logout_semua = function (u, p) {
+  var n = batalSesi_(u.ID, p.token);
+  log_(u.ID, 'LOG_KELUAR_SEMUA', n + ' sesi');
+  return { ok: true, msg: n ? n + ' peranti lain telah dilog keluar.' : 'Tiada peranti lain yang log masuk.' };
 };
 
 API.kemaskini_profil = function (u, p) {
@@ -1197,9 +1231,7 @@ API.reset_katalaluan = function (u, p) {
   for (var j = 0; j < 4; j++) sem += Math.floor(Math.random() * 10);
   var salt = Utilities.getUuid();
   kemaskini_('PENGGUNA', x._r, { HASH: hash_(sem, salt), SALT: salt, GAGAL: '0', KUNCI_HINGGA: '', WAJIB_TUKAR: 'YA' });
-  var sh = sh_('SESI'), rs = baca_('SESI'), c = CacheService.getScriptCache();
-  for (var k = rs.length - 1; k >= 0; k--) if (rs[k].ID === x.ID) { c.remove('t_' + rs[k].TOKEN); sh.deleteRow(rs[k]._r); }
-  delete _tbl.SESI;
+  batalSesi_(x.ID);
   log_(u.ID, 'RESET_KATALALUAN', x.ID);
   return { ok: true, sementara: sem, nama: x.NAMA, id: x.ID, telefon: x.TELEFON };
 };
@@ -1310,6 +1342,11 @@ AWAM_FN.borang_info = function (p) {
 AWAM_FN.borang_hantar = function (p) {
   var g = gelAwam_(p.g); if (!g) return { ok: false, msg: 'Gelanggang tidak aktif.' };
   var d = p.data || {}, kp = bersihKP_(d.no_kp);
+  // Perangkap bot: medan tersembunyi "laman" mesti kosong (manusia tidak nampak medan ini)
+  if (d.laman) { log_('AWAM', 'BORANG_BOT', g.KOD); return { ok: true, id: '-', msg: 'Permohonan dihantar.' }; }
+  // Had: maksimum 20 permohonan setiap gelanggang dalam 1 jam
+  var cg = CacheService.getScriptCache(), kg = 'bhg_' + g.KOD, bilG = Number(cg.get(kg) || 0);
+  if (bilG >= 20) return { ok: false, msg: 'Terlalu banyak permohonan untuk gelanggang ini dalam sejam. Cuba lagi kemudian atau hubungi jurulatih.' };
   if (String(kp).replace(/\D/g, '').length !== 12) return { ok: false, msg: 'No. KP / MyKid mesti 12 digit.' };
   if (!d.nama || !d.jantina || !d.tarikh_lahir) return { ok: false, msg: 'Sila lengkapkan nama, jantina dan tarikh lahir.' };
   if (!d.akur_adat) return { ok: false, msg: 'Sila tandakan akuan adat dan adab perguruan.' };
@@ -1333,7 +1370,7 @@ AWAM_FN.borang_hantar = function (p) {
     NO_KP_WARIS: pot(d.no_kp_waris, 20), TEL_WARIS: pot(d.tel_waris, 20), EMEL_WARIS: pot(d.emel_waris, 120), KESIHATAN: pot(d.kesihatan, 300),
     KEBENARAN_WARIS: d.kebenaran_waris ? 'YA ' + t : (bawah18 ? '' : 'DEWASA'), AKUR_ADAT: 'YA ' + t, PDPA: 'YA ' + t,
     STATUS: 'MENUNGGU', SEBAB_TOLAK: '', DIPROSES_OLEH: '', TARIKH_PROSES: '', NO_AHLI: '' });
-  c.put(kunci, '1', 120);
+  c.put(kunci, '1', 120); cg.put(kg, String(bilG + 1), 3600);
   log_('AWAM', 'PERMOHONAN_BARU', g.KOD + ' ' + id);
   return { ok: true, id: id, msg: 'Permohonan dihantar! Jurulatih ' + g.NAMA + ' akan menyemak dan meluluskannya.' };
 };
@@ -1490,4 +1527,23 @@ function cawSah_(kod, id) {   // pastikan ID cawangan milik gelanggang ini
   if (!id || id === '__TIADA') return '';
   var c = cariSatu_('CAWANGAN', 'ID', id);
   return c && c.KOD_GELANGGANG === kod && c.STATUS !== 'PADAM' ? c.ID : '';
+}
+
+/* ======================= SANDARAN (BACKUP) AUTOMATIK =======================
+ * Sekali sahaja: pilih fungsi "pasangSandaranMingguan" → Run. Selepas itu salinan Google Sheet
+ * dibuat setiap Ahad jam 2 pagi ke folder Drive "SilatApp Sandaran" (8 salinan terkini disimpan). */
+function sandaran() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var nama = 'SilatApp Sandaran', it = DriveApp.getFoldersByName(nama), folder = it.hasNext() ? it.next() : DriveApp.createFolder(nama);
+  DriveApp.getFileById(ss.getId()).makeCopy('Sandaran SilatApp ' + masa_().replace(/:/g, '.'), folder);
+  var fail = [], f = folder.getFiles(); while (f.hasNext()) fail.push(f.next());
+  fail.sort(function (a, b) { return b.getDateCreated() - a.getDateCreated(); });
+  fail.slice(8).forEach(function (x) { x.setTrashed(true); });
+  log_('SISTEM', 'SANDARAN', 'Salinan dibuat (' + Math.min(fail.length, 8) + ' disimpan)');
+}
+function pasangSandaranMingguan() {
+  ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'sandaran') ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger('sandaran').timeBased().onWeekDay(ScriptApp.WeekDay.SUNDAY).atHour(2).create();
+  sandaran();
+  Logger.log('Sandaran mingguan dipasang. Salinan pertama sudah dibuat dalam folder Drive "SilatApp Sandaran".');
 }
