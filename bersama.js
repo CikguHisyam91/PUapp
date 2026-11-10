@@ -232,4 +232,4 @@ function kecilkanGambar(fail, maxPx, maxPanjang) {
 
 /* ====== Sesi latihan (bebas: Pagi, Petang, Malam, Sesi 4 ...) ====== */
 const CADANGAN_SESI = ['Pagi', 'Tengah Hari', 'Petang', 'Malam'];
-function labelSesi(j) { return j.sesi || `${jam12(j.mula)}–${jam12(j.tamat)}`; }
+function labelSesi(j) { return (j.sesi || `${jam12(j.mula)}–${jam12(j.tamat)}`).toUpperCase(); }

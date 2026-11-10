@@ -144,9 +144,9 @@ function urus_(p) {
   var lock = null;
   try {
     var a = p.action;
-    var VERSI_SKEMA = '10';
+    var VERSI_SKEMA = '11';
     if (PropertiesService.getScriptProperties().getProperty('SKEMA') !== VERSI_SKEMA || !sh_('PENGGUNA')) {
-      binaSheet_(); PropertiesService.getScriptProperties().setProperty('SKEMA', VERSI_SKEMA);
+      binaSheet_(); hurufBesarSemua_(); PropertiesService.getScriptProperties().setProperty('SKEMA', VERSI_SKEMA);
     }
     if (TULIS[a]) {
       lock = LockService.getScriptLock();
@@ -190,9 +190,28 @@ function baca_(n) {
   _tbl[n] = rows;
   return rows;
 }
+/* KETETAPAN HURUF BESAR: lajur teks ini SENTIASA disimpan dalam HURUF BESAR,
+   walau ditaip huruf kecil di mana-mana borang. (ID log masuk, e-mel, No. KP, kod & status tidak disentuh.) */
+var LAJUR_BESAR = { NAMA: 1, NAMA_WARIS: 1, ALAMAT: 1, HUBUNGAN_WARIS: 1, SEKOLAH_KERJA: 1, KESIHATAN: 1, LOKASI: 1,
+  CATATAN: 1, KETERANGAN: 1, KATEGORI: 1, SEBAB: 1, SEBAB_TOLAK: 1, PDPA_OLEH: 1, SESI: 1 };
+function nilai_(k, v) { var s = v == null ? '' : String(v); return LAJUR_BESAR[k] ? s.toUpperCase() : s; }
+/* Tukar data lama ke huruf besar (dijalankan automatik sekali semasa naik taraf skema) */
+function hurufBesarSemua_() {
+  var n = 0;
+  Object.keys(JADUAL).forEach(function (nama) {
+    var sh = sh_(nama); if (!sh || sh.getLastRow() < 2) return;
+    var h = JADUAL[nama], lajur = h.map(function (k, i) { return LAJUR_BESAR[k] ? i : -1; }).filter(function (i) { return i >= 0; });
+    if (!lajur.length) return;
+    var julat = sh.getRange(2, 1, sh.getLastRow() - 1, h.length), v = julat.getDisplayValues(), ubah = false;
+    v.forEach(function (r) { lajur.forEach(function (i) { var b = String(r[i]).toUpperCase(); if (b !== r[i]) { r[i] = b; ubah = true; n++; } }); });
+    if (ubah) julat.setNumberFormat('@').setValues(v);
+    delete _tbl[nama];
+  });
+  return n;
+}
 function tambah_(n, o) {
   var h = JADUAL[n], sh = sh_(n);
-  var baris = h.map(function (k) { return o[k] == null ? '' : String(o[k]); });
+  var baris = h.map(function (k) { return nilai_(k, o[k]); });
   var r = sh.getLastRow() + 1;
   sh.getRange(r, 1, 1, h.length).setNumberFormat('@').setValues([baris]);
   delete _tbl[n];
@@ -202,7 +221,7 @@ function kemaskini_(n, r, o) {
   var h = JADUAL[n], sh = sh_(n);
   Object.keys(o).forEach(function (k) {
     var c = h.indexOf(k);
-    if (c >= 0) sh.getRange(r, c + 1).setNumberFormat('@').setValue(o[k] == null ? '' : String(o[k]));
+    if (c >= 0) sh.getRange(r, c + 1).setNumberFormat('@').setValue(nilai_(k, o[k]));
   });
   delete _tbl[n];
 }
@@ -979,7 +998,7 @@ function padamBaris_(n, r) { sh_(n).deleteRow(r); delete _tbl[n]; }
 
 /* ---------- Kehadiran ---------- */
 /* Nama sesi latihan bebas (cth. Pagi, Petang, Malam, Sesi 4) — '' = sesi lalai (rekod lama) */
-function namaSesi_(v) { return String(v || '').replace(/[<>,]/g, '').replace(/\s+/g, ' ').trim().slice(0, 30); }
+function namaSesi_(v) { return String(v || '').replace(/[<>,]/g, '').replace(/\s+/g, ' ').trim().slice(0, 30).toUpperCase(); }
 API.hadir_get = function (u, p) {
   var g = gelJur_(u), t = p.tarikh || hariIni_(), cw = p.cawangan || '', ss = namaSesi_(p.sesi);
   var hariIni = baca_('KEHADIRAN').filter(function (x) { return x.KOD_GELANGGANG === g.KOD && x.TARIKH === t && (x.CAWANGAN || '') === cw; });

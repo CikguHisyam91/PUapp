@@ -860,7 +860,7 @@ async function tabHadir() {
   lukisHadir();
 }
 function sesiLain() {
-  const n = (prompt('Nama sesi tambahan (cth. Sesi Tanding, Latihan Khas):') || '').replace(/[<>,]/g, '').trim().slice(0, 30);
+  const n = (prompt('Nama sesi tambahan (cth. Sesi Tanding, Latihan Khas):') || '').replace(/[<>,]/g, '').trim().slice(0, 30).toUpperCase();
   if (!n) return; S.hSesiTambah = [...new Set([...(S.hSesiTambah || []), n])]; S.hSesi = n; tabHadir();
 }
 async function padamHadir() {
