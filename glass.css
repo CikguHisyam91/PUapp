@@ -1,0 +1,164 @@
+/* =====================================================================
+ * TEMA PREMIUM — SilatApp Pusat (Mod Normal ☀️ & Mod Malam 🌙)
+ * Dimuatkan SELEPAS gaya asal setiap halaman. Hanya mengubah rupa, bukan fungsi.
+ * Ringan & laju: tiada kesan kabur (blur) atau animasi latar yang memberatkan telefon.
+ * Mod dipilih oleh tema.js → <html data-tema="malam|normal">.
+ * ===================================================================== */
+
+/* ---------- Token warna: MOD MALAM (lalai) ---------- */
+:root{
+  color-scheme:dark;
+  --bg:#0B0D11; --bg2:#0F1217;
+  --kad:#15181E; --kad2:#1C2028; --kad3:#232833;
+  --garis:#262B35; --garis2:#323947;
+  --teks:#ECEDEF; --pudar:#A3A9B5;
+  --emas:#E4B75C; --emasT:#E4B75C; --emasLembut:rgba(228,183,92,.12);
+  --hijau:#4CC98A; --merah:#FF8A80; --kuning:#E4B75C; --biru:#7DB4F0;
+  --tHijau:rgba(76,201,138,.14); --tKuning:rgba(228,183,92,.14); --tMerah:rgba(255,138,128,.14); --tBiru:rgba(125,180,240,.14); --tKelabu:rgba(255,255,255,.07);
+  --kepala:rgba(11,13,17,.92);
+  --bayang:0 1px 2px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.22);
+  --bayangKecil:0 1px 2px rgba(0,0,0,.3);
+  --emasGrad:linear-gradient(135deg,#F1CF83,#E4B75C 50%,#CC9A3E);
+  --cipOn:#ECEDEF; --cipOnT:#111317;
+}
+/* ---------- Token warna: MOD NORMAL (cerah) ---------- */
+html[data-tema="normal"]{
+  color-scheme:light;
+  --bg:#F4F2ED; --bg2:#ECE9E2;
+  --kad:#FFFFFF; --kad2:#F6F4EF; --kad3:#EFECE5;
+  --garis:#E4E0D7; --garis2:#D3CEC2;
+  --teks:#1A1C21; --pudar:#5B616C;
+  --emas:#8A6212; --emasT:#8A6212; --emasLembut:rgba(200,149,47,.12);
+  --hijau:#136B42; --merah:#C2362B; --kuning:#8A6212; --biru:#1F63B5;
+  --tHijau:#E3F4EA; --tKuning:#FBF0D9; --tMerah:#FBE5E2; --tBiru:#E2EDFA; --tKelabu:#EEECE7;
+  --kepala:rgba(255,255,255,.94);
+  --bayang:0 1px 2px rgba(30,25,10,.06),0 6px 20px rgba(30,25,10,.06);
+  --bayangKecil:0 1px 2px rgba(30,25,10,.08);
+  --cipOn:#1A1C21; --cipOnT:#FFFFFF;
+}
+
+/* ---------- Asas ---------- */
+html,body{background:var(--bg) !important;color:var(--teks) !important}
+body{font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+h1,h2,h3{letter-spacing:-.01em}
+a{color:var(--emasT)}
+.pudar,small{color:var(--pudar)}
+::selection{background:var(--emasLembut)}
+
+/* ---------- Kepala & tajuk melekat ---------- */
+header{background:var(--kepala) !important;border-bottom:1px solid var(--garis) !important;box-shadow:var(--bayangKecil)}
+header img{box-shadow:0 0 0 2px var(--emas)}
+header .t b{font-weight:800;letter-spacing:-.01em}
+header .t{min-width:0}header .t b,header .t small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header>a.kecil{flex:none;white-space:nowrap}
+@media(max-width:400px){header{gap:8px !important;padding:10px 12px !important}header .t small{font-size:11px}}
+.tajuk{background:var(--bg) !important;border-bottom:1px solid var(--garis) !important;top:59px}
+.tajuk h2{font-weight:800}
+.tabs{background:var(--bg);border-bottom:1px solid var(--garis) !important}
+
+/* ---------- Permukaan: kad, ringkasan, senarai ---------- */
+.kad,.ring,.item,.langkah,.isi:not(#modalIsi),.soalan,.kotakHasil,#cetak .alat{
+  background:var(--kad) !important;border:1px solid var(--garis) !important;box-shadow:var(--bayang);
+}
+.kad,.ring,.langkah{border-radius:18px}
+.kad h3,.isi h3{color:var(--emasT) !important;font-weight:700}
+.stat{background:var(--kad2) !important;border:1px solid var(--garis);border-radius:14px}
+.stat b{color:var(--emasT) !important;font-weight:800}
+.item{border-radius:14px;transition:transform .12s ease,border-color .15s}
+.item:hover{border-color:var(--garis2) !important}
+.item:active{transform:scale(.99)}
+.item.on{border-color:var(--hijau) !important;background:linear-gradient(0deg,var(--tHijau),var(--tHijau)),var(--kad) !important}
+.pdpa,.akuan{background:var(--kad2) !important;border:1px solid var(--garis) !important;color:var(--teks)}
+.amaran{background:var(--tKuning) !important;color:var(--emasT) !important;border-color:var(--emas) !important}
+.tip{background:var(--kad2) !important}
+.ring .besar,.besar{letter-spacing:-.02em}
+
+/* ---------- Menu utama ---------- */
+.menu button{background:var(--kad) !important;border:1px solid var(--garis) !important;border-radius:18px !important;box-shadow:var(--bayang);transition:transform .12s ease,border-color .15s}
+.menu button:hover{transform:translateY(-2px);border-color:var(--emas) !important}
+.menu button b{color:var(--teks)}
+
+/* ---------- Butang ---------- */
+button,.btn,a.btn{background:var(--kad2) !important;color:var(--teks) !important;border:1px solid var(--garis) !important;transition:transform .1s ease,background .15s,border-color .15s;font-weight:600}
+button:hover,.btn:hover{border-color:var(--garis2) !important}
+button:active{transform:scale(.98)}
+button.utama,a.utama,.ikon.utama,.cipB button.on{background:var(--emasGrad) !important;color:#1A1405 !important;border-color:transparent !important;box-shadow:0 6px 18px rgba(200,149,47,.28);font-weight:700}
+button.aktif{background:var(--emasLembut) !important;border-color:var(--emas) !important;color:var(--emasT) !important}
+button.bahaya{background:transparent !important;border-color:var(--merah) !important;color:var(--merah) !important}
+button:disabled{opacity:.45;box-shadow:none}
+.ikon{background:var(--kad) !important;border:1px solid var(--garis) !important;color:var(--teks) !important}
+.cip button{background:var(--kad) !important;color:var(--pudar) !important}
+.cip button.on{background:var(--cipOn) !important;color:var(--cipOnT) !important;border-color:var(--cipOn) !important}
+.lencanaRekod{background:var(--emasGrad) !important;color:#1A1405 !important}
+
+/* ---------- Medan input ---------- */
+input,select,textarea{background:var(--kad) !important;color:var(--teks) !important;border:1px solid var(--garis2) !important;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--emas) !important;box-shadow:0 0 0 4px var(--emasLembut)}
+input::placeholder,textarea::placeholder{color:var(--pudar);opacity:.85}
+select option{background:var(--kad);color:var(--teks)}
+input[type=checkbox],input[type=radio]{accent-color:var(--emas);background:none !important;box-shadow:none}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--teks) 50%),linear-gradient(135deg,var(--teks) 50%,transparent 50%) !important;background-position:calc(100% - 20px) 21px,calc(100% - 15px) 21px !important;background-size:5px 5px !important;background-repeat:no-repeat !important}
+label{color:var(--pudar)}
+
+/* ---------- Tag status ---------- */
+.t-AKTIF,.t-HIJAU{background:var(--tHijau) !important;color:var(--hijau) !important}
+.t-MENUNGGU,.t-KUNING{background:var(--tKuning) !important;color:var(--kuning) !important}
+.t-TIDAK{background:var(--tKelabu) !important;color:var(--pudar) !important}
+.t-DIGANTUNG,.t-DISEKAT,.t-DITOLAK,.t-DIBATALKAN,.t-MERAH{background:var(--tMerah) !important;color:var(--merah) !important}
+.t-BERPINDAH,.t-BERSAMA,.t-BIRU,.t-KETUA{background:var(--tBiru) !important;color:var(--biru) !important}
+
+/* ---------- Lembaran bawah, notis, kad ahli ---------- */
+#modal{background:rgba(5,6,9,.55) !important}
+#modal .isi{background:var(--kad) !important;border:1px solid var(--garis) !important;box-shadow:0 -12px 40px rgba(0,0,0,.25)}
+#toast{background:var(--teks) !important;color:var(--bg) !important;border:0 !important;box-shadow:var(--bayang);font-weight:600}
+.ahlikad{background:linear-gradient(135deg,var(--emasLembut),transparent 55%),var(--kad) !important;border:1.5px solid var(--emas) !important;box-shadow:var(--bayang)}
+.ahlikad .no{color:var(--emasT) !important}
+.bar{background:var(--kad3) !important}
+.bulan div{background:var(--kad2) !important}
+.carta i{background:var(--emasGrad) !important}
+.login .logo img{box-shadow:0 0 0 3px var(--emas),0 10px 30px rgba(200,149,47,.25)}
+.login h1{color:var(--emasT) !important}
+.terapung{background:linear-gradient(transparent,var(--bg) 35%) !important}
+.gambar img{border-color:var(--garis2) !important}
+th{color:var(--pudar)} th,td{border-bottom-color:var(--garis) !important}
+
+/* ---------- Mod Normal: tukar warna gelap yang ditulis terus dalam halaman ---------- */
+html[data-tema="normal"] [style*="#0B0D10"],html[data-tema="normal"] [style*="#0F1115"],
+html[data-tema="normal"] [style*="#181B22"],html[data-tema="normal"] [style*="#1c1f27"],html[data-tema="normal"] [style*="#1b1e26"]{background:var(--kad) !important;color:var(--teks) !important}
+html[data-tema="normal"] [style*="#20242D"],html[data-tema="normal"] [style*="#2a2e37"]{background:var(--kad2) !important;color:var(--teks) !important}
+html[data-tema="normal"] [style*="#2a2513"],html[data-tema="normal"] [style*="#3a321f"]{background:var(--tKuning) !important}
+html[data-tema="normal"] [style*="#1f3a2c"]{background:var(--tHijau) !important}
+html[data-tema="normal"] [style*="#3a2020"]{background:var(--tMerah) !important}
+html[data-tema="normal"] [style*="#1f2c3a"]{background:var(--tBiru) !important}
+html[data-tema="normal"] [style*="#2C313C"]{border-color:var(--garis) !important}
+html[data-tema="normal"] [style*="color:#E8E9EC"],html[data-tema="normal"] [style*="color:#EDEEF0"],html[data-tema="normal"] [style*="color:#cfd2d8"],html[data-tema="normal"] [style*="color:#fff"]:not(.no):not(button){color:var(--teks) !important}
+html[data-tema="normal"] [style*="color:#9097A3"]{color:var(--pudar) !important}
+html[data-tema="normal"] [style*="color:#E2B55A"],html[data-tema="normal"] [style*="color: #E2B55A"]{color:var(--emasT) !important}
+html[data-tema="normal"] [style*="color:#3FB97B"],html[data-tema="normal"] [style*="color:var(--hijau)"]{color:var(--hijau) !important}
+html[data-tema="normal"] [style*="color:#E0605A"]{color:var(--merah) !important}
+html[data-tema="normal"] .langkah p{color:var(--teks) !important}
+html[data-tema="normal"] .gambar img{background:#fff !important}
+
+/* ---------- Butang tukar tema ---------- */
+.tukarTema{width:40px;height:40px;min-height:0 !important;padding:0 !important;flex:none;display:inline-flex !important;align-items:center;justify-content:center;border-radius:12px !important;font-size:18px !important;line-height:1}
+.tukarTema.apung{position:fixed;top:12px;right:12px;z-index:70;box-shadow:var(--bayang)}
+
+/* ---------- Kebolehcapaian ---------- */
+:focus-visible{outline:3px solid var(--emas) !important;outline-offset:2px;border-radius:10px}
+.item:focus-visible,.menu button:focus-visible{box-shadow:0 0 0 3px var(--emas),var(--bayang) !important}
+html{scroll-padding-top:76px}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+
+/* ---------- Cetak: sentiasa putih ---------- */
+@media print{
+  html,body{background:#fff !important;color:#000 !important}
+  .tukarTema{display:none !important}
+  .kad,.ring,.item,.stat,.isi,.langkah{background:#fff !important;color:#000 !important;border:1px solid #000 !important;box-shadow:none !important}
+}
+.lencana{background:var(--tKuning) !important;color:var(--emasT) !important;border-color:var(--emas) !important}
+.cip button.on small{color:inherit !important;opacity:.85}
+
+/* ---------- Ketetapan huruf besar: teks dipaparkan HURUF BESAR semasa menaip (pelayan juga menukar) ---------- */
+input:not([type]):not([autocapitalize="none"]):not([inputmode="tel"]):not([inputmode="numeric"]):not([id^="cari"]),
+input[type=text]:not([autocapitalize="none"]):not([id^="cari"]),textarea{text-transform:uppercase}
+input::placeholder,textarea::placeholder{text-transform:none}
