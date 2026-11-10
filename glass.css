@@ -157,3 +157,8 @@ html{scroll-padding-top:76px}
 }
 .lencana{background:var(--tKuning) !important;color:var(--emasT) !important;border-color:var(--emas) !important}
 .cip button.on small{color:inherit !important;opacity:.85}
+
+/* ---------- Ketetapan huruf besar: teks dipaparkan HURUF BESAR semasa menaip (pelayan juga menukar) ---------- */
+input:not([type]):not([autocapitalize="none"]):not([inputmode="tel"]):not([inputmode="numeric"]):not([id^="cari"]),
+input[type=text]:not([autocapitalize="none"]):not([id^="cari"]),textarea{text-transform:uppercase}
+input::placeholder,textarea::placeholder{text-transform:none}
